@@ -1,0 +1,36 @@
+### Đăng nhập để lấy Token (nếu chưa có)
+POST http://localhost:4000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "khang393324@gmail.com",
+  "password": "Khang@0937393324"
+}
+
+### TẠO SẢN PHẨM MỚI
+POST http://localhost:4000/api/products
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQzZDZiMWIzLWNkMDAtNDdiZi1iZmUwLTM3ODViNzQxMjlkOCIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc2Njk5NDE3MywiZXhwIjoxNzY3MDgwNTczfQ.-n8ZRFVyDNguGs38mh4_v45P4mBL7Pxoru4-knM-LEA
+
+{
+  "name": "Áo Thun Oversize Fortunate",
+  "slug": "ao-thun-oversize-fortunate-v1",
+  "description": "Chất liệu cotton 100%, thoáng mát.",
+  "categoryId": "d058707e-1597-4fbb-988c-0ddb8018a732",
+  "status": "PUBLISHED",
+  "images": [
+    {
+      "url": "https://example.com/image1.jpg",
+      "isMain": true
+    }
+  ],
+  "variants": [
+    {
+      "sku": "TS-WHT-L",
+      "color": "White",
+      "size": "L",
+      "price": 250000,
+      "stock": 50
+    }
+  ]
+}

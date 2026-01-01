@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+// --- NGƯỜI DÙNG ---
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  name        String?
+  avatar      String?  // Thêm ảnh đại diện
+  role        Role     @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt // Theo dõi thời gian cập nhật
+
+  addresses     Address[]
+  cart          Cart?
+  orders        Order[]
+  reviews       Review[]
+  wishlist      Wishlist[]
+  bodyProfile   UserBodyProfile?
+  tryOns        VirtualTryOnSession[]
+  notifications Notification[] // Hệ thống thông báo
+}
+
+enum Role {
+  USER
+  ADMIN
+  CREATOR
+}
+
+model Address {
+  id        String  @id @default(uuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  fullName  String
+  phone     String
+  address   String
+  city      String
+  country   String
+  isDefault Boolean @default(false) // Địa chỉ mặc định để thanh toán nhanh
+  createdAt DateTime @default(now())
+}
+
+// --- QUẢN LÝ SẢN PHẨM ---
+model Brand {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  logo      String?
+  products  Product[]
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String
+  slug      String     @unique // Tốt cho SEO
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique // Ví dụ: ao-thun-unisex-01
+  description String?
+  status      ProductStatus @default(DRAFT) // Creator có thể ẩn/hiện sản phẩm
+  
+  brandId     String?
+  brand       Brand?   @relation(fields: [brandId], references: [id])
+  
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  images      ProductImage[]
+  variants    ProductVariant[]
+  reviews     Review[]
+  wishlists   Wishlist[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  OUT_OF_STOCK
+  ARCHIVED
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  
+  sku       String   @unique // Mã quản lý kho (ví dụ: TS-WHT-L)
+  color     String
+  size      String
+  price     Float
+  stock     Int
+
+  measurement ProductMeasurement?
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  tryOns      VirtualTryOnSession[]
+}
+
+model ProductImage {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  url       String
+  isMain    Boolean @default(false)
+}
+
+// --- BÁN HÀNG & KHUYẾN MÃI ---
+model Coupon {
+  id            String    @id @default(uuid())
+  code          String    @unique // Ví dụ: CHAOHE2024
+  discountValue Float
+  isPercentage  Boolean   @default(false)
+  startDate     DateTime
+  endDate       DateTime
+  usageLimit    Int       @default(100)
+  orders        Order[]
+}
+
+model Cart {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+  items  CartItem[]
+}
+
+model CartItem {
+  id        String @id @default(uuid())
+  cartId    String
+  variantId String
+  cart      Cart           @relation(fields: [cartId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  quantity  Int
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  status    OrderStatus @default(PENDING)
+  
+  couponId  String?
+  coupon    Coupon?     @relation(fields: [couponId], references: [id])
+  
+  totalBeforeDiscount Float
+  discountAmount      Float @default(0)
+  total               Float // Giá cuối cùng phải trả
+
+  items     OrderItem[]
+  payment   Payment?
+  createdAt DateTime @default(now())
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  variantId String
+  order     Order          @relation(fields: [orderId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  price     Float // Lưu giá tại thời điểm mua
+  quantity  Int
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  orderId         String        @unique
+  order           Order         @relation(fields: [orderId], references: [id])
+  
+  method          PaymentMethod @default(VNPAY) // Mặc định là VNPAY
+  status          PaymentStatus @default(PENDING)
+  
+  // Các trường bổ sung để lưu thông tin từ VNPay trả về
+  vnp_TransactionNo String?     // Mã giao dịch của VNPay
+  vnp_ResponseCode  String?     // Mã phản hồi (00 là thành công)
+  vnp_OrderInfo     String?     // Thông tin nội dung thanh toán
+  
+  transactionId   String?       // Có thể dùng chung với vnp_TransactionNo
+  paidAt          DateTime?
+  amount          Float         // Số tiền thực tế đã thanh toán
+}
+
+// --- TƯƠNG TÁC & MARKETING ---
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Banner {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  linkUrl   String?
+  isActive  Boolean  @default(true)
+  position  Int      @default(0) // Thứ tự hiển thị trên Home
+}
+
+// --- GIỮ NGUYÊN CÁC MODEL VIRTUAL TRY-ON CỦA BẠN ---
+model Review {
+  id        String @id @default(uuid())
+  userId    String
+  productId String
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Wishlist {
+  id        String @id @default(uuid())
+  userId    String
+  productId String
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+  @@unique([userId, productId])
+}
+
+model UserBodyProfile {
+  id      String @id @default(uuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id])
+  height  Float
+  weight  Float
+  chest   Float
+  waist   Float
+  hip     Float
+}
+
+model ProductMeasurement {
+  id        String @id @default(uuid())
+  variantId String @unique
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  chest     Float?
+  waist     Float?
+  hip       Float?
+  length    Float?
+}
+
+model AIModel {
+  id          String @id @default(uuid())
+  name        String
+  version     String
+  description String?
+  sessions    VirtualTryOnSession[]
+}
+
+model VirtualTryOnSession {
+  id          String @id @default(uuid())
+  userId      String
+  variantId   String
+  aiModelId   String
+  user        User           @relation(fields: [userId], references: [id])
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  aiModel     AIModel        @relation(fields: [aiModelId], references: [id])
+  inputImage  String
+  outputImage String
+  createdAt   DateTime @default(now())
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  VNPAY
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
