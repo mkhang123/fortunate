@@ -57,8 +57,6 @@ export default function MainLayout() {
 
           {/* Icons Group */}
           <div className="flex items-center gap-5">
-            <Search className="w-5 h-5 cursor-pointer hover:text-gray-500" />
-
             <Link to="/cart" title="Giỏ hàng">
               <ShoppingCart className="w-5 h-5 cursor-pointer hover:text-gray-500" />
             </Link>

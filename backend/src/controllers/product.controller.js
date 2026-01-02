@@ -47,10 +47,30 @@ class ProductController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
-  
+
   async getFeatured(req, res) {
     try {
       const products = await productService.getFeaturedProducts();
+      return res.status(200).json({
+        success: true,
+        data: products,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async getAll(req, res) {
+    try {
+      // Lấy từ khóa tìm kiếm từ query parameter (?search=...)
+      const { search } = req.query;
+
+      // Truyền search vào service để xử lý lọc
+      const products = await productService.getAllProducts({ search });
+
       return res.status(200).json({
         success: true,
         data: products,

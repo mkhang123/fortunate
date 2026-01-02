@@ -40,6 +40,10 @@ class ProductService {
       throw err;
     }
   }
+
+  async getAllProducts(filters) {
+    return await productRepository.getAll(filters);
+  }
 }
 
 export default new ProductService();

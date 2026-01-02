@@ -74,6 +74,34 @@ class ProductRepository {
       take: 10, // Chỉ lấy 10 sản phẩm nổi bật nhất
     });
   }
+
+  async getAll(filters = {}) {
+    const { search, categoryId, status } = filters;
+
+    const where = {};
+
+    if (search) {
+      where.name = { contains: search, mode: "insensitive" };
+    }
+
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    return await prisma.product.findMany({
+      where, // Truyền object where đã tổng hợp các điều kiện
+      include: {
+        images: true,
+        variants: true,
+        category: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
 }
 
 export default new ProductRepository();
