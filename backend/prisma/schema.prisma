@@ -9,7 +9,7 @@ datasource db {
 
 // --- NGƯỜI DÙNG ---
 model User {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   email       String   @unique
   password    String
   name        String?
@@ -35,21 +35,21 @@ enum Role {
 }
 
 model Address {
-  id        String  @id @default(uuid())
-  userId    String
-  user      User    @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
   fullName  String
   phone     String
   address   String
   city      String
   country   String
-  isDefault Boolean @default(false) // Địa chỉ mặc định để thanh toán nhanh
+  isDefault Boolean  @default(false) // Địa chỉ mặc định để thanh toán nhanh
   createdAt DateTime @default(now())
 }
 
 // --- QUẢN LÝ SẢN PHẨM ---
 model Brand {
-  id        String    @id @default(uuid())
+  id        Int       @id @default(autoincrement())
   name      String    @unique
   slug      String    @unique
   logo      String?
@@ -57,27 +57,27 @@ model Brand {
 }
 
 model Category {
-  id        String     @id @default(uuid())
+  id        Int        @id @default(autoincrement())
   name      String
   slug      String     @unique // Tốt cho SEO
-  parentId  String?
+  parentId  Int?
   parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryHierarchy")
   products  Product[]
 }
 
 model Product {
-  id          String   @id @default(uuid())
+  id          Int           @id @default(autoincrement())
   name        String
-  slug        String   @unique // Ví dụ: ao-thun-unisex-01
+  slug        String        @unique // Ví dụ: ao-thun-unisex-01
   description String?
   status      ProductStatus @default(DRAFT) // Creator có thể ẩn/hiện sản phẩm
-  
-  brandId     String?
-  brand       Brand?   @relation(fields: [brandId], references: [id])
-  
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+
+  brandId     Int?
+  brand       Brand?        @relation(fields: [brandId], references: [id])
+
+  categoryId  Int
+  category    Category      @relation(fields: [categoryId], references: [id])
 
   images      ProductImage[]
   variants    ProductVariant[]
@@ -96,8 +96,8 @@ enum ProductStatus {
 }
 
 model ProductVariant {
-  id        String   @id @default(uuid())
-  productId String
+  id        Int      @id @default(autoincrement())
+  productId Int
   product   Product  @relation(fields: [productId], references: [id])
   
   sku       String   @unique // Mã quản lý kho (ví dụ: TS-WHT-L)
@@ -113,8 +113,8 @@ model ProductVariant {
 }
 
 model ProductImage {
-  id        String  @id @default(uuid())
-  productId String
+  id        Int     @id @default(autoincrement())
+  productId Int
   product   Product @relation(fields: [productId], references: [id])
   url       String
   isMain    Boolean @default(false)
@@ -122,39 +122,39 @@ model ProductImage {
 
 // --- BÁN HÀNG & KHUYẾN MÃI ---
 model Coupon {
-  id            String    @id @default(uuid())
-  code          String    @unique // Ví dụ: CHAOHE2024
+  id            Int      @id @default(autoincrement())
+  code          String   @unique // Ví dụ: CHAOHE2024
   discountValue Float
-  isPercentage  Boolean   @default(false)
+  isPercentage  Boolean  @default(false)
   startDate     DateTime
   endDate       DateTime
-  usageLimit    Int       @default(100)
+  usageLimit    Int      @default(100)
   orders        Order[]
 }
 
 model Cart {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  id     Int        @id @default(autoincrement())
+  userId Int        @unique
+  user   User       @relation(fields: [userId], references: [id])
   items  CartItem[]
 }
 
 model CartItem {
-  id        String @id @default(uuid())
-  cartId    String
-  variantId String
+  id        Int            @id @default(autoincrement())
+  cartId    Int
+  variantId Int
   cart      Cart           @relation(fields: [cartId], references: [id])
   variant   ProductVariant @relation(fields: [variantId], references: [id])
   quantity  Int
 }
 
 model Order {
-  id        String      @id @default(uuid())
-  userId    String
+  id        Int         @id @default(autoincrement())
+  userId    Int
   user      User        @relation(fields: [userId], references: [id])
   status    OrderStatus @default(PENDING)
-  
-  couponId  String?
+
+  couponId  Int?
   coupon    Coupon?     @relation(fields: [couponId], references: [id])
   
   totalBeforeDiscount Float
@@ -167,9 +167,9 @@ model Order {
 }
 
 model OrderItem {
-  id        String @id @default(uuid())
-  orderId   String
-  variantId String
+  id        Int            @id @default(autoincrement())
+  orderId   Int
+  variantId Int
   order     Order          @relation(fields: [orderId], references: [id])
   variant   ProductVariant @relation(fields: [variantId], references: [id])
   price     Float // Lưu giá tại thời điểm mua
@@ -177,8 +177,8 @@ model OrderItem {
 }
 
 model Payment {
-  id              String        @id @default(uuid())
-  orderId         String        @unique
+  id              Int           @id @default(autoincrement())
+  orderId         Int           @unique
   order           Order         @relation(fields: [orderId], references: [id])
   
   method          PaymentMethod @default(VNPAY) // Mặc định là VNPAY
@@ -196,8 +196,8 @@ model Payment {
 
 // --- TƯƠNG TÁC & MARKETING ---
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String
+  id        Int      @id @default(autoincrement())
+  userId    Int
   user      User     @relation(fields: [userId], references: [id])
   title     String
   message   String
@@ -206,37 +206,37 @@ model Notification {
 }
 
 model Banner {
-  id        String   @id @default(uuid())
+  id        Int     @id @default(autoincrement())
   imageUrl  String
   linkUrl   String?
-  isActive  Boolean  @default(true)
-  position  Int      @default(0) // Thứ tự hiển thị trên Home
+  isActive  Boolean @default(true)
+  position  Int     @default(0) // Thứ tự hiển thị trên Home
 }
 
 // --- GIỮ NGUYÊN CÁC MODEL VIRTUAL TRY-ON CỦA BẠN ---
 model Review {
-  id        String @id @default(uuid())
-  userId    String
-  productId String
-  user      User    @relation(fields: [userId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
 }
 
 model Wishlist {
-  id        String @id @default(uuid())
-  userId    String
-  productId String
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  productId Int
   user      User    @relation(fields: [userId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
   @@unique([userId, productId])
 }
 
 model UserBodyProfile {
-  id      String @id @default(uuid())
-  userId  String @unique
+  id      Int    @id @default(autoincrement())
+  userId  Int    @unique
   user    User   @relation(fields: [userId], references: [id])
   height  Float
   weight  Float
@@ -246,8 +246,8 @@ model UserBodyProfile {
 }
 
 model ProductMeasurement {
-  id        String @id @default(uuid())
-  variantId String @unique
+  id        Int            @id @default(autoincrement())
+  variantId Int            @unique
   variant   ProductVariant @relation(fields: [variantId], references: [id])
   chest     Float?
   waist     Float?
@@ -256,7 +256,7 @@ model ProductMeasurement {
 }
 
 model AIModel {
-  id          String @id @default(uuid())
+  id          Int                   @id @default(autoincrement())
   name        String
   version     String
   description String?
@@ -264,10 +264,10 @@ model AIModel {
 }
 
 model VirtualTryOnSession {
-  id          String @id @default(uuid())
-  userId      String
-  variantId   String
-  aiModelId   String
+  id          Int            @id @default(autoincrement())
+  userId      Int
+  variantId   Int
+  aiModelId   Int
   user        User           @relation(fields: [userId], references: [id])
   variant     ProductVariant @relation(fields: [variantId], references: [id])
   aiModel     AIModel        @relation(fields: [aiModelId], references: [id])

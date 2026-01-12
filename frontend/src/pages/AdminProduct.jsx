@@ -4,6 +4,9 @@ import api from "../apis/axiosConfig";
 export default function AdminProduct() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     categoryId: "",
@@ -11,9 +14,11 @@ export default function AdminProduct() {
     stock: "",
     color: "",
     size: "",
-    imageUrl: "", // Thêm trường URL ảnh vào state
+    imageUrl: "",
+    description: "", 
   });
 
+  // SỬA: Di chuyển fetchData vào trong useEffect
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -25,6 +30,7 @@ export default function AdminProduct() {
         const catData = catRes.data?.data || [];
         setCategories(catData);
 
+        // Tự động gán ID danh mục đầu tiên nếu có
         if (catData.length > 0) {
           setFormData((prev) => ({ ...prev, categoryId: catData[0].id }));
         }
@@ -32,8 +38,9 @@ export default function AdminProduct() {
         console.error("Lỗi khi lấy dữ liệu:", err);
       }
     };
+
     fetchData();
-  }, []);
+  }, []); // Empty dependency array - chỉ chạy một lần khi mount
 
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
@@ -45,6 +52,37 @@ export default function AdminProduct() {
         alert(err.response?.data?.message || "Lỗi khi xóa sản phẩm");
       }
     }
+  };
+
+  const handleEdit = (p) => {
+    setIsEditing(true);
+    setEditId(p.id);
+    setFormData({
+      name: p.name,
+      categoryId: p.categoryId,
+      price: p.variants?.[0]?.price || "",
+      stock: p.variants?.[0]?.stock || "",
+      color: p.variants?.[0]?.color || "",
+      size: p.variants?.[0]?.size || "",
+      imageUrl: p.images?.[0]?.url || "",
+      description: p.description || "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditId(null);
+    setFormData({
+      name: "",
+      categoryId: categories[0]?.id || "",
+      price: "",
+      stock: "",
+      color: "",
+      size: "",
+      imageUrl: "",
+      description: "",
+    });
   };
 
   const createSlug = (name) => {
@@ -62,13 +100,12 @@ export default function AdminProduct() {
       const payload = {
         name: formData.name,
         slug: createSlug(formData.name),
-        description: "Mô tả sản phẩm mặc định",
+        description: formData.description || "Mô tả sản phẩm mặc định",
         status: "PUBLISHED",
-        categoryId: formData.categoryId,
-        // THÊM MẢNG ẢNH VÀO PAYLOAD ĐỂ KHỚP VỚI SCHEMA BACKEND
+        categoryId: Number(formData.categoryId), 
         images: formData.imageUrl 
           ? [{ url: formData.imageUrl, isMain: true }] 
-          : [], 
+          : [{ url: "https://via.placeholder.com/150", isMain: true }], 
         variants: [
           {
             sku: `SKU-${Date.now()}`,
@@ -80,30 +117,27 @@ export default function AdminProduct() {
         ],
       };
 
-      await api.post("/products", payload);
-      alert("Tạo sản phẩm thành công!");
+      if (isEditing) {
+        await api.patch(`/products/${editId}`, payload);
+        alert("Cập nhật sản phẩm thành công!");
+      } else {
+        await api.post("/products", payload);
+        alert("Tạo sản phẩm thành công!");
+      }
 
       const res = await api.get("/products");
       setProducts(res.data?.data || []);
-
-      setFormData({
-        name: "",
-        categoryId: categories[0]?.id || "",
-        price: "",
-        stock: "",
-        color: "",
-        size: "",
-        imageUrl: "", // Reset URL ảnh
-      });
+      cancelEdit();
     } catch (err) {
-      const errorData = err.response?.data;
-      alert(errorData?.message || "Lỗi khi tạo sản phẩm.");
+      alert(err.response?.data?.message || "Lỗi thao tác sản phẩm.");
     }
   };
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Quản lý Sản phẩm (Admin)</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        {isEditing ? "Chỉnh sửa sản phẩm" : "Quản lý Sản phẩm (Admin)"}
+      </h1>
 
       <form
         onSubmit={handleSubmit}
@@ -117,7 +151,6 @@ export default function AdminProduct() {
           required
         />
 
-        {/* Ô NHẬP URL ẢNH */}
         <input
           placeholder="URL Hình ảnh (http://...)"
           value={formData.imageUrl}
@@ -156,19 +189,30 @@ export default function AdminProduct() {
           required
         />
 
-        <button
-          type="submit"
-          className="bg-black text-white font-bold p-2 col-span-full rounded uppercase tracking-widest"
-        >
-          Thêm sản phẩm
-        </button>
+        <div className="col-span-full flex gap-2">
+          <button
+            type="submit"
+            className={`${isEditing ? 'bg-blue-600' : 'bg-black'} text-white font-bold p-2 flex-1 rounded uppercase tracking-widest`}
+          >
+            {isEditing ? "Lưu thay đổi" : "Thêm sản phẩm"}
+          </button>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="bg-gray-400 text-white font-bold p-2 px-6 rounded uppercase tracking-widest"
+            >
+              Hủy
+            </button>
+          )}
+        </div>
       </form>
 
       <div className="overflow-x-auto border rounded-lg">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100 border-b">
-              <th className="p-3 text-left w-20">Ảnh</th> {/* CỘT ẢNH */}
+              <th className="p-3 text-left w-20">Ảnh</th>
               <th className="p-3 text-left">Tên sản phẩm</th>
               <th className="p-3 text-left">Giá</th>
               <th className="p-3 text-center">Thao tác</th>
@@ -178,18 +222,15 @@ export default function AdminProduct() {
             {products.length > 0 ? (
               products.map((p) => (
                 <tr key={p.id} className="border-b hover:bg-gray-50">
-                  {/* HIỂN THỊ ẢNH TRONG BẢNG */}
                   <td className="p-3">
                     {p.images && p.images.length > 0 ? (
                       <img 
                         src={p.images.find(img => img.isMain)?.url || p.images[0].url} 
-                        alt={p.name} 
+                        alt="" 
                         className="w-12 h-12 object-cover rounded border"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500">
-                        No Alt
-                      </div>
+                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500">No Alt</div>
                     )}
                   </td>
                   <td className="p-3 font-medium">{p.name}</td>
@@ -197,7 +238,12 @@ export default function AdminProduct() {
                     {p.variants?.[0]?.price?.toLocaleString()}đ
                   </td>
                   <td className="p-3 text-center">
-                    <button className="text-blue-500 hover:underline mr-4">Sửa</button>
+                    <button 
+                      onClick={() => handleEdit(p)}
+                      className="text-blue-500 hover:underline mr-4"
+                    >
+                      Sửa
+                    </button>
                     <button
                       className="text-red-500 hover:underline"
                       onClick={() => handleDelete(p.id)}
@@ -209,9 +255,7 @@ export default function AdminProduct() {
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="p-10 text-center text-gray-400 italic">
-                  Đang tải hoặc chưa có sản phẩm...
-                </td>
+                <td colSpan="4" className="p-10 text-center text-gray-400 italic">Đang tải hoặc chưa có sản phẩm...</td>
               </tr>
             )}
           </tbody>

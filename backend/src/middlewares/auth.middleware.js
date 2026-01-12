@@ -6,7 +6,7 @@ export const authMiddleware = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Gán user thật từ Token (id lúc này sẽ là UUID String)
+        req.user = decoded; // Gán user thật từ Token (id lúc này là số nguyên)
         next();
     } catch (error) {
         return res.status(401).json({ message: "Token không hợp lệ" });

@@ -5,14 +5,27 @@ import { roleMiddleware } from "../middlewares/role.middleware.js";
 
 const router = express.Router();
 
+router.get("/featured", productController.getFeatured);
 router.get("/", productController.getAll);
+
 router.post(
   "/",
   authMiddleware,
   roleMiddleware(["ADMIN", "CREATOR"]),
   productController.create
 );
-router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN"]), productController.delete);
-router.get("/featured", productController.getFeatured);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "CREATOR"]),
+  productController.delete
+);
+router.patch(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "CREATOR"]),
+  productController.update
+);
 
 export default router;

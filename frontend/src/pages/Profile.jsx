@@ -96,7 +96,7 @@ export default function Profile() {
                   Chiều cao
                 </p>
                 <p className="text-2xl font-black">
-                  {profile.bodyProfile.height}{" "}
+                  {profile.bodyProfile.height}
                   <span className="text-xs font-normal">cm</span>
                 </p>
               </div>
@@ -105,7 +105,7 @@ export default function Profile() {
                   Cân nặng
                 </p>
                 <p className="text-2xl font-black">
-                  {profile.bodyProfile.weight}{" "}
+                  {profile.bodyProfile.weight}
                   <span className="text-xs font-normal">kg</span>
                 </p>
               </div>
@@ -114,7 +114,7 @@ export default function Profile() {
                   Vòng ngực
                 </p>
                 <p className="text-xl font-bold">
-                  {profile.bodyProfile.chest || "--"}{" "}
+                  {profile.bodyProfile.chest || "--"}
                   <span className="text-xs font-normal text-gray-500">cm</span>
                 </p>
               </div>
@@ -123,7 +123,7 @@ export default function Profile() {
                   Vòng eo
                 </p>
                 <p className="text-xl font-bold">
-                  {profile.bodyProfile.waist || "--"}{" "}
+                  {profile.bodyProfile.waist || "--"}
                   <span className="text-xs font-normal text-gray-500">cm</span>
                 </p>
               </div>

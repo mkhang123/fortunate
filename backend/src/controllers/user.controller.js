@@ -16,3 +16,30 @@ export const getProfile = async (req, res) => {
     });
   }
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await userService.listAllUsers();
+    res.json({ success: true, data: users });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params; // ID của user cần sửa
+    const { role } = req.body;  // Role mới: "ADMIN", "CREATOR", "USER"
+    
+    const result = await userService.changeUserRole(id, role);
+    
+    res.json({ 
+      success: true, 
+      message: `Đã chuyển thành công người dùng sang quyền ${role}`,
+      data: result 
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+

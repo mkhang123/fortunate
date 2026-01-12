@@ -21,9 +21,9 @@ class ProductService {
     }
   }
 
-  async getAllProducts() {
+  async getAllProducts(filters = {}) {
     try {
-      return await productRepository.getAllProducts();
+      return await productRepository.getAll(filters);
     } catch (error) {
       const err = new Error("Lỗi khi lấy danh sách sản phẩm");
       err.statusCode = 500;
@@ -41,8 +41,37 @@ class ProductService {
     }
   }
 
-  async getAllProducts(filters) {
-    return await productRepository.getAll(filters);
+  async removeProduct(id) {
+    try {
+      const productId = Number(id); // Number() an toàn hơn parseInt() cho ID
+
+      // Kiểm tra nếu không phải là số hoặc số âm
+      if (isNaN(productId) || productId <= 0) {
+        const error = new Error("ID sản phẩm không hợp lệ");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      return await productRepository.deleteProduct(productId);
+    } catch (error) {
+      console.error("Lỗi tại ProductService:", error);
+      throw error; // Quăng nguyên object error để Controller lấy được statusCode
+    }
+  }
+
+  async updateProduct(id, data) {
+    const productId = Number(id);
+
+    // 1. Kiểm tra tồn tại thông qua Repository
+    const existingProduct = await productRepository.findById(productId);
+    if (!existingProduct) {
+      const error = new Error("Không tìm thấy sản phẩm để cập nhật");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // 2. Gọi Repository xử lý Transaction (Bạn đã viết hàm này ở Repository rồi)
+    return await productRepository.updateProduct(productId, data);
   }
 }
 

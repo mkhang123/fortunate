@@ -1,6 +1,9 @@
 // fortunate/backend/src/controllers/product.controller.js
 import productService from "../services/product.service.js";
-import { createProductSchema } from "../validators/product.schema.js";
+import {
+  createProductSchema,
+  updateProductSchema,
+} from "../validators/product.schema.js";
 
 class ProductController {
   async create(req, res) {
@@ -20,21 +23,6 @@ class ProductController {
       return res.status(status).json({
         success: false,
         message: error.message || "Đã xảy ra lỗi không xác định",
-      });
-    }
-  }
-
-  async getAll(req, res) {
-    try {
-      const products = await productService.getAllProducts();
-      return res.status(200).json({
-        success: true,
-        data: products,
-      });
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({
-        success: false,
-        message: error.message,
       });
     }
   }
@@ -65,20 +53,48 @@ class ProductController {
 
   async getAll(req, res) {
     try {
-      // Lấy từ khóa tìm kiếm từ query parameter (?search=...)
-      const { search } = req.query;
+      // Lấy thêm trường sort từ query string (URL)
+      const { search, categoryId, status, sort } = req.query;
 
-      // Truyền search vào service để xử lý lọc
-      const products = await productService.getAllProducts({ search });
+      // Truyền tất cả filter (bao gồm sort) vào service
+      const products = await productService.getAllProducts({
+        search,
+        categoryId,
+        status,
+        sort,
+      });
+
+      return res.status(200).json({ success: true, data: products });
+    } catch (error) {
+      return res
+        .status(error.statusCode || 500)
+        .json({ success: false, message: error.message });
+    }
+  }
+  
+  async update(req, res) {
+    try {
+      const { id } = req.params;
+
+      // 1. Validate dữ liệu gửi lên (sử dụng partial schema)
+      const validatedData = updateProductSchema.parse(req.body);
+
+      // 2. Gọi service để xử lý cập nhật
+      const result = await productService.updateProduct(id, validatedData);
 
       return res.status(200).json({
         success: true,
-        data: products,
+        message: "Cập nhật sản phẩm thành công",
+        data: result,
       });
     } catch (error) {
-      return res.status(error.statusCode || 500).json({
+      // Bắt lỗi từ Zod hoặc từ Service
+      const status = error.statusCode || 400;
+      return res.status(status).json({
         success: false,
-        message: error.message,
+        message: error.message || "Lỗi khi cập nhật sản phẩm",
+        // Nếu có lỗi chi tiết từ Zod thì trả về thêm (tùy chọn)
+        errors: error.errors || null,
       });
     }
   }
