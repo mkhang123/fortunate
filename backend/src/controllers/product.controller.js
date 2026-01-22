@@ -17,9 +17,7 @@ class ProductController {
         data: result,
       });
     } catch (error) {
-      // Nếu có statusCode từ Service thì dùng, không thì mặc định 400
       const status = error.statusCode || 400;
-
       return res.status(status).json({
         success: false,
         message: error.message || "Đã xảy ra lỗi không xác định",
@@ -53,13 +51,14 @@ class ProductController {
 
   async getAll(req, res) {
     try {
-      // Lấy thêm trường sort từ query string (URL)
-      const { search, categoryId, status, sort } = req.query;
+      // CẬP NHẬT: Thêm categorySlug để nhận từ URL (?categorySlug=...)
+      const { search, categoryId, categorySlug, status, sort } = req.query;
 
-      // Truyền tất cả filter (bao gồm sort) vào service
+      // Truyền tất cả filter vào service
       const products = await productService.getAllProducts({
         search,
         categoryId,
+        categorySlug, // Thêm vào object truyền đi
         status,
         sort,
       });
@@ -71,15 +70,11 @@ class ProductController {
         .json({ success: false, message: error.message });
     }
   }
-  
+
   async update(req, res) {
     try {
       const { id } = req.params;
-
-      // 1. Validate dữ liệu gửi lên (sử dụng partial schema)
       const validatedData = updateProductSchema.parse(req.body);
-
-      // 2. Gọi service để xử lý cập nhật
       const result = await productService.updateProduct(id, validatedData);
 
       return res.status(200).json({
@@ -88,13 +83,28 @@ class ProductController {
         data: result,
       });
     } catch (error) {
-      // Bắt lỗi từ Zod hoặc từ Service
       const status = error.statusCode || 400;
       return res.status(status).json({
         success: false,
         message: error.message || "Lỗi khi cập nhật sản phẩm",
-        // Nếu có lỗi chi tiết từ Zod thì trả về thêm (tùy chọn)
         errors: error.errors || null,
+      });
+    }
+  }
+
+  async getBySlug(req, res) {
+    try {
+      const { slug } = req.params;
+      const product = await productService.getProductDetail(slug);
+
+      return res.status(200).json({
+        success: true,
+        data: product,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message,
       });
     }
   }

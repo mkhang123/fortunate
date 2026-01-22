@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.get("/featured", productController.getFeatured);
 router.get("/", productController.getAll);
+router.get("/:slug", productController.getBySlug);
 
 router.post(
   "/",

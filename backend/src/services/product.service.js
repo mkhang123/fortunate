@@ -23,10 +23,20 @@ class ProductService {
 
   async getAllProducts(filters = {}) {
     try {
-      return await productRepository.getAll(filters);
+      // Bóc tách rõ ràng các filter để đảm bảo tính minh bạch
+      const { search, categoryId, categorySlug, status, sort } = filters;
+
+      // Truyền object đã lọc xuống Repository
+      return await productRepository.getAll({
+        search,
+        categoryId,
+        categorySlug,
+        status,
+        sort,
+      });
     } catch (error) {
-      const err = new Error("Lỗi khi lấy danh sách sản phẩm");
-      err.statusCode = 500;
+      const err = new Error(error.message || "Lỗi khi lấy danh sách sản phẩm");
+      err.statusCode = error.statusCode || 500;
       throw err;
     }
   }
@@ -72,6 +82,23 @@ class ProductService {
 
     // 2. Gọi Repository xử lý Transaction (Bạn đã viết hàm này ở Repository rồi)
     return await productRepository.updateProduct(productId, data);
+  }
+
+  async getProductDetail(slug) {
+    try {
+      const product = await productRepository.findBySlug(slug);
+
+      if (!product) {
+        const error = new Error("Sản phẩm không tồn tại");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      return product;
+    } catch (error) {
+      if (!error.statusCode) error.statusCode = 500;
+      throw error;
+    }
   }
 }
 

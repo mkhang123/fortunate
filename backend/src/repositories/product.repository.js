@@ -30,69 +30,61 @@ class ProductRepository {
 
   async findBySlug(slug) {
     return await prisma.product.findUnique({
-      where: { slug },
-    });
-  }
-  async getAllProducts() {
-    return await prisma.product.findMany({
-      include: {
-        images: true, // Lấy kèm danh sách ảnh
-        variants: true, // Lấy kèm các biến thể (giá, size, màu)
-        category: true, // Lấy kèm thông tin danh mục
-        brand: true, // Lấy kèm thông tin thương hiệu
-      },
-      orderBy: {
-        createdAt: "desc", // Sản phẩm mới nhất lên đầu
-      },
-    });
-  }
-
-  async getFeaturedProducts(filters = {}) {
-    const { search, sort } = filters;
-    const where = {
-      // Chỉ lấy sản phẩm có lượt yêu thích (tùy chọn logic của bạn)
-      wishlists: { some: {} },
-    };
-
-    if (search) {
-      where.name = { contains: search, mode: "insensitive" };
-    }
-
-    let orderBy = {};
-    // Nếu sort là 'featured', sắp xếp theo số lượng wishlist giảm dần
-    if (sort === "featured" || !sort) {
-      orderBy = { wishlists: { _count: "desc" } };
-    } else {
-      // Sử dụng chung logic sắp xếp với hàm getAll
-      switch (sort) {
-        case "price_asc":
-          orderBy = { variants: { _min: { price: "asc" } } };
-          break;
-        case "price_desc":
-          orderBy = { variants: { _max: { price: "desc" } } };
-          break;
-        case "name_asc":
-          orderBy = { name: "asc" };
-          break;
-      }
-    }
-
-    return await prisma.product.findMany({
-      where,
+      where: { slug: slug },
       include: {
         images: true,
         variants: true,
         category: true,
         brand: true,
-        _count: { select: { wishlists: true } },
+        wishlists: true,
       },
-      orderBy,
+    });
+  }
+
+  async getAllProducts() {
+    return await prisma.product.findMany({
+      include: {
+        images: true,
+        variants: true,
+        category: true,
+        brand: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  // fortunate/backend/src/repositories/product.repository.js
+
+  async getFeaturedProducts() {
+    return await prisma.product.findMany({
+      where: {
+        status: "PUBLISHED",
+        // ĐIỀU KIỆN QUAN TRỌNG: Chỉ lấy sản phẩm có lượt yêu thích
+        wishlists: {
+          some: {},
+        },
+      },
+      include: {
+        images: true,
+        variants: true,
+        _count: {
+          select: { wishlists: true }, // Trả về số lượng để hiển thị icon sao/tim
+        },
+      },
+      orderBy: {
+        wishlists: {
+          _count: "desc", // Sắp xếp sản phẩm hot nhất lên đầu
+        },
+      },
       take: 10,
     });
   }
 
   async getAll(filters = {}) {
-    const { search, categoryId, status, sort } = filters;
+    // SỬA TẠI ĐÂY: Thêm categorySlug vào danh sách bóc tách biến từ filters
+    const { search, categoryId, categorySlug, status, sort } = filters;
 
     const where = {};
 
@@ -104,11 +96,18 @@ class ProductRepository {
       where.categoryId = Number(categoryId);
     }
 
+    // Logic này sẽ chạy đúng sau khi bạn đã khai báo categorySlug ở trên
+    if (categorySlug) {
+      where.category = {
+        slug: categorySlug,
+      };
+    }
+
     if (status) {
       where.status = status;
     }
 
-    // Cập nhật logic sắp xếp (Sorting)
+    // Logic sắp xếp (Sorting)
     let orderBy = {};
 
     switch (sort) {
@@ -119,15 +118,12 @@ class ProductRepository {
         orderBy = { name: "desc" };
         break;
       case "price_asc":
-        // Sắp xếp theo giá nhỏ nhất của các biến thể tăng dần
         orderBy = { variants: { _min: { price: "asc" } } };
         break;
       case "price_desc":
-        // Sắp xếp theo giá lớn nhất của các biến thể giảm dần
         orderBy = { variants: { _max: { price: "desc" } } };
         break;
       default:
-        // Mặc định: Sản phẩm mới nhất lên đầu
         orderBy = { createdAt: "desc" };
         break;
     }
@@ -142,8 +138,6 @@ class ProductRepository {
       orderBy,
     });
   }
-
-  // fortunate/backend/src/repositories/product.repository.js
 
   async deleteProduct(id) {
     // Bỏ dòng parseInt ở đây vì Service đã làm rồi, đảm bảo id nhận vào là số

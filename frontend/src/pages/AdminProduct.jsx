@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../apis/axiosConfig";
+import { toast } from "react-hot-toast";
 
 export default function AdminProduct() {
   const [products, setProducts] = useState([]);
@@ -12,13 +13,12 @@ export default function AdminProduct() {
     categoryId: "",
     price: "",
     stock: "",
-    color: "",
-    size: "",
+    color: "Basic",
+    size: "FREE SIZE",
     imageUrl: "",
-    description: "", 
+    description: "",
   });
 
-  // SỬA: Di chuyển fetchData vào trong useEffect
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,7 +30,6 @@ export default function AdminProduct() {
         const catData = catRes.data?.data || [];
         setCategories(catData);
 
-        // Tự động gán ID danh mục đầu tiên nếu có
         if (catData.length > 0) {
           setFormData((prev) => ({ ...prev, categoryId: catData[0].id }));
         }
@@ -40,18 +39,13 @@ export default function AdminProduct() {
     };
 
     fetchData();
-  }, []); // Empty dependency array - chỉ chạy một lần khi mount
+  }, []);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
-      try {
-        await api.delete(`/products/${id}`);
-        const res = await api.get("/products");
-        setProducts(res.data?.data || []);
-      } catch (err) {
-        alert(err.response?.data?.message || "Lỗi khi xóa sản phẩm");
-      }
-    }
+    await api.delete(`/products/${id}`);
+    const res = await api.get("/products");
+    setProducts(res.data?.data || []);
+    toast.success("Đã xóa sản phẩm");
   };
 
   const handleEdit = (p) => {
@@ -62,8 +56,8 @@ export default function AdminProduct() {
       categoryId: p.categoryId,
       price: p.variants?.[0]?.price || "",
       stock: p.variants?.[0]?.stock || "",
-      color: p.variants?.[0]?.color || "",
-      size: p.variants?.[0]?.size || "",
+      color: p.variants?.[0]?.color || "Basic",
+      size: p.variants?.[0]?.size || "FREE SIZE",
       imageUrl: p.images?.[0]?.url || "",
       description: p.description || "",
     });
@@ -78,8 +72,8 @@ export default function AdminProduct() {
       categoryId: categories[0]?.id || "",
       price: "",
       stock: "",
-      color: "",
-      size: "",
+      color: "Basic",
+      size: "FREE SIZE",
       imageUrl: "",
       description: "",
     });
@@ -97,39 +91,41 @@ export default function AdminProduct() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const defaultSizes = ["S", "M", "L", "XL"];
+
       const payload = {
         name: formData.name,
         slug: createSlug(formData.name),
         description: formData.description || "Mô tả sản phẩm mặc định",
         status: "PUBLISHED",
-        categoryId: Number(formData.categoryId), 
-        images: formData.imageUrl 
-          ? [{ url: formData.imageUrl, isMain: true }] 
-          : [{ url: "https://via.placeholder.com/150", isMain: true }], 
-        variants: [
-          {
-            sku: `SKU-${Date.now()}`,
-            color: formData.color || "Basic",
-            size: formData.size || "Free",
-            price: Number(formData.price),
-            stock: Number(formData.stock),
-          },
-        ],
+        categoryId: Number(formData.categoryId),
+        images: formData.imageUrl
+          ? [{ url: formData.imageUrl, isMain: true }]
+          : [{ url: "https://via.placeholder.com/150", isMain: true }],
+
+        variants: defaultSizes.map((s) => ({
+          sku: `SKU-${s}-${Date.now()}`,
+          color: "Basic",
+          size: s,
+          price: Number(formData.price),
+          stock: Number(formData.stock),
+        })),
       };
 
       if (isEditing) {
         await api.patch(`/products/${editId}`, payload);
-        alert("Cập nhật sản phẩm thành công!");
       } else {
         await api.post("/products", payload);
-        alert("Tạo sản phẩm thành công!");
       }
 
       const res = await api.get("/products");
       setProducts(res.data?.data || []);
       cancelEdit();
+      toast.success(
+        isEditing ? "Cập nhật thành công" : "Thêm sản phẩm thành công",
+      );
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi thao tác sản phẩm.");
+      toast.error(err.response?.data?.message || "Lỗi thao tác.");
     }
   };
 
@@ -155,8 +151,29 @@ export default function AdminProduct() {
           placeholder="URL Hình ảnh (http://...)"
           value={formData.imageUrl}
           className="border p-2 rounded col-span-2"
-          onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, imageUrl: e.target.value })
+          }
         />
+
+        {/* Ô CHỌN DANH MỤC */}
+        <select
+          className="border p-2 rounded bg-white font-medium"
+          value={formData.categoryId}
+          onChange={(e) =>
+            setFormData({ ...formData, categoryId: e.target.value })
+          }
+          required
+        >
+          <option value="" disabled>
+            -- Chọn danh mục --
+          </option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
 
         <input
           type="number"
@@ -177,22 +194,17 @@ export default function AdminProduct() {
         <input
           placeholder="Mô tả"
           value={formData.description}
-          className="border p-2 rounded"
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          required
-        />
-        <input
-          placeholder="Kích thước (Size)"
-          value={formData.size}
-          className="border p-2 rounded"
-          onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+          className="border p-2 rounded col-span-full md:col-span-3"
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
           required
         />
 
         <div className="col-span-full flex gap-2">
           <button
             type="submit"
-            className={`${isEditing ? 'bg-blue-600' : 'bg-black'} text-white font-bold p-2 flex-1 rounded uppercase tracking-widest`}
+            className={`${isEditing ? "bg-blue-600" : "bg-black"} text-white font-bold p-2 flex-1 rounded uppercase tracking-widest`}
           >
             {isEditing ? "Lưu thay đổi" : "Thêm sản phẩm"}
           </button>
@@ -224,13 +236,18 @@ export default function AdminProduct() {
                 <tr key={p.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">
                     {p.images && p.images.length > 0 ? (
-                      <img 
-                        src={p.images.find(img => img.isMain)?.url || p.images[0].url} 
-                        alt="" 
+                      <img
+                        src={
+                          p.images.find((img) => img.isMain)?.url ||
+                          p.images[0].url
+                        }
+                        alt=""
                         className="w-12 h-12 object-cover rounded border"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500">No Alt</div>
+                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500">
+                        No Alt
+                      </div>
                     )}
                   </td>
                   <td className="p-3 font-medium">{p.name}</td>
@@ -238,7 +255,7 @@ export default function AdminProduct() {
                     {p.variants?.[0]?.price?.toLocaleString()}đ
                   </td>
                   <td className="p-3 text-center">
-                    <button 
+                    <button
                       onClick={() => handleEdit(p)}
                       className="text-blue-500 hover:underline mr-4"
                     >
@@ -255,7 +272,12 @@ export default function AdminProduct() {
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="p-10 text-center text-gray-400 italic">Đang tải hoặc chưa có sản phẩm...</td>
+                <td
+                  colSpan="4"
+                  className="p-10 text-center text-gray-400 italic"
+                >
+                  Đang tải hoặc chưa có sản phẩm...
+                </td>
               </tr>
             )}
           </tbody>
