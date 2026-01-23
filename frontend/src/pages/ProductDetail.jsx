@@ -35,6 +35,22 @@ export default function ProductDetail() {
         const res = await api.get(`/products/${slug}`);
         const productData = res.data.data;
 
+        // --- BẮT ĐẦU PHẦN SỬA LỖI LẶP SIZE ---
+        // Lọc để chỉ giữ lại các variant có size duy nhất
+        if (productData && productData.variants) {
+          const uniqueVariants = [];
+          const seenSizes = new Set();
+
+          productData.variants.forEach((variant) => {
+            if (!seenSizes.has(variant.size)) {
+              seenSizes.add(variant.size);
+              uniqueVariants.push(variant);
+            }
+          });
+          productData.variants = uniqueVariants;
+        }
+        // --- KẾT THÚC PHẦN SỬA LỖI ---
+
         setProduct(productData);
         setMainImage(
           productData.images?.[0]?.url ||
@@ -43,7 +59,6 @@ export default function ProductDetail() {
         setSelectedVariant(null);
 
         // KIỂM TRA TRẠNG THÁI YÊU THÍCH BAN ĐẦU
-        // Đảm bảo user tồn tại và productData.wishlists là một mảng
         if (user && Array.isArray(productData.wishlists)) {
           const liked = productData.wishlists.some((w) => w.userId === user.id);
           setIsWishlisted(liked);
@@ -90,14 +105,26 @@ export default function ProductDetail() {
     if (newQty >= 1 && newQty <= stockLimit) setQuantity(newQty);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedVariant) {
-      alert("Vui lòng chọn size trước khi thêm vào giỏ hàng!");
+      toast.error("Vui lòng chọn size!");
       return;
     }
-    toast.success(
-      `Đã thêm ${quantity} sản phẩm "${product.name}" (Size ${selectedVariant.size}) vào giỏ hàng!`,
-    );
+
+    try {
+      const res = await api.post("/cart/add", {
+        variantId: selectedVariant.id,
+        quantity: quantity,
+      });
+
+      if (res.data.success) {
+        toast.success(`Đã thêm vào giỏ hàng thành công!`);
+      }
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message || "Vui lòng đăng nhập để mua hàng",
+      );
+    }
   };
 
   if (loading)

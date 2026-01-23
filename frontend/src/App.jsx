@@ -14,12 +14,13 @@ import AdminUserManagement from "./pages/AdminUserManagement";
 import VirtualTryOn from "./pages/VirtualTryOn";
 import ProductDetail from "./pages/ProductDetail";
 import { Toaster } from "react-hot-toast";
+import Cart from './pages/Cart';
 
 export default function App() {
   return (
     <>
       <Toaster
-        position="top-right"
+        position="bottom-left"
         reverseOrder={false}
         toastOptions={{
           duration: 3000,
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/admin/users" element={<AdminUserManagement />} />
           <Route path="/virtual-try-on" element={<VirtualTryOn />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
+          <Route path="cart" element={<Cart />} />
         </Route>
       </Routes>
     </>

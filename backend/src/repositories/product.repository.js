@@ -163,38 +163,57 @@ class ProductRepository {
     const productId = Number(id);
 
     return await prisma.$transaction(async (tx) => {
-      // 1. Cập nhật thông tin chính và các quan hệ 1-n
-      return await tx.product.update({
+      // 1. Cập nhật thông tin cơ bản của sản phẩm
+      const updatedProduct = await tx.product.update({
         where: { id: productId },
         data: {
           name: data.name,
           slug: data.slug,
           description: data.description,
           status: data.status,
-          categoryId: data.categoryId,
-          brandId: data.brandId,
-
-          // Xử lý ảnh: Xóa toàn bộ ảnh cũ của SP này rồi tạo lại mới
-          images: data.images
-            ? {
-                deleteMany: {},
-                create: data.images,
-              }
-            : undefined,
-
-          // Xử lý biến thể: Xóa toàn bộ cũ rồi tạo lại mới
-          variants: data.variants
-            ? {
-                deleteMany: {},
-                create: data.variants,
-              }
-            : undefined,
-        },
-        include: {
-          images: true,
-          variants: true,
+          categoryId: data.categoryId ? Number(data.categoryId) : undefined,
+          brandId: data.brandId ? Number(data.brandId) : undefined,
         },
       });
+
+      // 2. Xử lý ảnh: Chỉ xóa và tạo lại nếu có danh sách ảnh mới gửi lên
+      if (data.images && data.images.length > 0) {
+        await tx.productImage.deleteMany({ where: { productId } });
+        await tx.productImage.createMany({
+          data: data.images.map((img) => ({ ...img, productId })),
+        });
+      }
+
+      // 3. Xử lý biến thể (SỬA LỖI TẠI ĐÂY):
+      // Thay vì deleteMany, chúng ta cập nhật từng cái hoặc chỉ thêm mới
+      if (data.variants && data.variants.length > 0) {
+        for (const variant of data.variants) {
+          if (variant.id) {
+            // Nếu có ID -> Cập nhật biến thể cũ (Tránh vi phạm khóa ngoại giỏ hàng)
+            await tx.productVariant.update({
+              where: { id: Number(variant.id) },
+              data: {
+                size: variant.size,
+                price: Number(variant.price),
+                stock: Number(variant.stock),
+                sku: variant.sku,
+              },
+            });
+          } else {
+            // Nếu không có ID -> Tạo biến thể mới
+            await tx.productVariant.create({
+              data: {
+                ...variant,
+                productId,
+                price: Number(variant.price),
+                stock: Number(variant.stock),
+              },
+            });
+          }
+        }
+      }
+
+      return updatedProduct;
     });
   }
 
