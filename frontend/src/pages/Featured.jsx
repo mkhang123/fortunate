@@ -122,9 +122,12 @@ export default function Featured() {
 
                   <img
                     src={
-                      product.images?.[0]?.url ||
+                      product.images?.[0] ||
                       "https://via.placeholder.com/600x800"
                     }
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/600x800?text=No+Image";
+                    }}
                     alt={product.name}
                     className="w-full h-full object-contain mix-blend-multiply transition-transform duration-1000 ease-in-out group-hover:scale-110"
                   />

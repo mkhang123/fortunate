@@ -115,9 +115,12 @@ export default function Cart() {
                 <div className="w-32 aspect-[3/4] bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative shrink-0">
                   <img
                     src={
-                      item.variant.product.images[0]?.url ||
+                      item.variant.product.images[0] ||
                       "https://via.placeholder.com/300x400"
                     }
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/300x400?text=No+Image";
+                    }}
                     className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
                     alt={item.variant.product.name}
                   />

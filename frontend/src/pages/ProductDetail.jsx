@@ -53,8 +53,7 @@ export default function ProductDetail() {
 
         setProduct(productData);
         setMainImage(
-          productData.images?.[0]?.url ||
-            "https://via.placeholder.com/800x1000",
+          productData.images?.[0] || "https://via.placeholder.com/800x1000",
         );
         setSelectedVariant(null);
 
@@ -179,11 +178,15 @@ export default function ProductDetail() {
             {product.images?.map((img, idx) => (
               <div
                 key={idx}
-                className={`aspect-[3/4] min-w-[70px] border-2 cursor-pointer p-1 rounded-xl transition-all duration-300 ${mainImage === img.url ? "border-black shadow-lg scale-105" : "border-gray-100 opacity-60 hover:opacity-100"}`}
-                onClick={() => setMainImage(img.url)}
+                className={`aspect-[3/4] min-w-[70px] border-2 cursor-pointer p-1 rounded-xl transition-all duration-300 ${mainImage === img ? "border-black shadow-lg scale-105" : "border-gray-100 opacity-60 hover:opacity-100"}`}
+                onClick={() => setMainImage(img)}
               >
                 <img
-                  src={img.url}
+                  src={img}
+                  onError={(e) => {
+                    e.target.src =
+                      "https://via.placeholder.com/800x1000?text=No+Image";
+                  }}
                   className="w-full h-full object-contain mix-blend-multiply"
                   alt="thumb"
                 />
@@ -193,6 +196,10 @@ export default function ProductDetail() {
           <div className="flex-1 aspect-[3/4] bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-center overflow-hidden shadow-sm group">
             <img
               src={mainImage}
+              onError={(e) => {
+                e.target.src =
+                  "https://via.placeholder.com/800x1000?text=No+Image";
+              }}
               className="w-full h-full object-contain mix-blend-multiply transition-transform duration-1000 group-hover:scale-110"
               alt={product.name}
             />

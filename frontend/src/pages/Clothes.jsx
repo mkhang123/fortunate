@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import api from '../apis/axiosConfig';
-import { Link, useParams } from 'react-router-dom'; // Thay useLocation bằng useParams
-import { Search, ChevronDown } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import api from "../apis/axiosConfig";
+import { Link, useParams } from "react-router-dom"; // Thay useLocation bằng useParams
+import { Search, ChevronDown } from "lucide-react";
 
 export default function Clothes() {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("latest");
   const [loading, setLoading] = useState(false);
-  
+
   // Đọc categorySlug từ URL dạng /clothes/:categorySlug
   const { categorySlug } = useParams();
 
@@ -16,16 +16,16 @@ export default function Clothes() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        
+
         // Gửi categorySlug trực tiếp lấy từ useParams()
         const params = {
           search: searchTerm,
           sort: sortOption,
-          categorySlug: categorySlug || undefined, 
-          status: 'PUBLISHED'
+          categorySlug: categorySlug || undefined,
+          status: "PUBLISHED",
         };
 
-        const res = await api.get('/products', { params });
+        const res = await api.get("/products", { params });
         setProducts(res.data.data);
       } catch (err) {
         console.error("Lỗi lấy sản phẩm:", err);
@@ -47,16 +47,20 @@ export default function Clothes() {
         <div>
           <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-3">
             {/* Hiển thị tiêu đề dựa trên slug hiện tại */}
-            {categorySlug ? categorySlug.replace('-', ' ') : "Tất cả sản phẩm"}
+            {categorySlug ? categorySlug.replace("-", " ") : "Tất cả sản phẩm"}
           </h1>
           <nav className="text-[10px] text-gray-400 uppercase tracking-[0.3em] font-bold">
-            <Link to="/" className="hover:text-black transition-colors">Trang chủ</Link>
+            <Link to="/" className="hover:text-black transition-colors">
+              Trang chủ
+            </Link>
             <span className="mx-2">/</span>
             <span className="text-black">Clothes</span>
             {categorySlug && (
               <>
                 <span className="mx-2">/</span>
-                <span className="text-black uppercase">{categorySlug.replace('-', ' ')}</span>
+                <span className="text-black uppercase">
+                  {categorySlug.replace("-", " ")}
+                </span>
               </>
             )}
           </nav>
@@ -100,17 +104,20 @@ export default function Clothes() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-20">
           {products.length > 0 ? (
             products.map((product) => (
-              <Link 
-                key={product.id} 
-                to={`/product/${product.slug}`} 
+              <Link
+                key={product.id}
+                to={`/product/${product.slug}`}
                 className="group flex flex-col"
               >
                 <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#fcfcfc] mb-6 flex items-center justify-center border border-gray-50 shadow-sm transition-all duration-500 group-hover:shadow-xl">
                   <div className="absolute top-4 left-4 z-10 bg-black text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest italic shadow-lg">
                     New Arrival
                   </div>
-                  <img 
-                    src={product.images?.[0]?.url || 'https://via.placeholder.com/600x800'} 
+                  <img
+                    src={
+                      product.images?.[0] ||
+                      "https://via.placeholder.com/600x800"
+                    }
                     alt={product.name}
                     className="w-full h-full object-contain mix-blend-multiply transition-transform duration-1000 ease-in-out group-hover:scale-110"
                   />
@@ -121,7 +128,10 @@ export default function Clothes() {
                     {product.name}
                   </h3>
                   <p className="text-[14px] font-black text-gray-900 italic tracking-tighter">
-                    {(product.variants?.[0]?.price || 0).toLocaleString('vi-VN')} VNĐ
+                    {(product.variants?.[0]?.price || 0).toLocaleString(
+                      "vi-VN",
+                    )}{" "}
+                    VNĐ
                   </p>
                 </div>
               </Link>

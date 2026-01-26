@@ -14,9 +14,8 @@ export default function AdminProduct() {
     price: "",
     stock: "",
     color: "Basic",
-    size: "FREE SIZE",
     imageUrl: "",
-    description: "",
+    variants: [], // Lưu trữ variants cũ để lấy ID khi update
   });
 
   useEffect(() => {
@@ -29,7 +28,6 @@ export default function AdminProduct() {
         setProducts(prodRes.data?.data || []);
         const catData = catRes.data?.data || [];
         setCategories(catData);
-
         if (catData.length > 0) {
           setFormData((prev) => ({ ...prev, categoryId: catData[0].id }));
         }
@@ -37,47 +35,8 @@ export default function AdminProduct() {
         console.error("Lỗi khi lấy dữ liệu:", err);
       }
     };
-
     fetchData();
   }, []);
-
-  const handleDelete = async (id) => {
-    await api.delete(`/products/${id}`);
-    const res = await api.get("/products");
-    setProducts(res.data?.data || []);
-    toast.success("Đã xóa sản phẩm");
-  };
-
-  const handleEdit = (p) => {
-    setIsEditing(true);
-    setEditId(p.id);
-    setFormData({
-      name: p.name,
-      categoryId: p.categoryId,
-      price: p.variants?.[0]?.price || "",
-      stock: p.variants?.[0]?.stock || "",
-      color: p.variants?.[0]?.color || "Basic",
-      size: p.variants?.[0]?.size || "FREE SIZE",
-      imageUrl: p.images?.[0]?.url || "",
-      description: p.description || "",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const cancelEdit = () => {
-    setIsEditing(false);
-    setEditId(null);
-    setFormData({
-      name: "",
-      categoryId: categories[0]?.id || "",
-      price: "",
-      stock: "",
-      color: "Basic",
-      size: "FREE SIZE",
-      imageUrl: "",
-      description: "",
-    });
-  };
 
   const createSlug = (name) => {
     return name
@@ -93,72 +52,122 @@ export default function AdminProduct() {
     try {
       const defaultSizes = ["S", "M", "L", "XL"];
 
+      // Xử lý variants khác nhau cho CREATE vs EDIT
       const payload = {
         name: formData.name,
         slug: createSlug(formData.name),
-        description: formData.description || "Mô tả sản phẩm mặc định",
         status: "PUBLISHED",
         categoryId: Number(formData.categoryId),
+        brandId: null,
+        price: Number(formData.price),
         images: formData.imageUrl
-          ? [{ url: formData.imageUrl, isMain: true }]
-          : [{ url: "https://via.placeholder.com/150", isMain: true }],
-
-        variants: defaultSizes.map((s) => ({
-          sku: `SKU-${s}-${Date.now()}`,
-          color: "Basic",
-          size: s,
-          price: Number(formData.price),
-          stock: Number(formData.stock),
-        })),
+          ? [formData.imageUrl]
+          : ["https://via.placeholder.com/150"],
+        variants: isEditing
+          ? // Khi EDIT: Cập nhật tất cả variants hiện có
+          formData.variants?.map((v) => ({
+            id: v.id, // Giữ nguyên ID để update
+            color: formData.color || "Basic",
+            size: v.size, // Giữ nguyên size cũ
+            price: Number(formData.price),
+            stock: Number(formData.stock),
+          })) || []
+          : // Khi CREATE: Tạo mới 4 sizes mặc định
+          defaultSizes.map((s) => ({
+            color: formData.color || "Basic",
+            size: s,
+            price: Number(formData.price),
+            stock: Number(formData.stock),
+          })),
       };
 
       if (isEditing) {
         await api.patch(`/products/${editId}`, payload);
+        toast.success("Cập nhật thành công");
       } else {
         await api.post("/products", payload);
+        toast.success("Thêm sản phẩm thành công");
       }
 
       const res = await api.get("/products");
       setProducts(res.data?.data || []);
       cancelEdit();
-      toast.success(
-        isEditing ? "Cập nhật thành công" : "Thêm sản phẩm thành công",
-      );
     } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi thao tác.");
+      const errorData = err.response?.data;
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
+        toast.error(`${errorData.errors[0].message}`);
+      } else if (errorData?.message) {
+        toast.error(errorData.message);
+      } else {
+        toast.error("Lỗi thao tác dữ liệu.");
+      }
+      console.error("Chi tiết lỗi hệ thống:", errorData);
     }
   };
 
+  const handleEdit = (p) => {
+    setIsEditing(true);
+    setEditId(p.id);
+    setFormData({
+      name: p.name,
+      categoryId: p.categoryId,
+      price: p.price || p.variants?.[0]?.price || "",
+      stock: p.variants?.[0]?.stock || "",
+      color: p.variants?.[0]?.color || "Basic",
+      imageUrl: Array.isArray(p.images) ? p.images[0] : "",
+      variants: p.variants || [], // Lưu lại mảng variants để lấy ID trong handleSubmit
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditId(null);
+    setFormData({
+      name: "",
+      categoryId: categories[0]?.id || "",
+      price: "",
+      stock: "",
+      color: "Basic",
+      imageUrl: "",
+      variants: [],
+    });
+  };
+
+  const handleDelete = async (id) => {
+    await api.delete(`/products/${id}`);
+    setProducts(products.filter((p) => p.id !== id));
+    toast.success("Đã xóa sản phẩm");
+  };
+
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">
-        {isEditing ? "Chỉnh sửa sản phẩm" : "Quản lý Sản phẩm (Admin)"}
+    <div className="p-8 max-w-7xl mx-auto font-sans">
+      <h1 className="text-2xl font-bold mb-6 uppercase tracking-widest text-gray-800">
+        {isEditing ? "Chỉnh sửa sản phẩm" : "Quản lý Sản phẩm"}
       </h1>
 
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-6 rounded-lg shadow-sm mb-8 bg-gray-50"
+        className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-6 rounded-lg shadow-sm mb-8 bg-white"
       >
         <input
           placeholder="Tên sản phẩm"
           value={formData.name}
-          className="border p-2 rounded col-span-2"
+          className="border p-2 rounded col-span-2 focus:ring-1 focus:ring-black outline-none"
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
         />
-
         <input
-          placeholder="URL Hình ảnh (http://...)"
+          placeholder="URL Hình ảnh"
           value={formData.imageUrl}
-          className="border p-2 rounded col-span-2"
+          className="border p-2 rounded col-span-2 focus:ring-1 focus:ring-black outline-none"
           onChange={(e) =>
             setFormData({ ...formData, imageUrl: e.target.value })
           }
         />
 
-        {/* Ô CHỌN DANH MỤC */}
         <select
-          className="border p-2 rounded bg-white font-medium"
+          className="border p-2 rounded bg-white cursor-pointer"
           value={formData.categoryId}
           onChange={(e) =>
             setFormData({ ...formData, categoryId: e.target.value })
@@ -166,7 +175,7 @@ export default function AdminProduct() {
           required
         >
           <option value="" disabled>
-            -- Chọn danh mục --
+            -- Danh mục --
           </option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
@@ -177,7 +186,7 @@ export default function AdminProduct() {
 
         <input
           type="number"
-          placeholder="Giá"
+          placeholder="Giá (VNĐ)"
           value={formData.price}
           className="border p-2 rounded"
           onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -185,34 +194,35 @@ export default function AdminProduct() {
         />
         <input
           type="number"
-          placeholder="Số lượng kho"
+          placeholder="Kho"
           value={formData.stock}
           className="border p-2 rounded"
           onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
           required
         />
         <input
-          placeholder="Mô tả"
-          value={formData.description}
-          className="border p-2 rounded col-span-full md:col-span-3"
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
+          placeholder="Màu (Basic, Black...)"
+          value={formData.color}
+          className="border p-2 rounded"
+          onChange={(e) => setFormData({ ...formData, color: e.target.value })}
           required
         />
 
         <div className="col-span-full flex gap-2">
           <button
             type="submit"
-            className={`${isEditing ? "bg-blue-600" : "bg-black"} text-white font-bold p-2 flex-1 rounded uppercase tracking-widest`}
+            className={`text-white font-bold p-3 flex-1 rounded uppercase transition-all shadow-md ${isEditing
+              ? "bg-blue-600 hover:bg-blue-700"
+              : "bg-black hover:bg-gray-800"
+              }`}
           >
-            {isEditing ? "Lưu thay đổi" : "Thêm sản phẩm"}
+            {isEditing ? "Lưu thay đổi" : "Tạo sản phẩm mới"}
           </button>
           {isEditing && (
             <button
               type="button"
               onClick={cancelEdit}
-              className="bg-gray-400 text-white font-bold p-2 px-6 rounded uppercase tracking-widest"
+              className="bg-gray-200 text-black font-bold p-3 px-8 rounded uppercase hover:bg-gray-300 transition-all shadow-sm"
             >
               Hủy
             </button>
@@ -220,66 +230,59 @@ export default function AdminProduct() {
         </div>
       </form>
 
-      <div className="overflow-x-auto border rounded-lg">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100 border-b">
-              <th className="p-3 text-left w-20">Ảnh</th>
-              <th className="p-3 text-left">Tên sản phẩm</th>
-              <th className="p-3 text-left">Giá</th>
-              <th className="p-3 text-center">Thao tác</th>
+      <div className="overflow-hidden border rounded-xl shadow-sm bg-white">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="p-4 text-left font-semibold text-gray-600">Ảnh</th>
+              <th className="p-4 text-left font-semibold text-gray-600">
+                Sản phẩm
+              </th>
+              <th className="p-4 text-left font-semibold text-gray-600">
+                Giá niêm yết
+              </th>
+              <th className="p-4 text-center font-semibold text-gray-600">
+                Thao tác
+              </th>
             </tr>
           </thead>
           <tbody>
-            {products.length > 0 ? (
-              products.map((p) => (
-                <tr key={p.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">
-                    {p.images && p.images.length > 0 ? (
-                      <img
-                        src={
-                          p.images.find((img) => img.isMain)?.url ||
-                          p.images[0].url
-                        }
-                        alt=""
-                        className="w-12 h-12 object-cover rounded border"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500">
-                        No Alt
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-3 font-medium">{p.name}</td>
-                  <td className="p-3 font-bold text-blue-600">
-                    {p.variants?.[0]?.price?.toLocaleString()}đ
-                  </td>
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() => handleEdit(p)}
-                      className="text-blue-500 hover:underline mr-4"
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      className="text-red-500 hover:underline"
-                      onClick={() => handleDelete(p.id)}
-                    >
-                      Xóa
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan="4"
-                  className="p-10 text-center text-gray-400 italic"
-                >
-                  Đang tải hoặc chưa có sản phẩm...
+            {products.map((p) => (
+              <tr
+                key={p.id}
+                className="border-b last:border-0 hover:bg-gray-50 transition-colors"
+              >
+                <td className="p-4">
+                  <img
+                    src={p.images?.[0] || "https://via.placeholder.com/50"}
+                    onError={(e) => {
+                      e.target.src =
+                        "https://via.placeholder.com/50?text=No+Image";
+                    }}
+                    alt=""
+                    className="w-12 h-12 object-cover rounded shadow-sm border"
+                  />
+                </td>
+                <td className="p-4 font-medium text-gray-700">{p.name}</td>
+                <td className="p-4 text-blue-600 font-bold">
+                  {(p.price || p.variants?.[0]?.price || 0).toLocaleString()}₫
+                </td>
+                <td className="p-4 text-center">
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="text-blue-600 font-bold mr-4 hover:underline"
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="text-red-500 font-bold hover:underline"
+                  >
+                    Xóa
+                  </button>
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
