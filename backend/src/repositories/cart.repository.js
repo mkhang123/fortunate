@@ -61,6 +61,14 @@ class CartRepository {
       data: { quantity },
     });
   }
+
+  // Xóa tất cả items trong giỏ hàng (sau khi tạo order)
+  async clearCart(cartId) {
+    return await prisma.cartItem.deleteMany({
+      where: { cartId },
+    });
+  }
 }
 
 export default new CartRepository();
+

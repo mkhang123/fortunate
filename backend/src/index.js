@@ -7,6 +7,8 @@ import userRoutes from "./routes/user.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import wishlistRoutes from "./routes/wishlist.route.js";
 import cartRoutes from "./routes/cart.route.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import orderRoutes from "./routes/order.routes.js";
 
 const app = express();
 
@@ -24,6 +26,22 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/orders", orderRoutes);
+
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  res.status(statusCode).json({
+    success: false,
+    message: message,
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
+});
 
 const PORT = 4000;
 app.listen(PORT, () => {

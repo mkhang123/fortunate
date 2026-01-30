@@ -1,0 +1,157 @@
+import { OKResponse, CreatedResponse } from "../response/success.js";
+import { BadRequestError } from "../response/error.js";
+import OrderService from "../services/order.service.js";
+
+class OrderController {
+    /**
+     * Create order from cart
+     * POST /api/orders
+     */
+    static async createOrder(req, res) {
+        try {
+            const userId = req.user.id;
+            const orderData = req.body;
+
+            // Validate required fields
+            const {
+                receiverName,
+                receiverPhone,
+                receiverEmail,
+                shippingAddress,
+                paymentMethod,
+            } = orderData;
+
+            if (!receiverName || !receiverPhone || !receiverEmail || !shippingAddress) {
+                throw new BadRequestError(
+                    "Missing required fields: receiverName, receiverPhone, receiverEmail, shippingAddress"
+                );
+            }
+
+            const result = await OrderService.createOrderFromCart(userId, orderData);
+
+            console.log(`[ORDER] Created order #${result.order.id} for user ${userId}`);
+
+            new CreatedResponse({
+                message: "Order created successfully",
+                metadata: result,
+            }).send(res);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Get user's orders
+     * GET /api/orders/me
+     */
+    static async getUserOrders(req, res) {
+        try {
+            const userId = req.user.id;
+
+            const orders = await OrderService.getOrdersByUserId(userId);
+
+            new OKResponse({
+                metadata: orders,
+            }).send(res);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Get order by ID
+     * GET /api/orders/:id
+     */
+    static async getOrderById(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            const order = await OrderService.findById(+id);
+
+            // Check if user owns this order or is admin
+            if (order.userId !== userId && req.user.role !== "ADMIN") {
+                throw new BadRequestError("Unauthorized to view this order");
+            }
+
+            new OKResponse({
+                metadata: order,
+            }).send(res);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Get all orders (Admin)
+     * GET /api/orders
+     */
+    static async getAllOrders(req, res) {
+        try {
+            const { status, page, limit, search } = req.query;
+
+            const filters = {
+                status,
+                page: page ? +page : 1,
+                limit: limit ? +limit : 20,
+                search,
+            };
+
+            const result = await OrderService.getAllOrders(filters);
+
+            new OKResponse({
+                metadata: result,
+            }).send(res);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Update order status (Admin)
+     * PATCH /api/orders/:id/status
+     */
+    static async updateOrderStatus(req, res) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+
+            if (!status) {
+                throw new BadRequestError("Status is required");
+            }
+
+            const order = await OrderService.updateOrderStatus(+id, status);
+
+            console.log(`[ORDER] Updated order #${id} status to ${status}`);
+
+            new OKResponse({
+                message: "Order status updated successfully",
+                metadata: order,
+            }).send(res);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Delete order (Admin)
+     * DELETE /api/orders/:id
+     */
+    static async deleteOrder(req, res) {
+        try {
+            const { id } = req.params;
+
+            await OrderService.deleteOrder(+id);
+
+            console.log(`[ORDER] Deleted order #${id}`);
+
+            new OKResponse({
+                message: "Order deleted successfully",
+            }).send(res);
+        } catch (error) {
+            throw error;
+        }
+    }
+}
+
+export default OrderController;

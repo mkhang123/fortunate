@@ -71,9 +71,6 @@ model Category {
   image        String?
   isActive     Boolean    @default(true)
   displayOrder Int        @default(0)
-  parentId     Int?
-  parent       Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children     Category[] @relation("CategoryHierarchy")
   products     Product[]
 
   @@index([slug])
@@ -83,9 +80,9 @@ model Product {
   id          Int           @id @default(autoincrement())
   name        String
   slug        String        @unique
-  price       Float?        // GIÁ THAM KHẢO (Dùng để hiển thị ở trang danh sách)
+  price       Float?        
   status      ProductStatus @default(DRAFT)
-  images      String[]      // MẢNG URL ẢNH (Tối ưu hóa bảng)
+  images      String[]      
   
   brandId     Int?
   brand       Brand?        @relation(fields: [brandId], references: [id], onDelete: SetNull)
@@ -117,7 +114,7 @@ model ProductVariant {
   
   color          String
   size           String
-  price          Float   // GIÁ THỰC TẾ (Dùng để tính tiền trong giỏ hàng)
+  price          Float 
   stock          Int     @default(0)
 
   measurement ProductMeasurement?
@@ -158,19 +155,15 @@ model Order {
   user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   status              OrderStatus @default(PENDING)
   
-  // SNAPSHOT THÔNG TIN KHÁCH HÀNG TẠI THỜI ĐIỂM ĐẶT
   receiverName        String?     
   receiverPhone       String?
-  receiverEmail       String?     // Thêm Email để gửi hóa đơn & VNPay
+  receiverEmail       String?     
   shippingAddress     String
+  city                String?    
   
   trackingNumber      String?
   notes               String?
   total               Float
-  
-  cancelledAt         DateTime?
-  shippedAt           DateTime?
-  completedAt         DateTime?
   createdAt           DateTime    @default(now())
 
   items               OrderItem[]
@@ -197,6 +190,7 @@ model Payment {
   method            PaymentMethod @default(VNPAY)
   status            PaymentStatus @default(PENDING)
   
+  txnRef            String?       @unique // VNPAY transaction reference
   vnp_TransactionNo String?
   vnp_ResponseCode  String?
   vnp_OrderInfo     String?
@@ -206,6 +200,7 @@ model Payment {
   metadata          Json?
 
   @@index([status])
+  @@index([txnRef])
 }
 
 // --- TƯƠNG TÁC ---
@@ -224,18 +219,6 @@ model Notification {
   @@index([userId, isRead])
 }
 
-model Banner {
-  id          Int      @id @default(autoincrement())
-  title       String?
-  imageUrl    String
-  linkUrl     String?
-  isActive    Boolean  @default(true)
-  position    Int      @default(0)
-  startDate   DateTime?
-  endDate     DateTime?
-  clickCount  Int      @default(0)
-}
-
 model Review {
   id              Int      @id @default(autoincrement())
   userId          Int
@@ -246,7 +229,6 @@ model Review {
   comment         String?
   images          String[] 
   verifiedPurchase Boolean @default(false)
-  helpfulCount    Int      @default(0)
   createdAt       DateTime @default(now())
 
   @@unique([userId, productId])

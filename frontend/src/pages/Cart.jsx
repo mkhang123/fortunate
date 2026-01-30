@@ -112,7 +112,7 @@ export default function Cart() {
                 className="flex gap-6 pb-8 border-b border-gray-50 group"
               >
                 {/* Ảnh sản phẩm */}
-                <div className="w-32 aspect-[3/4] bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative shrink-0">
+                <div className="w-32 aspect-[3/4] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative shrink-0">
                   <img
                     src={
                       item.variant.product.images[0] ||
@@ -215,7 +215,10 @@ export default function Cart() {
                 </div>
               </div>
 
-              <button className="w-full bg-black text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl hover:bg-gray-800 transition-all group">
+              <button
+                onClick={() => navigate('/checkout')}
+                className="w-full bg-black text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl hover:bg-gray-800 transition-all group"
+              >
                 Tiến hành thanh toán{" "}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>

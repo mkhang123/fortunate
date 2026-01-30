@@ -165,17 +165,34 @@ export default function MainLayout() {
                             phẩm
                           </Link>
                           {isAdmin && (
-                            <Link
-                              to="/admin/users"
-                              className="flex items-center gap-3 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
-                              onClick={() => setIsMenuOpen(false)}
-                            >
-                              <Users className="w-4 h-4" /> Quản lý người dùng
-                            </Link>
+                            <>
+                              <Link
+                                to="/admin/orders"
+                                className="flex items-center gap-3 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                                onClick={() => setIsMenuOpen(false)}
+                              >
+                                <ShoppingCart className="w-4 h-4" /> Quản lý đơn hàng
+                              </Link>
+                              <Link
+                                to="/admin/users"
+                                className="flex items-center gap-3 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                                onClick={() => setIsMenuOpen(false)}
+                              >
+                                <Users className="w-4 h-4" /> Quản lý người dùng
+                              </Link>
+                            </>
                           )}
                           <div className="border-b my-1"></div>
                         </>
                       )}
+
+                      <Link
+                        to="/my-orders"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <ShoppingCart className="w-4 h-4" /> Đơn hàng của tôi
+                      </Link>
 
                       <Link
                         to="/profile"

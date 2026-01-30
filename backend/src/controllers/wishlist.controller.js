@@ -4,7 +4,7 @@ import wishlistService from "../services/wishlist.service.js";
 class WishlistController {
   async toggle(req, res) {
     try {
-      const userId = req.user.id; // Lấy từ authMiddleware
+      const userId = req.user.id;
       const { productId } = req.body;
 
       if (!productId) {

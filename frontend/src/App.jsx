@@ -15,6 +15,11 @@ import VirtualTryOn from "./pages/VirtualTryOn";
 import ProductDetail from "./pages/ProductDetail";
 import { Toaster } from "react-hot-toast";
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
+import MyOrders from './pages/MyOrders';
+import OrderDetail from './pages/OrderDetail';
+import AdminOrders from './pages/AdminOrders';
 
 export default function App() {
   return (
@@ -33,7 +38,7 @@ export default function App() {
           },
         }}
       />
-      
+
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<MainDisplay />} />
@@ -50,6 +55,11 @@ export default function App() {
           <Route path="/virtual-try-on" element={<VirtualTryOn />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/my-orders/:orderId" element={<OrderDetail />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
         </Route>
       </Routes>
     </>
