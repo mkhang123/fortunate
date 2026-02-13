@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { Smartphone, Upload, Shirt, RotateCcw, Download, Info, Plus } from 'lucide-react';
+import { vtonAPI } from '../apis/vton.api';
 
 export default function VirtualTryOn() {
-  const [userImage, setUserImage] = useState(null); // Ảnh người dùng
+  const [userImage, setUserImage] = useState(null); // Ảnh người dùng (preview)
+  const [userImageFile, setUserImageFile] = useState(null); // File người dùng
   const [selectedProduct, setSelectedProduct] = useState(null); // Sản phẩm đang chọn
-  const [customProductImage, setCustomProductImage] = useState(null); // Ảnh đồ người dùng tải lên
+  const [customProductImage, setCustomProductImage] = useState(null); // Ảnh đồ người dùng tải lên (preview)
+  const [customProductFile, setCustomProductFile] = useState(null); // File đồ người dùng tải lên
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState(null);
+  const [error, setError] = useState(null);
 
   // Danh sách sản phẩm mẫu từ hệ thống
   const clothesToTry = [
@@ -19,8 +23,10 @@ export default function VirtualTryOn() {
   const handleUserImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setUserImageFile(file);
       setUserImage(URL.createObjectURL(file));
       setResultImage(null);
+      setError(null);
     }
   };
 
@@ -28,29 +34,62 @@ export default function VirtualTryOn() {
   const handleCustomProductUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setCustomProductFile(file);
       const imageUrl = URL.createObjectURL(file);
       const customItem = {
         id: 'custom-' + Date.now(),
         name: "Đồ bạn tải lên",
-        image: imageUrl
+        image: imageUrl,
+        isCustom: true
       };
       setCustomProductImage(customItem);
       setSelectedProduct(customItem); // Tự động chọn luôn sau khi tải
     }
   };
 
-  const handleStartTryOn = () => {
-    if (!userImage || !selectedProduct) {
+  const handleStartTryOn = async () => {
+    if (!userImageFile || !selectedProduct) {
       alert("Vui lòng tải ảnh cá nhân và chọn sản phẩm!");
       return;
     }
+
     setIsProcessing(true);
-    
-    // Giả lập AI xử lý
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      // Xác định garment image file
+      let garmentFile;
+
+      if (selectedProduct.isCustom) {
+        // Dùng file custom đã upload
+        garmentFile = customProductFile;
+      } else {
+        // Download ảnh từ URL và convert thành File
+        const response = await fetch(selectedProduct.image);
+        const blob = await response.blob();
+        garmentFile = new File([blob], `product_${selectedProduct.id}.jpg`, { type: 'image/jpeg' });
+      }
+
+      // Gọi API
+      const result = await vtonAPI.tryOn(userImageFile, garmentFile, null);
+
+      console.log('VTON Result:', result);
+
+      // Hiển thị kết quả
+      if (result.success && result.data.outputImage) {
+        // Construct URL to result image
+        const resultImageUrl = `http://localhost:4000/${result.data.outputImage.replace(/\\/g, '/')}`;
+        setResultImage(resultImageUrl);
+      } else {
+        throw new Error('Không nhận được kết quả từ server');
+      }
+
+    } catch (error) {
+      console.error('Error in VTON:', error);
+      setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi xử lý');
+    } finally {
       setIsProcessing(false);
-      setResultImage(userImage); 
-    }, 2500);
+    }
   };
 
   return (
@@ -66,7 +105,7 @@ export default function VirtualTryOn() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        
+
         {/* CỘT 1: TẢI ẢNH NGƯỜI DÙNG */}
         <div className="space-y-6">
           <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
@@ -106,6 +145,20 @@ export default function VirtualTryOn() {
                 <div className="w-12 h-12 border-2 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-[9px] font-bold uppercase tracking-[0.2em] animate-pulse">AI đang tính toán phom dáng...</p>
               </div>
+            ) : error ? (
+              <div className="text-center px-8">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">❌</span>
+                </div>
+                <p className="text-[10px] text-red-600 font-bold uppercase tracking-widest mb-2">Có lỗi xảy ra</p>
+                <p className="text-[9px] text-red-500">{error}</p>
+                <button
+                  onClick={() => setError(null)}
+                  className="mt-4 text-[9px] underline hover:no-underline"
+                >
+                  Thử lại
+                </button>
+              </div>
             ) : resultImage ? (
               <img src={resultImage} className="w-full h-full object-cover animate-in fade-in zoom-in duration-700" alt="Result" />
             ) : (
@@ -115,7 +168,7 @@ export default function VirtualTryOn() {
               </div>
             )}
           </div>
-          <button 
+          <button
             disabled={isProcessing}
             onClick={handleStartTryOn}
             className="w-full bg-black text-white py-4 text-xs font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all disabled:bg-gray-200"
@@ -130,7 +183,7 @@ export default function VirtualTryOn() {
             <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-[10px]">2</span>
             Chọn trang phục
           </h2>
-          
+
           <div className="grid grid-cols-2 gap-4">
             {/* NÚT TẢI ẢNH ĐỒ RIÊNG */}
             <label className="cursor-pointer border-2 border-dashed border-gray-200 aspect-[3/4] rounded-sm flex flex-col items-center justify-center hover:border-black transition-all bg-gray-50/50 group">
@@ -141,7 +194,7 @@ export default function VirtualTryOn() {
 
             {/* HIỂN THỊ ĐỒ ĐÃ TẢI LÊN (NẾU CÓ) */}
             {customProductImage && (
-              <div 
+              <div
                 onClick={() => setSelectedProduct(customProductImage)}
                 className={`relative cursor-pointer border-2 transition-all p-1 rounded-sm ${selectedProduct?.id === customProductImage.id ? 'border-black bg-gray-50' : 'border-transparent bg-white shadow-sm'}`}
               >
@@ -154,7 +207,7 @@ export default function VirtualTryOn() {
 
             {/* DANH SÁCH MẪU CÓ SẴN */}
             {clothesToTry.map((item) => (
-              <div 
+              <div
                 key={item.id}
                 onClick={() => setSelectedProduct(item)}
                 className={`cursor-pointer border-2 transition-all p-1 rounded-sm ${selectedProduct?.id === item.id ? 'border-black bg-gray-50' : 'border-transparent bg-white hover:border-gray-50'}`}

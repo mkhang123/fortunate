@@ -249,16 +249,25 @@ model Wishlist {
 
 // --- VIRTUAL TRY-ON ---
 model UserBodyProfile {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unit      String   @default("cm")
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit      String    @default("cm")
   height    Float
   weight    Float
   chest     Float
   waist     Float
   hip       Float
-  updatedAt DateTime @updatedAt
+  bodyType  BodyType? // Body shape category
+  updatedAt DateTime  @updatedAt
+}
+
+enum BodyType {
+  RECTANGLE         // Straight, athletic build
+  TRIANGLE          // Pear-shaped (wider hips)
+  INVERTED_TRIANGLE // V-shaped (wider shoulders)
+  HOURGLASS         // Balanced bust-waist-hip
+  OVAL              // Apple-shaped (fuller midsection)
 }
 
 model ProductMeasurement {

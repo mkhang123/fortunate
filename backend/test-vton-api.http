@@ -1,0 +1,63 @@
+### ========================================
+### VTON API Testing
+### ========================================
+
+### Variables
+@baseUrl = http://localhost:4000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcwOTU4NTA5LCJleHAiOjE3NzEwNDQ5MDl9.7uuZ3lBcWNxPEDXVIECCGKidLK6osBefoZTHmqQjk8c
+# Lấy token từ: Login vào website → F12 → Application → localStorage → token
+
+### ========================================
+### 1. Test Try-On API (Cần 2 ảnh)
+### ========================================
+
+POST {{baseUrl}}/api/vton/try-on
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcwOTU4NTA5LCJleHAiOjE3NzEwNDQ5MDl9.7uuZ3lBcWNxPEDXVIECCGKidLK6osBefoZTHmqQjk8c
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="personImage"; filename="person.jpg"
+Content-Type: image/jpeg
+
+< D:/z7330087597865_07f88ea1a363568dc3552559b0a59ded.jpg
+------WebKitFormBoundary
+Content-Disposition: form-data; name="garmentImage"; filename="garment.jpg"
+Content-Type: image/jpeg
+
+< D:/z7330064833989_9630d65666ac4a4ad871c507ed69e3b3.jpg
+------WebKitFormBoundary--
+
+### ========================================
+### 2. Get History
+### ========================================
+
+GET {{baseUrl}}/api/vton/history?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### ========================================
+### 3. Get Session Detail
+### ========================================
+
+GET {{baseUrl}}/api/vton/session/1
+Authorization: Bearer {{token}}
+
+### ========================================
+### 4. Delete Session
+### ========================================
+
+DELETE {{baseUrl}}/api/vton/session/1
+Authorization: Bearer {{token}}
+
+### ========================================
+### HELPER: Get JWT Token (Login first)
+### ========================================
+
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "khang393324@gmail.com",
+  "password": "Khang@0937393324"
+}
+
+### Response sẽ trả về token, copy và paste vào @token ở trên

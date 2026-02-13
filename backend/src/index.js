@@ -9,6 +9,7 @@ import wishlistRoutes from "./routes/wishlist.route.js";
 import cartRoutes from "./routes/cart.route.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import orderRoutes from "./routes/order.routes.js";
+import vtonRoutes from './routes/vton.routes.js';
 
 const app = express();
 
@@ -28,6 +29,9 @@ app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/orders", orderRoutes);
+app.use('/uploads', express.static('uploads'));
+app.use('/api/vton', vtonRoutes);
+
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
