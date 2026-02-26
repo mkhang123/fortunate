@@ -10,6 +10,7 @@ import cartRoutes from "./routes/cart.route.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import vtonRoutes from './routes/vton.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/orders", orderRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/vton', vtonRoutes);
+app.use('/api/upload', uploadRoutes);
 
 
 // Global error handling middleware

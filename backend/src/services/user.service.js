@@ -30,6 +30,47 @@ class UserService {
     // Thực hiện cập nhật role qua repository
     return await userRepository.updateRole(userId, newRole);
   }
+
+  // Cập nhật thông tin cơ bản (name, phone)
+  async updateProfile(userId, { name, phone }) {
+    // name không được để rỗng
+    if (!name || name.trim() === "") {
+      const error = new Error("Tên không được để trống");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const updatedUser = await userRepository.updateProfile(userId, {
+      name: name.trim(),
+      // Chỉ cập nhật phone nếu có gửi lên
+      ...(phone !== undefined && { phone }),
+    });
+    return updatedUser;
+  }
+
+  // Cập nhật số đo cơ thể
+  async updateBodyProfile(userId, data) {
+    const { height, weight, chest, waist, hip } = data;
+    const fields = { height, weight, chest, waist, hip };
+
+    // Kiểm tra: tất cả các số phải > 0
+    for (const [key, val] of Object.entries(fields)) {
+      if (val !== undefined && (isNaN(val) || Number(val) <= 0)) {
+        const error = new Error(`Giá trị ${key} phải là số dương`);
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Chuyển sang số thực trước khi lưu
+    const parsedData = Object.fromEntries(
+      Object.entries(fields)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, parseFloat(v)])
+    );
+
+    return await userRepository.upsertBodyProfile(userId, parsedData);
+  }
 }
 
 export default new UserService();

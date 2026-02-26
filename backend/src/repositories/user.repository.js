@@ -34,6 +34,28 @@ class UserRepository {
       select: { id: true, name: true, role: true },
     });
   }
+
+  // Cập nhật thông tin cơ bản: name, phone
+  async updateProfile(userId, data) {
+    const id = Number(userId);
+    return await prisma.user.update({
+      where: { id },
+      data,
+      select: { id: true, name: true, phone: true, email: true },
+    });
+  }
+
+  // Tạo mới hoặc cập nhật số đo cơ thể (upsert)
+  async upsertBodyProfile(userId, data) {
+    const id = Number(userId);
+    return await prisma.userBodyProfile.upsert({
+      where: { userId: id },
+      // Nếu chưa có record -> tạo mới
+      create: { userId: id, ...data },
+      // Nếu đã có -> cập nhật
+      update: { ...data },
+    });
+  }
 }
 
 export default new UserRepository();

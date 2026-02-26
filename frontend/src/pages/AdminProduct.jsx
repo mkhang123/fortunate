@@ -7,6 +7,8 @@ export default function AdminProduct() {
   const [categories, setCategories] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -15,7 +17,7 @@ export default function AdminProduct() {
     stock: "",
     color: "Basic",
     imageUrl: "",
-    variants: [], // Lưu trữ variants cũ để lấy ID khi update
+    variants: [],
   });
 
   useEffect(() => {
@@ -47,12 +49,33 @@ export default function AdminProduct() {
       .replace(/ +/g, "-");
   };
 
+  // Upload ảnh lên Cloudinary
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImagePreview(URL.createObjectURL(file));
+    setIsUploading(true);
+    try {
+      const formPayload = new FormData();
+      formPayload.append("image", file);
+      const res = await api.post("/upload/image", formPayload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const cloudUrl = res.data?.data?.url;
+      setFormData((prev) => ({ ...prev, imageUrl: cloudUrl }));
+      toast.success("Upload ảnh thành công!");
+    } catch (err) {
+      toast.error("Upload ảnh thất bại, bạn có thể nhập URL thủ công");
+      console.error("Upload error:", err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const defaultSizes = ["S", "M", "L", "XL"];
-
-      // Xử lý variants khác nhau cho CREATE vs EDIT
       const payload = {
         name: formData.name,
         slug: createSlug(formData.name),
@@ -64,16 +87,14 @@ export default function AdminProduct() {
           ? [formData.imageUrl]
           : ["https://via.placeholder.com/150"],
         variants: isEditing
-          ? // Khi EDIT: Cập nhật tất cả variants hiện có
-          formData.variants?.map((v) => ({
-            id: v.id, // Giữ nguyên ID để update
+          ? formData.variants?.map((v) => ({
+            id: v.id,
             color: formData.color || "Basic",
-            size: v.size, // Giữ nguyên size cũ
+            size: v.size,
             price: Number(formData.price),
             stock: Number(formData.stock),
           })) || []
-          : // Khi CREATE: Tạo mới 4 sizes mặc định
-          defaultSizes.map((s) => ({
+          : defaultSizes.map((s) => ({
             color: formData.color || "Basic",
             size: s,
             price: Number(formData.price),
@@ -108,14 +129,16 @@ export default function AdminProduct() {
   const handleEdit = (p) => {
     setIsEditing(true);
     setEditId(p.id);
+    const existingImage = Array.isArray(p.images) ? p.images[0] : "";
+    setImagePreview(existingImage);
     setFormData({
       name: p.name,
       categoryId: p.categoryId,
       price: p.price || p.variants?.[0]?.price || "",
       stock: p.variants?.[0]?.stock || "",
       color: p.variants?.[0]?.color || "Basic",
-      imageUrl: Array.isArray(p.images) ? p.images[0] : "",
-      variants: p.variants || [], // Lưu lại mảng variants để lấy ID trong handleSubmit
+      imageUrl: existingImage,
+      variants: p.variants || [],
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -123,6 +146,7 @@ export default function AdminProduct() {
   const cancelEdit = () => {
     setIsEditing(false);
     setEditId(null);
+    setImagePreview("");
     setFormData({
       name: "",
       categoryId: categories[0]?.id || "",
@@ -157,14 +181,39 @@ export default function AdminProduct() {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
         />
-        <input
-          placeholder="URL Hình ảnh"
-          value={formData.imageUrl}
-          className="border p-2 rounded col-span-2 focus:ring-1 focus:ring-black outline-none"
-          onChange={(e) =>
-            setFormData({ ...formData, imageUrl: e.target.value })
-          }
-        />
+
+        {/* Upload ảnh Cloudinary */}
+        <div className="col-span-2 flex items-center gap-3">
+          <label className="cursor-pointer flex items-center gap-2 border border-dashed border-gray-400 px-3 py-2 rounded hover:border-black transition-all whitespace-nowrap">
+            <span className="text-sm text-gray-600">
+              {isUploading ? "⏳ Đang upload..." : "📷 Chọn ảnh"}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+              disabled={isUploading}
+            />
+          </label>
+          {imagePreview && (
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="w-12 h-12 object-cover rounded border shadow-sm flex-shrink-0"
+            />
+          )}
+          <input
+            placeholder="Hoặc nhập URL ảnh"
+            value={formData.imageUrl}
+            className="flex-1 border p-2 rounded text-sm focus:ring-1 focus:ring-black outline-none"
+            onChange={(e) => {
+              setFormData({ ...formData, imageUrl: e.target.value });
+              setImagePreview(e.target.value);
+            }}
+          />
+        </div>
+
 
         <select
           className="border p-2 rounded bg-white cursor-pointer"
