@@ -9,6 +9,10 @@ export const authMiddleware = (req, res, next) => {
         req.user = decoded; // Gán user thật từ Token (id lúc này là số nguyên)
         next();
     } catch (error) {
+        // Phân biệt token hết hạn vs token không hợp lệ để frontend xử lý đúng
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: "Token đã hết hạn", code: "TOKEN_EXPIRED" });
+        }
         return res.status(401).json({ message: "Token không hợp lệ" });
     }
 };

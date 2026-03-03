@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
+import { logoutUser } from "../apis/auth.api";
 import {
   User,
   Users,
@@ -34,12 +35,24 @@ export default function MainLayout() {
     { name: "QUẦN NGẮN (SHORTS)", path: "/clothes/quan-ngan" },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsMenuOpen(false);
-    navigate("/login");
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        // Vô hiệu hóa refreshToken trên server trước khi xóa local
+        await logoutUser(refreshToken);
+      }
+    } catch (error) {
+      // Vẫn tiếp tục logout dù API lỗi
+      console.error("Logout API error:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      setIsMenuOpen(false);
+      navigate("/login");
+      window.location.reload();
+    }
   };
 
   return (
@@ -156,6 +169,15 @@ export default function MainLayout() {
 
                       {hasManagementAccess && (
                         <>
+                          {isAdmin && (
+                            <Link
+                              to="/admin/dashboard"
+                              className="flex items-center gap-3 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 font-semibold"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <LayoutDashboard className="w-4 h-4" /> Dashboard
+                            </Link>
+                          )}
                           <Link
                             to="/admin/products"
                             className="flex items-center gap-3 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"

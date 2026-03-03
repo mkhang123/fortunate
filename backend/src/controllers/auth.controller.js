@@ -1,50 +1,52 @@
-import prisma from '../config/prisma.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+// fortunate/backend/src/controllers/auth.controller.js
+import * as authService from '../services/auth.service.js';
 
 // ĐĂNG KÝ
 export const register = async (req, res) => {
     try {
         const { email, password, name } = req.body;
-
-        const userExists = await prisma.user.findUnique({ where: { email } });
-        if (userExists) return res.status(400).json({ success: false, message: "Email đã tồn tại" });
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = await prisma.user.create({
-            data: { email, password: hashedPassword, name }
-        });
-
+        await authService.register({ email, password, name });
         res.status(201).json({ success: true, message: "Đăng ký thành công" });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.status(error.statusCode || 500).json({ success: false, message: error.message });
     }
 };
 
-// ĐĂNG NHẬP
+// ĐĂNG NHẬP — Trả về accessToken (15 phút) + refreshToken (7 ngày)
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return res.status(404).json({ success: false, message: "Người dùng không tồn tại" });
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ success: false, message: "Mật khẩu không đúng" });
-
-        const token = jwt.sign(
-            { id: user.id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1d' }
-        );
+        const { user, accessToken, refreshToken } = await authService.login(email, password);
 
         res.json({
             success: true,
-            token,
+            accessToken,
+            refreshToken,
             user: { id: user.id, name: user.name, email: user.email, role: user.role }
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+};
+
+// LÀM MỚI ACCESS TOKEN — Dùng refreshToken còn hạn trong DB
+export const refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        const { accessToken } = await authService.refresh(refreshToken);
+        res.json({ success: true, accessToken });
+    } catch (error) {
+        res.status(error.statusCode || 403).json({ success: false, message: error.message });
+    }
+};
+
+// ĐĂNG XUẤT — Xóa refreshToken khỏi DB
+export const logout = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        await authService.logout(refreshToken);
+        res.json({ success: true, message: "Đăng xuất thành công" });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ success: false, message: error.message });
     }
 };

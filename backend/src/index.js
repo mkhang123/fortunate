@@ -11,6 +11,7 @@ import paymentRoutes from "./routes/payment.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import vtonRoutes from './routes/vton.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/orders", orderRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/vton', vtonRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/admin/dashboard', dashboardRoutes);
 
 
 // Global error handling middleware

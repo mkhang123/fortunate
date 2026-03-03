@@ -9,3 +9,13 @@ export const registerUser = async (data) => {
 export const loginUser = async (data) => {
     return await api.post('/auth/login', data);
 };
+
+// Làm mới accessToken bằng refreshToken
+export const refreshAccessToken = async (refreshToken) => {
+    return await api.post('/auth/refresh', { refreshToken });
+};
+
+// Đăng xuất - vô hiệu hóa refreshToken trên server
+export const logoutUser = async (refreshToken) => {
+    return await api.post('/auth/logout', { refreshToken });
+};

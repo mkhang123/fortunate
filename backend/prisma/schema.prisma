@@ -17,6 +17,7 @@ model User {
   avatar        String?
   isActive      Boolean   @default(true)
   role          Role      @default(USER)
+  refreshToken  String?   // Lưu refresh token hiện tại, null khi đăng xuất
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

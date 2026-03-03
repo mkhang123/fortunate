@@ -20,6 +20,7 @@ import OrderConfirmation from './pages/OrderConfirmation';
 import MyOrders from './pages/MyOrders';
 import OrderDetail from './pages/OrderDetail';
 import AdminOrders from './pages/AdminOrders';
+import AdminDashboard from './pages/AdminDashboard';
 
 export default function App() {
   return (
@@ -60,6 +61,7 @@ export default function App() {
           <Route path="/my-orders" element={<MyOrders />} />
           <Route path="/my-orders/:orderId" element={<OrderDetail />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Route>
       </Routes>
     </>
