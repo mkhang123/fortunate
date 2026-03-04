@@ -162,7 +162,7 @@ export default function AdminDashboard() {
         try {
             const rt = localStorage.getItem("refreshToken");
             if (rt) await logoutUser(rt);
-        } catch (_) { }
+        } catch (_) { /* ignore */ }
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");

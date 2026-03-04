@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../apis/axiosConfig";
+import toast from "react-hot-toast";
 
 export default function AdminUserManagement() {
   const [users, setUsers] = useState([]);
@@ -13,7 +14,7 @@ export default function AdminUserManagement() {
       setUsers(res.data?.data || []);
     } catch (err) {
       console.error("Lỗi khi lấy danh sách người dùng:", err);
-      alert("Không có quyền truy cập hoặc lỗi server");
+      toast.error("Không có quyền truy cập hoặc lỗi server");
     } finally {
       setLoading(false);
     }
@@ -25,14 +26,13 @@ export default function AdminUserManagement() {
 
   // 2. Hàm xử lý cập nhật Role
   const handleUpdateRole = async (userId, newRole) => {
-    if (!window.confirm(`Bạn có chắc muốn chuyển người dùng này thành ${newRole}?`)) return;
 
     try {
       await api.put(`/users/role/${userId}`, { role: newRole });
-      alert("Cập nhật quyền thành công!");
+      toast.success(`Cập nhật quyền thành ${newRole} thành công!`);
       fetchUsers(); // Tải lại danh sách để cập nhật giao diện
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi cập nhật quyền");
+      toast.error(err.response?.data?.message || "Lỗi khi cập nhật quyền");
     }
   };
 
@@ -61,38 +61,44 @@ export default function AdminUserManagement() {
                   <td className="p-4 font-medium text-gray-800">{user.name}</td>
                   <td className="p-4 text-gray-600">{user.email}</td>
                   <td className="p-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                      user.role === 'ADMIN' ? 'bg-red-100 text-red-600' : 
-                      user.role === 'CREATOR' ? 'bg-blue-100 text-blue-600' : 
-                      'bg-green-100 text-green-600'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${user.role === 'ADMIN' ? 'bg-red-100 text-red-600' :
+                      user.role === 'CREATOR' ? 'bg-blue-100 text-blue-600' :
+                        'bg-green-100 text-green-600'
+                      }`}>
                       {user.role}
                     </span>
                   </td>
                   <td className="p-4">
-                    <div className="flex justify-center gap-2">
-                      <button 
-                        onClick={() => handleUpdateRole(user.id, "USER")}
-                        disabled={user.role === "USER"}
-                        className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-30"
-                      >
-                        USER
-                      </button>
-                      <button 
-                        onClick={() => handleUpdateRole(user.id, "CREATOR")}
-                        disabled={user.role === "CREATOR"}
-                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-30"
-                      >
-                        CREATOR
-                      </button>
-                      <button 
-                        onClick={() => handleUpdateRole(user.id, "ADMIN")}
-                        disabled={user.role === "ADMIN"}
-                        className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-30"
-                      >
-                        ADMIN
-                      </button>
-                    </div>
+                    {user.role === "ADMIN" ? (
+                      <div className="flex justify-center">
+                        <span className="px-3 py-1 text-xs bg-gray-100 text-gray-400 rounded font-medium italic">
+                          Không thể thay đổi
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleUpdateRole(user.id, "USER")}
+                          disabled={user.role === "USER"}
+                          className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-30"
+                        >
+                          USER
+                        </button>
+                        <button
+                          onClick={() => handleUpdateRole(user.id, "CREATOR")}
+                          disabled={user.role === "CREATOR"}
+                          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-30"
+                        >
+                          CREATOR
+                        </button>
+                        <button
+                          onClick={() => handleUpdateRole(user.id, "ADMIN")}
+                          className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                          ADMIN
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))
