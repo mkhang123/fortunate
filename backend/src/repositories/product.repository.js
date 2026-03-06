@@ -51,27 +51,46 @@ class ProductRepository {
     });
   }
 
-  async getFeaturedProducts() {
-    return await prisma.product.findMany({
-      where: {
-        status: "PUBLISHED",
-        wishlists: {
-          some: {},
-        },
-      },
+  async getFeaturedProducts(filters = {}) {
+    const { search, sort } = filters;
+
+    const where = {
+      status: "PUBLISHED",
+      wishlists: { some: {} },
+    };
+
+    if (search) {
+      where.name = { contains: search, mode: "insensitive" };
+    }
+
+    const isPriceSort = sort === "price_asc" || sort === "price_desc";
+
+    // Với price sort → dùng orderBy mặc định, sort bằng JS sau
+    let orderBy = { wishlists: { _count: "desc" } };
+    if (sort === "name_asc") orderBy = { name: "asc" };
+
+    const products = await prisma.product.findMany({
+      where,
       include: {
         variants: true,
-        _count: {
-          select: { wishlists: true },
-        },
+        _count: { select: { wishlists: true } },
       },
-      orderBy: {
-        wishlists: {
-          _count: "desc",
-        },
-      },
-      take: 10,
+      orderBy,
+      take: 20,
     });
+
+    // Sort theo giá thấp nhất của variants
+    if (isPriceSort) {
+      const getMinPrice = (p) =>
+        p.variants.length > 0 ? Math.min(...p.variants.map((v) => v.price)) : 0;
+      products.sort((a, b) =>
+        sort === "price_asc"
+          ? getMinPrice(a) - getMinPrice(b)
+          : getMinPrice(b) - getMinPrice(a)
+      );
+    }
+
+    return products;
   }
 
   async getAll(filters = {}) {
@@ -87,42 +106,38 @@ class ProductRepository {
     }
 
     if (categorySlug) {
-      where.category = {
-        slug: categorySlug,
-      };
+      where.category = { slug: categorySlug };
     }
 
     if (status) {
       where.status = status;
     }
 
-    let orderBy = {};
-    switch (sort) {
-      case "name_asc":
-        orderBy = { name: "asc" };
-        break;
-      case "name_desc":
-        orderBy = { name: "desc" };
-        break;
-      case "price_asc":
-        orderBy = { variants: { _min: { price: "asc" } } };
-        break;
-      case "price_desc":
-        orderBy = { variants: { _max: { price: "desc" } } };
-        break;
-      default:
-        orderBy = { createdAt: "desc" };
-        break;
-    }
+    // Với price sort → fetch trước rồi sort bằng JS
+    const isPriceSort = sort === "price_asc" || sort === "price_desc";
 
-    return await prisma.product.findMany({
+    let orderBy = { createdAt: "desc" };
+    if (sort === "name_asc") orderBy = { name: "asc" };
+    if (sort === "name_desc") orderBy = { name: "desc" };
+
+    const products = await prisma.product.findMany({
       where,
-      include: {
-        variants: true,
-        category: true,
-      },
+      include: { variants: true, category: true },
       orderBy,
     });
+
+    // Sort theo giá thấp nhất của variants
+    if (isPriceSort) {
+      const getMinPrice = (p) =>
+        p.variants.length > 0 ? Math.min(...p.variants.map((v) => v.price)) : 0;
+      products.sort((a, b) =>
+        sort === "price_asc"
+          ? getMinPrice(a) - getMinPrice(b)
+          : getMinPrice(b) - getMinPrice(a)
+      );
+    }
+
+    return products;
   }
 
   async deleteProduct(id) {

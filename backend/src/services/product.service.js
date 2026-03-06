@@ -41,9 +41,9 @@ class ProductService {
     }
   }
 
-  async getFeaturedProducts() {
+  async getFeaturedProducts(filters = {}) {
     try {
-      return await productRepository.getFeaturedProducts();
+      return await productRepository.getFeaturedProducts(filters);
     } catch (error) {
       const err = new Error("Lỗi khi lấy danh sách sản phẩm nổi bật");
       err.statusCode = 500;

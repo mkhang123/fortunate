@@ -12,6 +12,8 @@ import orderRoutes from "./routes/order.routes.js";
 import vtonRoutes from './routes/vton.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import reviewRoutes from './routes/review.routes.js';
+import passport from './config/passport.config.js';
 
 const app = express();
 
@@ -22,12 +24,12 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(passport.initialize()); // Google OAuth
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/orders", orderRoutes);
@@ -35,6 +37,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/vton', vtonRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
+app.use('/api/products/:productId/reviews', reviewRoutes);
 
 
 // Global error handling middleware

@@ -2,7 +2,6 @@ import prisma from '../config/prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// Tạo cặp token: accessToken (15 phút) + refreshToken (7 ngày)
 const generateTokens = (userId, role) => {
   const accessToken = jwt.sign(
     { id: userId, role },
@@ -89,4 +88,27 @@ export const logout = async (token) => {
     where: { refreshToken: token },
     data: { refreshToken: null }
   });
+};
+
+export const googleLogin = async (googleUser) => {
+  // googleUser là user object từ Prisma (passport đã tìm/tạo sẵn)
+  const { accessToken, refreshToken } = generateTokens(googleUser.id, googleUser.role);
+
+  // Lưu refreshToken vào DB
+  await prisma.user.update({
+    where: { id: googleUser.id },
+    data: { refreshToken },
+  });
+
+  return {
+    user: {
+      id: googleUser.id,
+      name: googleUser.name,
+      email: googleUser.email,
+      avatar: googleUser.avatar,
+      role: googleUser.role,
+    },
+    accessToken,
+    refreshToken,
+  };
 };

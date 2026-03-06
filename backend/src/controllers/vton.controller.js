@@ -8,29 +8,54 @@ class VTONController {
   async tryOn(req, res) {
     try {
       const userId = req.user.id;
-      const { variantId } = req.body;
+      const { variantId, garmentImageUrl } = req.body;
 
-      // Kiểm tra file upload
-      if (!req.files || !req.files.personImage || !req.files.garmentImage) {
+      // Kiểm tra ảnh người
+      if (!req.files || !req.files.personImage) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng upload đầy đủ ảnh người và ảnh quần áo'
+          message: 'Vui lòng upload ảnh người'
         });
       }
 
       const personImage = req.files.personImage[0];
-      const garmentImage = req.files.garmentImage[0];
+      let garmentImage;
 
-      // Parse variantId to Int (nếu có)
+      if (req.files && req.files.garmentImage) {
+        // Trường hợp 1: Upload file trực tiếp
+        garmentImage = req.files.garmentImage[0];
+      } else if (garmentImageUrl) {
+        // Trường hợp 2: URL ảnh từ sản phẩm → backend tự download về server
+        const { default: axios } = await import('axios');
+        const { default: fs } = await import('fs');
+        const { default: path } = await import('path');
+
+        const dir = 'uploads/vton/garment';
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        const ext = path.extname(new URL(garmentImageUrl).pathname) || '.jpg';
+        const filename = `garment_product_${userId}_${Date.now()}${ext}`;
+        const filepath = `${dir}/${filename}`;
+
+        const response = await axios({ url: garmentImageUrl, method: 'GET', responseType: 'stream' });
+        await new Promise((resolve, reject) => {
+          const writer = fs.createWriteStream(filepath);
+          response.data.pipe(writer);
+          writer.on('finish', resolve);
+          writer.on('error', reject);
+        });
+
+        garmentImage = { path: filepath, filename, fieldname: 'garmentImage' };
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng cung cấp ảnh quần áo hoặc URL ảnh sản phẩm'
+        });
+      }
+
       const variantIdInt = variantId ? parseInt(variantId) : null;
 
-      // Gọi service xử lý
-      const session = await vtonService.processTryOn(
-        userId,
-        personImage,
-        garmentImage,
-        variantIdInt
-      );
+      const session = await vtonService.processTryOn(userId, personImage, garmentImage, variantIdInt);
 
       return res.status(201).json({
         success: true,

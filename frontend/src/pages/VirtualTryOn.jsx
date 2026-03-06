@@ -1,13 +1,24 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Smartphone, Upload, Shirt, RotateCcw, Download, Info, Plus } from 'lucide-react';
 import { vtonAPI } from '../apis/vton.api';
 
 export default function VirtualTryOn() {
-  const [userImage, setUserImage] = useState(null); // Ảnh người dùng (preview)
-  const [userImageFile, setUserImageFile] = useState(null); // File người dùng
-  const [selectedProduct, setSelectedProduct] = useState(null); // Sản phẩm đang chọn
-  const [customProductImage, setCustomProductImage] = useState(null); // Ảnh đồ người dùng tải lên (preview)
-  const [customProductFile, setCustomProductFile] = useState(null); // File đồ người dùng tải lên
+  const location = useLocation();
+
+  // Nếu navigate từ trang chi tiết sản phẩm → pre-select sản phẩm đó
+  const fromProduct = location.state?.fromProduct;
+  const initialSelected = fromProduct
+    ? { id: fromProduct.id, name: fromProduct.name, image: fromProduct.image, isFromProduct: true }
+    : null;
+
+  const [userImage, setUserImage] = useState(null);
+  const [userImageFile, setUserImageFile] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(initialSelected);
+  // Sản phẩm được navigate từ ProductDetail (hiển thị trong grid)
+  const [fromProductItem] = useState(initialSelected?.isFromProduct ? initialSelected : null);
+  const [customProductImage, setCustomProductImage] = useState(null);
+  const [customProductFile, setCustomProductFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState(null);
   const [error, setError] = useState(null);
@@ -57,21 +68,19 @@ export default function VirtualTryOn() {
     setError(null);
 
     try {
-      // Xác định garment image file
-      let garmentFile;
+      let garmentFile = null;
+      let garmentImageUrl = null;
 
       if (selectedProduct.isCustom) {
-        // Dùng file custom đã upload
+        // Ảnh custom từ máy → gửi file trực tiếp
         garmentFile = customProductFile;
       } else {
-        // Download ảnh từ URL và convert thành File
-        const response = await fetch(selectedProduct.image);
-        const blob = await response.blob();
-        garmentFile = new File([blob], `product_${selectedProduct.id}.jpg`, { type: 'image/jpeg' });
+        // Ảnh từ sản phẩm → gửi URL để backend tự download (tránh CORS)
+        garmentImageUrl = selectedProduct.image;
       }
 
       // Gọi API
-      const result = await vtonAPI.tryOn(userImageFile, garmentFile, null);
+      const result = await vtonAPI.tryOn(userImageFile, garmentFile, null, garmentImageUrl);
 
       console.log('VTON Result:', result);
 
@@ -97,7 +106,7 @@ export default function VirtualTryOn() {
       {/* HEADER SECTION */}
       <div className="mb-12 border-b border-gray-100 pb-8">
         <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 flex items-center gap-4">
-          Virtual Try-On <span className="text-xs bg-black text-white px-2 py-1 not-italic tracking-widest">BETA AI</span>
+          Virtual Try-On
         </h1>
         <p className="text-gray-500 text-sm max-w-2xl">
           Tải lên ảnh chân dung và chọn trang phục (có sẵn hoặc từ máy của bạn) để bắt đầu phiên thử đồ ảo.
@@ -202,6 +211,23 @@ export default function VirtualTryOn() {
                   <img src={customProductImage.image} className="w-full h-full object-cover" alt="Custom" />
                 </div>
                 <p className="text-[9px] font-black uppercase text-center truncate px-1 italic text-red-600 tracking-tighter">Personal Item</p>
+              </div>
+            )}
+
+            {/* SẢN PHẨM TỪ TRANG CHI TIẾT (PRE-SELECTED) */}
+            {fromProductItem && (
+              <div
+                onClick={() => setSelectedProduct(fromProductItem)}
+                className={`relative cursor-pointer border-2 transition-all p-1 rounded-sm ${selectedProduct?.id === fromProductItem.id ? 'border-black bg-gray-50' : 'border-transparent bg-white shadow-sm'}`}
+              >
+                <div className="aspect-[3/4] overflow-hidden bg-white mb-2">
+                  {fromProductItem.image
+                    ? <img src={fromProductItem.image} className="w-full h-full object-contain mix-blend-multiply" alt={fromProductItem.name} />
+                    : <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-300 font-bold uppercase">No Image</div>
+                  }
+                </div>
+                <p className="text-[9px] font-black uppercase text-center truncate px-1 text-blue-600 tracking-tighter italic">Đã chọn</p>
+                <p className="text-[8px] font-bold text-center truncate px-1 text-gray-500">{fromProductItem.name}</p>
               </div>
             )}
 

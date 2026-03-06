@@ -11,12 +11,13 @@ datasource db {
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
-  password      String
+  password      String?   // null nếu user đăng nhập bằng Google
   name          String?
   phone         String?   
   avatar        String?
   isActive      Boolean   @default(true)
   role          Role      @default(USER)
+  googleId      String?   @unique // Google OAuth ID
   refreshToken  String?   // Lưu refresh token hiện tại, null khi đăng xuất
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

@@ -36,7 +36,8 @@ class ProductController {
 
   async getFeatured(req, res) {
     try {
-      const products = await productService.getFeaturedProducts();
+      const { search, sort } = req.query;
+      const products = await productService.getFeaturedProducts({ search, sort });
       return res.status(200).json({
         success: true,
         data: products,
