@@ -16,9 +16,7 @@ export const vtonAPI = {
 
     if (variantId) formData.append('variantId', variantId);
 
-    const response = await api.post('/vton/try-on', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post('/vton/try-on', formData);
     return response.data;
   },
 
@@ -39,6 +37,18 @@ export const vtonAPI = {
   // Xóa session
   async deleteSession(sessionId) {
     const response = await api.delete(`/vton/session/${sessionId}`);
+    return response.data;
+  },
+
+  // [Admin] Lấy config VTON hiện tại (mode, colabUrl...)
+  async getConfig() {
+    const response = await api.get('/vton/config');
+    return response.data;
+  },
+
+  // [Admin] Cập nhật Colab URL không cần restart backend
+  async updateColabUrl(colabUrl) {
+    const response = await api.put('/vton/config', { colabUrl });
     return response.data;
   },
 };

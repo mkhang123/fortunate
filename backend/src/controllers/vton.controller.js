@@ -33,17 +33,34 @@ class VTONController {
         const dir = 'uploads/vton/garment';
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-        const ext = path.extname(new URL(garmentImageUrl).pathname) || '.jpg';
-        const filename = `garment_product_${userId}_${Date.now()}${ext}`;
-        const filepath = `${dir}/${filename}`;
+        let filepath, filename;
+        try {
+          const urlPath = new URL(garmentImageUrl).pathname;
+          const ext = path.extname(urlPath) || '.jpg';
+          filename = `garment_product_${userId}_${Date.now()}${ext}`;
+          filepath = path.join(dir, filename);
 
-        const response = await axios({ url: garmentImageUrl, method: 'GET', responseType: 'stream' });
-        await new Promise((resolve, reject) => {
-          const writer = fs.createWriteStream(filepath);
-          response.data.pipe(writer);
-          writer.on('finish', resolve);
-          writer.on('error', reject);
-        });
+          const response = await axios({
+            url: garmentImageUrl,
+            method: 'GET',
+            responseType: 'stream',
+            timeout: 30000,
+            maxRedirects: 5,
+            validateStatus: (s) => s === 200,
+          });
+          await new Promise((resolve, reject) => {
+            const writer = fs.createWriteStream(filepath);
+            response.data.pipe(writer);
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+          });
+        } catch (downloadErr) {
+          console.error('Garment image download failed:', downloadErr.message);
+          return res.status(400).json({
+            success: false,
+            message: 'Không tải được ảnh sản phẩm từ URL. Thử tải ảnh đồ từ máy (mục "Tải đồ từ máy").',
+          });
+        }
 
         garmentImage = { path: filepath, filename, fieldname: 'garmentImage' };
       } else {
@@ -64,10 +81,10 @@ class VTONController {
       });
 
     } catch (error) {
-      console.error('Error in tryOn controller:', error);
+      console.error('Error in tryOn controller:', error?.stack || error);
       return res.status(500).json({
         success: false,
-        message: error.message
+        message: error?.message || 'Lỗi xử lý thử đồ. Kiểm tra terminal backend để xem chi tiết.'
       });
     }
   }

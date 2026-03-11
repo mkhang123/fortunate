@@ -31,29 +31,55 @@ class VTONService {
       console.log(`📝 Created session #${session.id}`);
 
       // 3. Gọi AI để xử lý
-      const resultUrl = await aiService.generateTryOn(
+      const result = await aiService.generateTryOn(
         personImageFile.path,
         garmentImageFile.path
       );
 
       // 4. Xử lý kết quả (Real vs Mock mode)
-      const MOCK_MODE = process.env.VTON_MOCK_MODE === 'true';
+      const MOCK_MODE = process.env.VTON_MODE === 'mock';
       let resultPath;
 
       if (MOCK_MODE) {
-        // Mock mode: resultUrl là path của garment image
+        // Mock mode: result là path của garment image
         // Copy garment image sang thư mục results
-        const resultFileName = `result_${session.id}_${Date.now()}.jpg`;
-        resultPath = path.join('uploads', 'vton', 'results', resultFileName);
+        const resultsDir = path.join('uploads', 'vton', 'results');
+        if (!fs.existsSync(resultsDir)) {
+          fs.mkdirSync(resultsDir, { recursive: true });
+        }
 
-        fs.copyFileSync(resultUrl, resultPath);
+        const resultFileName = `result_${session.id}_${Date.now()}.jpg`;
+        resultPath = path.join(resultsDir, resultFileName);
+
+        fs.copyFileSync(result, resultPath);
         console.log('🎭 Mock result saved:', resultPath);
       } else {
-        // Real mode: Download ảnh từ URL
-        const resultFileName = `result_${session.id}_${Date.now()}.jpg`;
-        resultPath = path.join('uploads', 'vton', 'results', resultFileName);
+        // Real mode: result có thể là URL hoặc Blob
+        const resultsDir = path.join('uploads', 'vton', 'results');
+        if (!fs.existsSync(resultsDir)) {
+          fs.mkdirSync(resultsDir, { recursive: true });
+        }
 
-        await aiService.downloadImage(resultUrl, resultPath);
+        const resultFileName = `result_${session.id}_${Date.now()}.jpg`;
+        resultPath = path.join(resultsDir, resultFileName);
+
+        // Check if result is URL, Blob, or local path (Python mode)
+        if (typeof result === 'string' && result.startsWith('http')) {
+          // URL from Replicate
+          await aiService.downloadImage(result, resultPath);
+        } else if (result instanceof Blob) {
+          // Blob from Hugging Face
+          const arrayBuffer = await result.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          fs.writeFileSync(resultPath, buffer);
+          console.log('🤗 Hugging Face result saved:', resultPath);
+        } else if (typeof result === 'string' && result.length > 0) {
+          // Local path from Python VTON (app đã lưu file sẵn)
+          resultPath = result;
+          console.log('🐍 Python VTON result path:', resultPath);
+        } else {
+          throw new Error(`Unsupported result type: ${typeof result}`);
+        }
       }
 
       // 5. Cập nhật session với kết quả

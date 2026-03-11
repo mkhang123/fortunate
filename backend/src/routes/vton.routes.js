@@ -1,6 +1,8 @@
 import express from 'express';
 import vtonController from '../controllers/vton.controller.js';
+import vtonConfigController from '../controllers/vton-config.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { roleMiddleware } from '../middlewares/role.middleware.js';
 import { vtonUploadFields } from '../config/upload.config.js';
 
 const router = express.Router();
@@ -32,6 +34,22 @@ router.delete(
   '/session/:id',
   authMiddleware,
   vtonController.deleteSession
+);
+
+// GET /api/vton/config - Lấy config VTON (admin)
+router.get(
+  '/config',
+  authMiddleware,
+  roleMiddleware(['ADMIN']),
+  vtonConfigController.getConfig
+);
+
+// PUT /api/vton/config - Cập nhật Colab URL (admin)
+router.put(
+  '/config',
+  authMiddleware,
+  roleMiddleware(['ADMIN']),
+  vtonConfigController.updateColabUrl
 );
 
 export default router;

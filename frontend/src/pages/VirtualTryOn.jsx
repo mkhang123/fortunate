@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Smartphone, Upload, Shirt, RotateCcw, Download, Info, Plus } from 'lucide-react';
+import { Smartphone, Upload, RotateCcw, Download, Info, Plus } from 'lucide-react';
 import { vtonAPI } from '../apis/vton.api';
+import VtonAdminConfig from '../components/VtonAdminConfig';
 
 export default function VirtualTryOn() {
   const location = useLocation();
+
+  // Lấy thông tin user để kiểm tra quyền admin
+  const currentUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   // Nếu navigate từ trang chi tiết sản phẩm → pre-select sản phẩm đó
   const fromProduct = location.state?.fromProduct;
@@ -22,6 +27,10 @@ export default function VirtualTryOn() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState(null);
   const [error, setError] = useState(null);
+  // Kích thước thực tế của ảnh người (để đồng bộ ảnh kết quả)
+  const [personImgSize, setPersonImgSize] = useState(null);
+  const personImgRef = useRef(null);
+
 
   // Danh sách sản phẩm mẫu từ hệ thống
   const clothesToTry = [
@@ -121,16 +130,29 @@ export default function VirtualTryOn() {
             <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-[10px]">1</span>
             Ảnh của bạn
           </h2>
-          <div className="relative aspect-[3/4] border-2 border-dashed border-gray-200 rounded-sm overflow-hidden flex flex-col items-center justify-center group hover:border-black transition-colors bg-gray-50/30">
+          <div className="relative border-2 border-dashed border-gray-200 rounded-sm overflow-hidden flex flex-col items-center justify-center group hover:border-black transition-colors bg-gray-50/30">
             {userImage ? (
               <>
-                <img src={userImage} className="w-full h-full object-cover animate-in fade-in duration-500" alt="User" />
+                <img
+                  ref={personImgRef}
+                  src={userImage}
+                  className="w-full max-h-[520px] object-contain animate-in fade-in duration-500"
+                  alt="User"
+                  onLoad={() => {
+                    if (personImgRef.current) {
+                      setPersonImgSize({
+                        width: personImgRef.current.offsetWidth,
+                        height: personImgRef.current.offsetHeight,
+                      });
+                    }
+                  }}
+                />
                 <button onClick={() => setUserImage(null)} className="absolute top-2 right-2 bg-white/90 p-2 rounded-full shadow-md hover:bg-red-50 transition-colors">
                   <RotateCcw className="w-4 h-4 text-gray-600" />
                 </button>
               </>
             ) : (
-              <label className="cursor-pointer flex flex-col items-center p-8 text-center w-full h-full justify-center">
+              <label className="cursor-pointer flex flex-col items-center p-8 text-center w-full justify-center" style={{ minHeight: '280px' }}>
                 <Upload className="w-10 h-10 text-gray-300 mb-4 group-hover:text-black transition-colors" />
                 <span className="text-[11px] font-black uppercase tracking-widest">Tải ảnh chân dung</span>
                 <input type="file" className="hidden" onChange={handleUserImageUpload} accept="image/*" />
@@ -143,19 +165,22 @@ export default function VirtualTryOn() {
               Lưu ý: Ảnh rõ nét, đứng thẳng sẽ giúp AI ghép đồ đẹp hơn.
             </p>
           </div>
+
+          {/* Panel cấu hình Colab — chỉ hiện với Admin */}
+          {isAdmin && <VtonAdminConfig />}
         </div>
 
         {/* CỘT 2: PHÒNG THAY ĐỒ (KẾT QUẢ AI) */}
         <div className="space-y-6">
           <h2 className="text-xs font-black uppercase tracking-[0.2em] text-center">Phòng thay đồ ảo</h2>
-          <div className="relative aspect-[3/4] bg-[#fdfdfd] rounded-sm overflow-hidden flex items-center justify-center border border-gray-100 shadow-inner">
+          <div className="relative bg-[#fdfdfd] rounded-sm overflow-hidden flex items-center justify-center border border-gray-100 shadow-inner">
             {isProcessing ? (
-              <div className="text-center">
-                <div className="w-12 h-12 border-2 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="text-center" style={{ minHeight: '280px' }}>
+                <div className="w-12 h-12 border-2 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4" style={{ marginTop: '110px' }}></div>
                 <p className="text-[9px] font-bold uppercase tracking-[0.2em] animate-pulse">AI đang tính toán phom dáng...</p>
               </div>
             ) : error ? (
-              <div className="text-center px-8">
+              <div className="text-center px-8" style={{ minHeight: '280px', paddingTop: '80px' }}>
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">❌</span>
                 </div>
@@ -169,9 +194,18 @@ export default function VirtualTryOn() {
                 </button>
               </div>
             ) : resultImage ? (
-              <img src={resultImage} className="w-full h-full object-cover animate-in fade-in zoom-in duration-700" alt="Result" />
+              <div
+                style={personImgSize ? { width: `${personImgSize.width}px` } : {}}
+                className="flex items-center justify-center"
+              >
+                <img
+                  src={resultImage}
+                  className="w-full object-contain animate-in fade-in zoom-in duration-700"
+                  alt="Result"
+                />
+              </div>
             ) : (
-              <div className="text-center px-10">
+              <div className="text-center px-10" style={{ minHeight: '280px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <Smartphone className="w-12 h-12 text-gray-200 mx-auto mb-4 stroke-1" />
                 <p className="text-[10px] text-gray-400 uppercase tracking-widest leading-loose">Kết quả sẽ hiển thị tại đây</p>
               </div>
@@ -193,9 +227,9 @@ export default function VirtualTryOn() {
             Chọn trang phục
           </h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {/* NÚT TẢI ẢNH ĐỒ RIÊNG */}
-            <label className="cursor-pointer border-2 border-dashed border-gray-200 aspect-[3/4] rounded-sm flex flex-col items-center justify-center hover:border-black transition-all bg-gray-50/50 group">
+            <label className="cursor-pointer border-2 border-dashed border-gray-200 rounded-sm flex flex-col items-center justify-center hover:border-black transition-all bg-gray-50/50 group" style={{ height: '180px' }}>
               <Plus className="w-6 h-6 text-gray-300 group-hover:text-black mb-1" />
               <span className="text-[9px] font-black uppercase text-center px-2 leading-tight">Tải đồ từ máy</span>
               <input type="file" className="hidden" onChange={handleCustomProductUpload} accept="image/*" />
@@ -207,7 +241,7 @@ export default function VirtualTryOn() {
                 onClick={() => setSelectedProduct(customProductImage)}
                 className={`relative cursor-pointer border-2 transition-all p-1 rounded-sm ${selectedProduct?.id === customProductImage.id ? 'border-black bg-gray-50' : 'border-transparent bg-white shadow-sm'}`}
               >
-                <div className="aspect-[3/4] overflow-hidden bg-white mb-2">
+                <div className="overflow-hidden bg-white mb-1" style={{ height: '156px' }}>
                   <img src={customProductImage.image} className="w-full h-full object-cover" alt="Custom" />
                 </div>
                 <p className="text-[9px] font-black uppercase text-center truncate px-1 italic text-red-600 tracking-tighter">Personal Item</p>
@@ -220,7 +254,7 @@ export default function VirtualTryOn() {
                 onClick={() => setSelectedProduct(fromProductItem)}
                 className={`relative cursor-pointer border-2 transition-all p-1 rounded-sm ${selectedProduct?.id === fromProductItem.id ? 'border-black bg-gray-50' : 'border-transparent bg-white shadow-sm'}`}
               >
-                <div className="aspect-[3/4] overflow-hidden bg-white mb-2">
+                <div className="overflow-hidden bg-white mb-1" style={{ height: '156px' }}>
                   {fromProductItem.image
                     ? <img src={fromProductItem.image} className="w-full h-full object-contain mix-blend-multiply" alt={fromProductItem.name} />
                     : <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-300 font-bold uppercase">No Image</div>
@@ -238,7 +272,7 @@ export default function VirtualTryOn() {
                 onClick={() => setSelectedProduct(item)}
                 className={`cursor-pointer border-2 transition-all p-1 rounded-sm ${selectedProduct?.id === item.id ? 'border-black bg-gray-50' : 'border-transparent bg-white hover:border-gray-50'}`}
               >
-                <div className="aspect-[3/4] overflow-hidden bg-white mb-2">
+                <div className="overflow-hidden bg-white mb-1" style={{ height: '156px' }}>
                   <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
                 </div>
                 <p className="text-[9px] font-black uppercase text-center truncate px-1">{item.name}</p>
