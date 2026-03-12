@@ -118,10 +118,8 @@ export default function AdminOrders() {
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:border-black focus:outline-none appearance-none bg-white"
                         >
                             <option value="">Tất cả trạng thái</option>
-                            <option value="PENDING">Chờ thanh toán</option>
-                            <option value="PAID">Đã thanh toán</option>
-                            <option value="SHIPPED">Đang giao hàng</option>
-                            <option value="COMPLETED">Hoàn thành</option>
+                            <option value="PENDING">Đang xử lý</option>
+                            <option value="PAID">Đã duyệt</option>
                             <option value="CANCELLED">Đã hủy</option>
                         </select>
                     </div>
@@ -217,10 +215,8 @@ export default function AdminOrders() {
                                                     order.status
                                                 )}`}
                                             >
-                                                <option value="PENDING">Chờ thanh toán</option>
-                                                <option value="PAID">Đã thanh toán</option>
-                                                <option value="SHIPPED">Đang giao</option>
-                                                <option value="COMPLETED">Hoàn thành</option>
+                                                <option value="PENDING">Đang xử lý</option>
+                                                <option value="PAID">Duyệt</option>
                                                 <option value="CANCELLED">Hủy</option>
                                             </select>
                                         </td>

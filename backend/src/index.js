@@ -13,6 +13,7 @@ import vtonRoutes from './routes/vton.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import reviewRoutes from './routes/review.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 import passport from './config/passport.config.js';
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/vton', vtonRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/products/:productId/reviews', reviewRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 // Global error handling middleware

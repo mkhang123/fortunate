@@ -56,6 +56,16 @@ class UserRepository {
       update: { ...data },
     });
   }
+
+  // Cập nhật avatar của user
+  async updateAvatar(userId, avatarUrl) {
+    const id = Number(userId);
+    return await prisma.user.update({
+      where: { id },
+      data: { avatar: avatarUrl },
+      select: { id: true, name: true, email: true, avatar: true },
+    });
+  }
 }
 
 export default new UserRepository();

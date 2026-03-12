@@ -1,6 +1,8 @@
 import OrderRepository from "../repositories/order.repository.js";
 import cartRepository from "../repositories/cart.repository.js";
 import { NotFoundError, BadRequestError } from "../response/error.js";
+import notificationService from "./notification.service.js";
+import prisma from "../config/prisma.js";
 
 class OrderService {
     /**
@@ -17,47 +19,103 @@ class OrderService {
             notes,
         } = orderData;
 
-        // 1. Get cart with items
-        const cart = await cartRepository.getOrCreateCart(userId);
+        // Thực hiện toàn bộ thao tác tạo đơn + trừ tồn kho trong transaction
+        const order = await prisma.$transaction(async (tx) => {
+            // 1. Lấy giỏ hàng trong transaction (đảm bảo dữ liệu mới nhất)
+            const cart = await tx.cart.findUnique({
+                where: { userId },
+                include: {
+                    items: {
+                        include: {
+                            variant: true,
+                        },
+                    },
+                },
+            });
 
-        if (!cart.items || cart.items.length === 0) {
-            throw new BadRequestError("Giỏ hàng trống");
-        }
+            if (!cart || !cart.items || cart.items.length === 0) {
+                throw new BadRequestError("Giỏ hàng trống");
+            }
 
-        // 2. Calculate total and prepare order items
-        let total = 0;
-        const orderItems = cart.items.map((item) => {
-            const price = item.variant.price;
-            const quantity = item.quantity;
-            total += price * quantity;
+            // 2. Tính tổng tiền và chuẩn bị danh sách order items
+            let total = 0;
+            const orderItems = cart.items.map((item) => {
+                const price = item.variant.price;
+                const quantity = item.quantity;
+                total += price * quantity;
 
-            return {
-                variantId: item.variantId,
-                price: price, // Snapshot price at time of purchase
-                quantity: quantity,
-            };
+                return {
+                    variantId: item.variantId,
+                    price: price, // Snapshot price at time of purchase
+                    quantity: quantity,
+                };
+            });
+
+            // 3. Trừ tồn kho theo từng biến thể size
+            for (const item of cart.items) {
+                const result = await tx.productVariant.updateMany({
+                    where: {
+                        id: item.variantId,
+                        stock: {
+                            gte: item.quantity,
+                        },
+                    },
+                    data: {
+                        stock: {
+                            decrement: item.quantity,
+                        },
+                    },
+                });
+
+                if (result.count === 0) {
+                    throw new BadRequestError(
+                        "Sản phẩm không đủ số lượng trong kho"
+                    );
+                }
+            }
+
+            // 4. Tạo đơn hàng
+            const createdOrder = await tx.order.create({
+                data: {
+                    userId,
+                    receiverName,
+                    receiverPhone,
+                    receiverEmail,
+                    shippingAddress,
+                    city: city || "TP. Hồ Chí Minh",
+                    notes,
+                    total,
+                    status: "PENDING",
+                    items: {
+                        create: orderItems,
+                    },
+                },
+                include: {
+                    items: {
+                        include: {
+                            variant: {
+                                include: {
+                                    product: true,
+                                },
+                            },
+                        },
+                    },
+                    payment: true,
+                },
+            });
+
+            // 5. Xóa giỏ hàng sau khi tạo đơn thành công
+            await tx.cartItem.deleteMany({
+                where: { cartId: cart.id },
+            });
+
+            return createdOrder;
         });
 
-        // 3. Create order
-        const order = await OrderRepository.createOrder(
-            {
-                userId,
-                receiverName,
-                receiverPhone,
-                receiverEmail,
-                shippingAddress,
-                city: city || "TP. Hồ Chí Minh",
-                notes,
-                total,
-                status: "PENDING",
-            },
-            orderItems
-        );
+        // 5. Gửi thông báo đặt hàng thành công cho user
+        notificationService.notifyOrderPlaced(userId, order.id).catch(console.error);
 
-        // 4. Clear cart after successful order creation
-        await cartRepository.clearCart(cart.id);
-
-        // 5. Return order with payment info
+        // 6. Return order with payment info
         // Payment record will be created by payment controller
         let result = {
             order,
@@ -125,7 +183,20 @@ class OrderService {
             throw new BadRequestError("Invalid order status");
         }
 
-        return await OrderRepository.updateOrderStatus(orderId, status);
+        const updated = await OrderRepository.updateOrderStatus(orderId, status);
+
+        // Gửi thông báo cho user theo trạng thái mới
+        const notifyMap = {
+            PAID:      () => notificationService.notifyOrderPaid(order.userId, orderId),
+            SHIPPED:   () => notificationService.notifyOrderShipped(order.userId, orderId),
+            COMPLETED: () => notificationService.notifyOrderCompleted(order.userId, orderId),
+            CANCELLED: () => notificationService.notifyOrderCancelled(order.userId, orderId),
+        };
+        if (notifyMap[status]) {
+            notifyMap[status]().catch(console.error);
+        }
+
+        return updated;
     }
 
     /**

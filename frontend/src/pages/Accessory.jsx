@@ -66,25 +66,50 @@ export default function Accessory() {
         <div className="text-center p-20 text-gray-400 animate-pulse italic">Đang tải phụ kiện...</div>
       ) : products.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {products.map((product) => (
-            <div key={product.id} className="group cursor-pointer">
-              <div className="aspect-[3/4] overflow-hidden bg-gray-100 mb-4 relative rounded-sm shadow-sm">
-                <img
-                  src={product.images?.[0] || 'https://via.placeholder.com/400x500'}
-                  onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/400x500?text=No+Image";
-                  }}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-              </div>
+          {products.map((product) => {
+            const totalStock =
+              product.variants?.reduce(
+                (sum, v) => sum + (v.stock || 0),
+                0,
+              ) || 0;
+            const isSoldOut = totalStock <= 0;
 
-              <h3 className="text-sm font-semibold uppercase mb-1 tracking-tight group-hover:underline">{product.name}</h3>
-              <p className="text-sm text-gray-900 font-bold">
-                {product.variants?.[0]?.price?.toLocaleString()}đ
-              </p>
-            </div>
-          ))}
+            return (
+              <div
+                key={product.id}
+                className={`group cursor-pointer ${
+                  isSoldOut ? "opacity-40 grayscale" : ""
+                }`}
+              >
+                <div className="aspect-[3/4] overflow-hidden bg-gray-100 mb-4 relative rounded-sm shadow-sm">
+                  {isSoldOut && (
+                    <div className="absolute top-3 left-3 z-10 bg-white text-black px-2 py-1 text-[8px] font-black uppercase tracking-widest border border-black shadow-md">
+                      Hết hàng
+                    </div>
+                  )}
+                  <img
+                    src={
+                      product.images?.[0] ||
+                      "https://via.placeholder.com/400x500"
+                    }
+                    onError={(e) => {
+                      e.target.src =
+                        "https://via.placeholder.com/400x500?text=No+Image";
+                    }}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </div>
+
+                <h3 className="text-sm font-semibold uppercase mb-1 tracking-tight group-hover:underline">
+                  {product.name}
+                </h3>
+                <p className="text-sm text-gray-900 font-bold">
+                  {product.variants?.[0]?.price?.toLocaleString()}đ
+                </p>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-20 text-gray-400 border-2 border-dashed rounded-lg bg-gray-50">

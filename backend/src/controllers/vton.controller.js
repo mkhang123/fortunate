@@ -1,4 +1,5 @@
 import vtonService from '../services/vton.service.js';
+import { uploadFromUrl } from '../config/cloudinary.config.js';
 
 class VTONController {
   /**
@@ -18,51 +19,29 @@ class VTONController {
         });
       }
 
+      // personImage đã được upload lên Cloudinary bởi multer middleware
       const personImage = req.files.personImage[0];
       let garmentImage;
 
       if (req.files && req.files.garmentImage) {
-        // Trường hợp 1: Upload file trực tiếp
+        // Trường hợp 1: Upload file trực tiếp → đã lên Cloudinary
         garmentImage = req.files.garmentImage[0];
       } else if (garmentImageUrl) {
-        // Trường hợp 2: URL ảnh từ sản phẩm → backend tự download về server
-        const { default: axios } = await import('axios');
-        const { default: fs } = await import('fs');
-        const { default: path } = await import('path');
-
-        const dir = 'uploads/vton/garment';
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-        let filepath, filename;
+        // Trường hợp 2: URL ảnh từ sản phẩm → upload lên Cloudinary
         try {
-          const urlPath = new URL(garmentImageUrl).pathname;
-          const ext = path.extname(urlPath) || '.jpg';
-          filename = `garment_product_${userId}_${Date.now()}${ext}`;
-          filepath = path.join(dir, filename);
-
-          const response = await axios({
-            url: garmentImageUrl,
-            method: 'GET',
-            responseType: 'stream',
-            timeout: 30000,
-            maxRedirects: 5,
-            validateStatus: (s) => s === 200,
-          });
-          await new Promise((resolve, reject) => {
-            const writer = fs.createWriteStream(filepath);
-            response.data.pipe(writer);
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-          });
-        } catch (downloadErr) {
-          console.error('Garment image download failed:', downloadErr.message);
+          const cloudResult = await uploadFromUrl(garmentImageUrl, 'fortunate/vton');
+          garmentImage = {
+            path: cloudResult.secure_url,
+            filename: cloudResult.public_id,
+            fieldname: 'garmentImage',
+          };
+        } catch (uploadErr) {
+          console.error('Garment URL upload to Cloudinary failed:', uploadErr.message);
           return res.status(400).json({
             success: false,
-            message: 'Không tải được ảnh sản phẩm từ URL. Thử tải ảnh đồ từ máy (mục "Tải đồ từ máy").',
+            message: 'Không tải được ảnh sản phẩm lên Cloudinary. Thử chọn ảnh từ máy (mục "Tải đồ từ máy").',
           });
         }
-
-        garmentImage = { path: filepath, filename, fieldname: 'garmentImage' };
       } else {
         return res.status(400).json({
           success: false,

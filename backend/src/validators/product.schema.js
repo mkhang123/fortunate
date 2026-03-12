@@ -7,6 +7,11 @@ const productVariantSchema = z.object({
   stock: z.coerce.number().int().nonnegative("Kho không được âm"),
 });
 
+// Schema cho biến thể khi cập nhật: cho phép có thêm id để backend biết biến thể nào cần update
+const productVariantUpdateSchema = productVariantSchema.extend({
+  id: z.coerce.number().int().optional(),
+});
+
 export const createProductSchema = z.object({
   name: z.string().min(3, "Tên quá ngắn"),
   slug: z.string().min(3),
@@ -19,4 +24,9 @@ export const createProductSchema = z.object({
   variants: z.array(productVariantSchema).min(1, "Phải có ít nhất 1 biến thể"),
 });
 
-export const updateProductSchema = createProductSchema.partial();
+// Khi update: cho phép thêm trường id trong từng variant để service nhận diện và update đúng biến thể
+export const updateProductSchema = createProductSchema
+  .extend({
+    variants: z.array(productVariantUpdateSchema).optional(),
+  })
+  .partial();

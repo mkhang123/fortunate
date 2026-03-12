@@ -71,6 +71,16 @@ class UserService {
 
     return await userRepository.upsertBodyProfile(userId, parsedData);
   }
+
+  // Cập nhật avatar của user
+  async updateAvatar(userId, avatarUrl) {
+    if (!avatarUrl) {
+      const error = new Error("URL ảnh đại diện không hợp lệ");
+      error.statusCode = 400;
+      throw error;
+    }
+    return await userRepository.updateAvatar(userId, avatarUrl);
+  }
 }
 
 export default new UserService();

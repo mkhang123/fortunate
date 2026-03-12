@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../apis/auth.api";
+import NotificationBell from "../components/NotificationBell";
 import {
   User,
   Users,
@@ -74,19 +75,19 @@ export default function MainLayout() {
               to="/"
               className="hover:text-gray-400 transition-colors uppercase"
             >
-              HOME
+              TRANG CHỦ
             </Link>
             <Link
               to="/featured"
               className="hover:text-gray-400 transition-colors uppercase"
             >
-              POPULAR
+              NỔI BẬT
             </Link>
 
             {/* DROPDOWN SHOP */}
             <div className="relative group h-full py-2 cursor-pointer">
               <span className="hover:text-gray-400 transition-colors flex items-center gap-1 uppercase">
-                SHOP{" "}
+                MUA SẮM{" "}
                 <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
               </span>
 
@@ -110,7 +111,7 @@ export default function MainLayout() {
               to="/virtual-try-on"
               className="relative hover:text-red-600 transition-colors uppercase flex items-center gap-1"
             >
-              VIRTUAL TRY-ON
+              THỬ ĐỒ ẢO
               <span className="absolute -top-3 -right-6 bg-red-600 text-[8px] text-white px-1 rounded-sm animate-pulse font-black">
                 AI
               </span>
@@ -120,7 +121,7 @@ export default function MainLayout() {
               to="/about"
               className="hover:text-gray-400 transition-colors uppercase"
             >
-              ABOUT US
+              GIỚI THIỆU
             </Link>
           </nav>
 
@@ -131,6 +132,9 @@ export default function MainLayout() {
             <Link to="/cart" title="Giỏ hàng">
               <ShoppingCart className="w-5 h-5 cursor-pointer hover:text-gray-400" />
             </Link>
+
+            {/* Thông báo */}
+            <NotificationBell />
 
             {!user ? (
               <Link to="/login" title="Đăng nhập">
@@ -245,59 +249,110 @@ export default function MainLayout() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t bg-[#fcfcfc] mt-auto">
-        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-12 text-sm">
-          <div>
-            <h3 className="font-bold mb-4 tracking-widest text-lg italic">
-              FORTUNATE
-            </h3>
-            <p className="text-gray-500 leading-relaxed">
-              Thương hiệu thời trang tối giản, tập trung vào chất lượng sản phẩm
-              và trải nghiệm mua sắm tích hợp công nghệ thử đồ ảo.
+      <footer className="bg-gray-50 text-gray-900 mt-auto border-t border-gray-100">
+
+
+        {/* Main footer grid */}
+        <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-12">
+          {/* Brand */}
+          <div className="md:col-span-1">
+            <h2 className="text-2xl font-black italic tracking-widest mb-4 text-black">FORTUNATE</h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
+              Thời trang tối giản, chất lượng cao — tích hợp công nghệ thử đồ ảo AI để mang lại trải nghiệm mua sắm hiện đại nhất.
             </p>
+            {/* Social icons */}
+            <div className="flex gap-3">
+              {[
+                { label: "FB", href: "#" },
+                { label: "IG", href: "#" },
+                { label: "TK", href: "#" },
+              ].map(({ label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  className="w-8 h-8 border border-gray-300 rounded-full flex items-center justify-center text-[10px] font-black text-gray-500 hover:border-black hover:text-black transition-all"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
           </div>
+
+          {/* Khám phá */}
           <div>
-            <h3 className="font-bold mb-4 uppercase tracking-widest text-xs">
-              Hỗ trợ khách hàng
+            <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-5">
+              Khám phá
             </h3>
-            <ul className="space-y-3 text-gray-500">
-              <li>
-                <Link to="/shipping" className="hover:text-black">
-                  Chính sách giao hàng
-                </Link>
-              </li>
-              <li>
-                <Link to="/returns" className="hover:text-black">
-                  Đổi trả & Bảo hành
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="hover:text-black">
-                  Liên hệ chúng tôi
-                </Link>
-              </li>
+            <ul className="space-y-3">
+              {[
+                { label: "Trang chủ", to: "/" },
+                { label: "Sản phẩm nổi bật", to: "/featured" },
+                { label: "Mua sắm", to: "/clothes" },
+                { label: "Thử đồ ảo AI", to: "/virtual-try-on" },
+                { label: "Giới thiệu", to: "/about" },
+              ].map(({ label, to }) => (
+                <li key={to}>
+                  <Link to={to} className="text-sm text-gray-500 hover:text-black transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
+
+          {/* Hỗ trợ */}
           <div>
-            <h3 className="font-bold mb-4 uppercase tracking-widest text-xs">
-              Về chúng tôi
+            <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-5">
+              Hỗ trợ
             </h3>
-            <ul className="space-y-3 text-gray-500">
-              <li>
-                <Link to="/about" className="hover:text-black">
-                  Câu chuyện thương hiệu
-                </Link>
-              </li>
-              <li>
-                <Link to="/stores" className="hover:text-black">
-                  Hệ thống cửa hàng
-                </Link>
-              </li>
+            <ul className="space-y-3">
+              {[
+                { label: "Chính sách giao hàng", to: "/shipping" },
+                { label: "Đổi trả & Bảo hành", to: "/returns" },
+                { label: "Hướng dẫn chọn size", to: "/size-guide" },
+                { label: "Liên hệ chúng tôi", to: "/contact" },
+              ].map(({ label, to }) => (
+                <li key={to}>
+                  <Link to={to} className="text-sm text-gray-500 hover:text-black transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Tài khoản */}
+          <div>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-5">
+              Tài khoản
+            </h3>
+            <ul className="space-y-3">
+              {[
+                { label: "Đăng nhập", to: "/login" },
+                { label: "Đơn hàng của tôi", to: "/my-orders" },
+                { label: "Danh sách yêu thích", to: "/wishlist" },
+                { label: "Cài đặt hồ sơ", to: "/profile" },
+              ].map(({ label, to }) => (
+                <li key={to}>
+                  <Link to={to} className="text-sm text-gray-500 hover:text-black transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
-        <div className="text-center text-[10px] text-gray-400 py-6 border-t tracking-[0.2em] uppercase">
-          © 2026 FORTUNATE CLOTHING. All rights reserved.
+
+        {/* Bottom bar */}
+        <div className="border-t border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-2">
+            <p className="text-[10px] text-gray-400 tracking-[0.2em] uppercase">
+              © 2026 FORTUNATE CLOTHING. All rights reserved.
+            </p>
+            <p className="text-[10px] text-gray-400 tracking-widest uppercase">
+              Được xây dựng với ♥ — Luận văn tốt nghiệp 2026
+            </p>
+          </div>
         </div>
       </footer>
     </div>

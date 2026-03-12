@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import api from "../apis/axiosConfig";
 import toast from "react-hot-toast";
 
@@ -44,6 +44,10 @@ export default function Profile() {
     hip: "",
   });
   const [bodySaving, setBodySaving] = useState(false);
+
+  // Trạng thái upload avatar
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef(null);
 
   // ── Lấy thông tin profile ──────────────────────────────────────────────────
   useEffect(() => {
@@ -115,6 +119,36 @@ export default function Profile() {
     }
   };
 
+  // ── Upload avatar ─────────────────────────────────────────────────────────────────
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Kiểm tra kích thước file (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ảnh quá lớn! Vui lòng chọn ảnh dưới 5MB");
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const res = await api.post("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      // Cập nhật avatar trong state — không cần fetch lại
+      setProfile((prev) => ({ ...prev, avatar: res.data.data.avatar }));
+      toast.success("Đã cập nhật ảnh đại diện!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi upload ảnh");
+    } finally {
+      setAvatarUploading(false);
+      // Reset input để có thể chọn cùng file lần sau
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
   // ── Loading / Error States ─────────────────────────────────────────────────
   if (loading)
     return (
@@ -132,8 +166,42 @@ export default function Profile() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-6 mb-10 border-b pb-8">
         <div className="flex items-center gap-6">
-          <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center text-4xl font-bold uppercase shadow-lg">
-            {profile?.name?.charAt(0) || "U"}
+          {/* Avatar: click để đổi ảnh */}
+          <div className="relative group cursor-pointer" onClick={() => !avatarUploading && avatarInputRef.current?.click()}>
+            {profile?.avatar ? (
+              <img
+                src={profile.avatar}
+                alt={profile.name}
+                className="w-24 h-24 rounded-full object-cover shadow-lg border-2 border-gray-200"
+              />
+            ) : (
+              <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center text-4xl font-bold uppercase shadow-lg">
+                {profile?.name?.charAt(0) || "U"}
+              </div>
+            )}
+            {/* Overlay khi hover */}
+            <div className={`absolute inset-0 rounded-full flex items-center justify-center transition-all duration-200 ${
+              avatarUploading
+                ? "bg-black/60"
+                : "bg-black/0 group-hover:bg-black/50"
+            }`}>
+              {avatarUploading ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" />
+              ) : (
+                <svg className="w-7 h-7 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              )}
+            </div>
+            {/* Input file ẩn */}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
           <div>
             <h1 className="text-4xl font-black tracking-tighter uppercase italic">

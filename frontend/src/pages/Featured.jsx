@@ -100,50 +100,73 @@ export default function Featured() {
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-20">
           {products.length > 0 ? (
-            products.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.slug}`} // Chuyển hướng tới trang chi tiết dựa vào slug
-                className="group flex flex-col"
-              >
-                {/* KHUNG ẢNH */}
-                <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#fcfcfc] mb-6 flex items-center justify-center border border-gray-50 shadow-sm transition-all duration-500 group-hover:shadow-xl">
-                  {/* Tag HOT theo lượt wishlists */}
-                  <div className="absolute top-4 left-4 z-10 bg-black text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest italic shadow-lg flex items-center gap-1">
-                    <Star className="w-2 h-2 fill-yellow-400 text-yellow-400" />
-                    Hot Trend
+            products.map((product) => {
+              const totalStock =
+                product.variants?.reduce(
+                  (sum, v) => sum + (v.stock || 0),
+                  0,
+                ) || 0;
+              const isSoldOut = totalStock <= 0;
+
+              return (
+                <Link
+                  key={product.id}
+                  to={`/product/${product.slug}`} // Chuyển hướng tới trang chi tiết dựa vào slug
+                  className="group flex flex-col"
+                >
+                  {/* KHUNG ẢNH */}
+                  <div
+                    className={`relative aspect-[3/4] w-full overflow-hidden bg-[#fcfcfc] mb-6 flex items-center justify-center border border-gray-50 shadow-sm transition-all duration-500 group-hover:shadow-xl ${
+                      isSoldOut ? "opacity-40 grayscale" : ""
+                    }`}
+                  >
+                    {/* Tag HOT theo lượt wishlists */}
+                    <div className="absolute top-4 left-4 z-10 bg-black text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest italic shadow-lg flex items-center gap-1">
+                      <Star className="w-2 h-2 fill-yellow-400 text-yellow-400" />
+                      Hot Trend
+                    </div>
+
+                    {/* Lượt yêu thích */}
+                    <div className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-black shadow-sm border border-gray-100">
+                      <Star className="w-2.5 h-2.5 fill-black text-black" />
+                      {product._count?.wishlists || 0}
+                    </div>
+
+                    {isSoldOut && (
+                      <div className="absolute bottom-4 left-4 z-10 bg-white text-black px-2 py-1 text-[8px] font-black uppercase tracking-widest border border-black shadow-md">
+                        Hết hàng
+                      </div>
+                    )}
+
+                    <img
+                      src={
+                        product.images?.[0] ||
+                        "https://via.placeholder.com/600x800"
+                      }
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/600x800?text=No+Image";
+                      }}
+                      alt={product.name}
+                      className="w-full h-full object-contain mix-blend-multiply transition-transform duration-1000 ease-in-out group-hover:scale-110"
+                    />
                   </div>
 
-                  {/* Lượt yêu thích */}
-                  <div className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-black shadow-sm border border-gray-100">
-                    <Star className="w-2.5 h-2.5 fill-black text-black" />
-                    {product._count?.wishlists || 0}
+                  {/* THÔNG TIN */}
+                  <div className="space-y-2">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.15em] text-black group-hover:text-red-600 transition-colors line-clamp-2 leading-relaxed">
+                      {product.name}
+                    </h3>
+                    <p className="text-[14px] font-black text-gray-900 italic tracking-tighter">
+                      {(product.variants?.[0]?.price || 0).toLocaleString(
+                        "vi-VN",
+                      )}{" "}
+                      VNĐ
+                    </p>
                   </div>
-
-                  <img
-                    src={
-                      product.images?.[0] ||
-                      "https://via.placeholder.com/600x800"
-                    }
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/600x800?text=No+Image";
-                    }}
-                    alt={product.name}
-                    className="w-full h-full object-contain mix-blend-multiply transition-transform duration-1000 ease-in-out group-hover:scale-110"
-                  />
-                </div>
-
-                {/* THÔNG TIN */}
-                <div className="space-y-2">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.15em] text-black group-hover:text-red-600 transition-colors line-clamp-2 leading-relaxed">
-                    {product.name}
-                  </h3>
-                  <p className="text-[14px] font-black text-gray-900 italic tracking-tighter">
-                    {(product.variants?.[0]?.price || 0).toLocaleString("vi-VN")} VNĐ
-                  </p>
-                </div>
-              </Link>
-            ))
+                </Link>
+              );
+            })
           ) : (
             <div className="col-span-full py-40 text-center border-2 border-dashed border-gray-100 rounded-3xl">
               <p className="text-gray-400 uppercase tracking-[0.4em] text-[11px] font-black italic">

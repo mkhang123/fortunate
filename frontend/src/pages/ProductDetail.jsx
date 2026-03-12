@@ -303,7 +303,7 @@ export default function ProductDetail() {
                   className={`text-[10px] font-bold uppercase ${selectedVariant ? "text-green-600" : "text-red-500"}`}
                 >
                   {selectedVariant
-                    ? `✓ Đã chọn Size ${selectedVariant.size}`
+                    ? `✓ Đã chọn Size ${selectedVariant.size.toUpperCase()}`
                     : "⚠ Vui lòng chọn size"}
                 </p>
               </div>
@@ -327,7 +327,7 @@ export default function ProductDetail() {
                     className={`relative h-16 flex flex-col items-center justify-center rounded-2xl border-2 transition-all duration-300 ${isSelected ? "border-black bg-black text-white shadow-xl scale-105" : "border-gray-200 bg-white text-black hover:border-black"} ${isOutOfStock ? "opacity-20 cursor-not-allowed grayscale" : "cursor-pointer active:scale-90"}`}
                   >
                     <span className="text-sm font-black uppercase">
-                      {variant.size}
+                      {variant.size.toUpperCase()}
                     </span>
                     {isSelected && (
                       <div className="absolute -top-2 -right-2 bg-red-600 rounded-full p-1 shadow-lg">
