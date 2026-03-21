@@ -12,5 +12,6 @@ router.use(roleMiddleware(["ADMIN"]));
 
 // GET /api/admin/dashboard
 router.get("/", asyncHandler(DashboardController.getDashboard));
+router.get("/vton-sessions", asyncHandler(DashboardController.getVtonSessions));
 
 export default router;

@@ -176,6 +176,7 @@ class OrderService {
      */
     static async updateOrderStatus(orderId, status) {
         const order = await this.findById(orderId);
+        const previousStatus = order.status;
 
         // Validate status transitions
         const validStatuses = ["PENDING", "PAID", "SHIPPED", "COMPLETED", "CANCELLED"];
@@ -183,7 +184,35 @@ class OrderService {
             throw new BadRequestError("Invalid order status");
         }
 
-        const updated = await OrderRepository.updateOrderStatus(orderId, status);
+        // Khi đơn bị hủy trước khi giao/hoàn tất, trả lại kho theo các biến thể
+        // (hiện hệ thống trừ kho ngay khi tạo đơn)
+        let updated;
+        if (
+            status === "CANCELLED" &&
+            previousStatus !== "CANCELLED" &&
+            previousStatus !== "COMPLETED"
+        ) {
+            await prisma.$transaction(async (tx) => {
+                // Hoàn kho: cộng lại đúng số lượng đã trừ khi tạo đơn
+                for (const item of order.items || []) {
+                    const variantId = item.variantId ?? item.variant?.id;
+                    const quantity = item.quantity;
+                    if (!variantId || !quantity) continue;
+
+                    await tx.productVariant.update({
+                        where: { id: variantId },
+                        data: { stock: { increment: quantity } },
+                    });
+                }
+
+                updated = await tx.order.update({
+                    where: { id: orderId },
+                    data: { status },
+                });
+            });
+        } else {
+            updated = await OrderRepository.updateOrderStatus(orderId, status);
+        }
 
         // Gửi thông báo cho user theo trạng thái mới
         const notifyMap = {

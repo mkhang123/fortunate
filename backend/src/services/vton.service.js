@@ -52,16 +52,25 @@ class VTONService {
         outputUrl = uploadResult.secure_url;
         console.log('🎭 Mock result uploaded to Cloudinary:', outputUrl);
       } else {
+        console.log("🛠️ Result from AI target:", typeof result, result);
+        
         // Real mode: result có thể là URL hoặc Blob hoặc local path (Python)
-        if (typeof result === 'string' && result.startsWith('http')) {
+        // Xoay xở trường hợp result là mảng chứa url (Replicate cũ)
+        let finalResultToUpload = result;
+        if (Array.isArray(result) && result.length > 0) {
+            finalResultToUpload = result[0];
+        }
+
+        if (typeof finalResultToUpload === 'string' && finalResultToUpload.startsWith('http')) {
           // URL từ Replicate → upload lên Cloudinary
-          const uploadResult = await cloudinary.uploader.upload(result, {
+          console.log("☁️ Uploading to Cloudinary from URL:", finalResultToUpload);
+          const uploadResult = await cloudinary.uploader.upload(finalResultToUpload, {
             folder: 'fortunate/vton/results',
             resource_type: 'image',
           });
           outputUrl = uploadResult.secure_url;
           console.log('🚀 Replicate result uploaded to Cloudinary:', outputUrl);
-        } else if (result instanceof Blob) {
+        } else if (finalResultToUpload instanceof Blob) {
           // Blob từ Hugging Face → chuyển sang buffer → upload lên Cloudinary
           const arrayBuffer = await result.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);

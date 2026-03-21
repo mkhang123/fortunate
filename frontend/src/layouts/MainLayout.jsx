@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../apis/auth.api";
 import NotificationBell from "../components/NotificationBell";
+import ChatAssistant from "../components/ChatAssistant";
 import {
   User,
   Users,
@@ -244,8 +245,9 @@ export default function MainLayout() {
       </header>
 
       {/* CONTENT */}
-      <main className="flex-1">
+      <main className="flex-1 relative">
         <Outlet />
+        <ChatAssistant />
       </main>
 
       {/* FOOTER */}

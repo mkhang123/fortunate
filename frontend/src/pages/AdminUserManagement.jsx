@@ -36,6 +36,17 @@ export default function AdminUserManagement() {
     }
   };
 
+  // 3. Hàm xử lý chặn/mở chặn user
+  const handleToggleActive = async (userId, isActive) => {
+    try {
+      await api.put(`/users/active/${userId}`, { isActive });
+      toast.success(isActive ? "Đã mở chặn người dùng" : "Đã chặn người dùng");
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi khi cập nhật trạng thái người dùng");
+    }
+  };
+
   if (loading) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
 
   return (
@@ -51,6 +62,7 @@ export default function AdminUserManagement() {
               <th className="p-4 font-semibold text-gray-600">Email</th>
               <th className="p-4 font-semibold text-gray-600">Quyền hiện tại</th>
               <th className="p-4 font-semibold text-gray-600 text-center">Thay đổi quyền</th>
+              <th className="p-4 font-semibold text-gray-600 text-center">Chặn / Mở chặn</th>
             </tr>
           </thead>
           <tbody>
@@ -100,11 +112,28 @@ export default function AdminUserManagement() {
                       </div>
                     )}
                   </td>
+
+                  <td className="p-4 text-center">
+                    {user.role === "USER" ? (
+                      <button
+                        onClick={() => handleToggleActive(user.id, !user.isActive)}
+                        className={`px-3 py-1 text-xs rounded font-bold text-white ${
+                          user.isActive ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+                        }`}
+                      >
+                        {user.isActive ? "CHẶN" : "MỞ CHẶN"}
+                      </button>
+                    ) : (
+                      <span className="px-3 py-1 text-xs bg-gray-100 text-gray-400 rounded font-medium italic">
+                        Không áp dụng
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="p-8 text-center text-gray-400">Không có người dùng nào</td>
+                <td colSpan="6" className="p-8 text-center text-gray-400">Không có người dùng nào</td>
               </tr>
             )}
           </tbody>

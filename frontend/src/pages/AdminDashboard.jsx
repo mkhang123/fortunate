@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -46,12 +46,13 @@ ChartJS.register(
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 function Sidebar({ user, onLogout }) {
+    const location = useLocation();
     const navItems = [
-        { label: "Tổng quan", icon: LayoutDashboard, to: "/admin/dashboard", active: true },
+        { label: "Tổng quan", icon: LayoutDashboard, to: "/admin/dashboard" },
         { label: "Đơn hàng", icon: ShoppingBag, to: "/admin/orders" },
         { label: "Sản phẩm", icon: Package, to: "/admin/products" },
         { label: "Người dùng", icon: Users, to: "/admin/users" },
-        { label: "Virtual Try-On", icon: Shirt, to: "/admin/dashboard" },
+        { label: "Lịch sử thử đồ ảo", icon: Shirt, to: "/admin/vton-history" },
     ];
 
     return (
@@ -70,11 +71,13 @@ function Sidebar({ user, onLogout }) {
             <nav className="flex-1 py-4 flex flex-col gap-1 px-3">
                 {navItems.map((item) => {
                     const Icon = item.icon;
+                    const isActive = location.pathname === item.to;
+
                     return (
                         <Link
                             key={item.label}
                             to={item.to}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${item.active
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${isActive
                                 ? "bg-white text-black"
                                 : "text-white/60 hover:bg-white/10 hover:text-white"
                                 }`}

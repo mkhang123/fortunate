@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
-import productRoutes from "./routes/product.routes.js";
 import "dotenv/config";
+import productRoutes from "./routes/product.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
@@ -14,6 +14,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import chatRoutes from "./routes/chat.routes.js";
 import passport from './config/passport.config.js';
 
 const app = express();
@@ -40,6 +41,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/products/:productId/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use("/api/chat", chatRoutes);
 
 
 // Global error handling middleware

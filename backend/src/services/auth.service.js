@@ -38,6 +38,11 @@ export const login = async (email, password) => {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new Error('Tài khoản không tồn tại');
 
+  // Admin chặn user (isActive=false) => không cho đăng nhập
+  if (user.isActive === false) {
+    throw Object.assign(new Error('Tài khoản của bạn đã bị chặn'), { statusCode: 403 });
+  }
+
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error('Mật khẩu không chính xác');
 
@@ -92,6 +97,10 @@ export const logout = async (token) => {
 
 export const googleLogin = async (googleUser) => {
   // googleUser là user object từ Prisma (passport đã tìm/tạo sẵn)
+  if (googleUser?.isActive === false) {
+    throw Object.assign(new Error('Tài khoản của bạn đã bị chặn'), { statusCode: 403 });
+  }
+
   const { accessToken, refreshToken } = generateTokens(googleUser.id, googleUser.role);
 
   // Lưu refreshToken vào DB

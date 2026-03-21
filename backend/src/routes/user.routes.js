@@ -3,6 +3,7 @@ import {
   getProfile,
   getAllUsers,
   updateUserRole,
+  updateUserActive,
   updateProfile,
   updateBodyProfile,
   updateAvatar,
@@ -21,6 +22,9 @@ router.get("/all", authMiddleware, roleMiddleware("ADMIN"), getAllUsers);
 
 // Admin: thay đổi role user
 router.put("/role/:id", authMiddleware, roleMiddleware("ADMIN"), updateUserRole);
+
+// Admin: chặn/mở chặn user
+router.put("/active/:id", authMiddleware, roleMiddleware("ADMIN"), updateUserActive);
 
 // Cập nhật thông tin cơ bản (name, phone)
 router.put("/me", authMiddleware, updateProfile);

@@ -3,14 +3,26 @@ import { client } from "@gradio/client";
 import fs from "fs";
 import path from "path";
 import axios from "axios";
+import sharp from "sharp";
 
 class VTONAIService {
   constructor() {
     this.mode = process.env.VTON_MODE || "mock";
 
-    // Replicate initialization
+    // Replicate initialization với Custom Fetch để chống lỗi Timeout (fetch failed) khi cold-boot
+    // Mặc định Node.js sẽ ngắt mạng sau khoản 5p, IDM-VTON lúc warmup có thể tốn hơn 5p
+    const customFetch = (url, options) => {
+      // 10 minutes timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000); 
+      
+      return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timeoutId));
+    };
+
     this.replicate = new Replicate({
       auth: process.env.REPLICATE_API_TOKEN,
+      fetch: customFetch
     });
     this.replicateModelVersion =
       process.env.VTON_MODEL_REPLICATE ||
@@ -203,17 +215,21 @@ class VTONAIService {
    */
   async _generateReplicate(personImagePath, garmentImagePath) {
     try {
-      const personImageData = await this.fileToDataURL(personImagePath);
-      const garmentImageData = await this.fileToDataURL(garmentImagePath);
+      // Bật chế độ resize (true) để chuẩn hóa ảnh về 768x1024 trước khi gọi Replicate
+      const personImageData = await this.fileToDataURL(personImagePath, true);
+      const garmentImageData = await this.fileToDataURL(garmentImagePath, true);
+
+      // Lấy loại áo hoặc mô tả (tạm thời hardcode là short sleeve t-shirt, nhưng nên dynmaic sau này)
+      const garmentDescription = "Short sleeve shirt, t-shirt, top";
 
       const output = await this.replicate.run(this.replicateModelVersion, {
         input: {
           human_img: personImageData,
           garm_img: garmentImageData,
-          garment_des: "clothing item",
+          garment_des: garmentDescription, // Đưa mô tả chi tiết để tránh ra áo dài tay
           is_checked: true,
-          is_checked_crop: false,
-          denoise_steps: 30,
+          is_checked_crop: false, // Để AI tự cắt theo thông số tốt nhất nếu cần
+          denoise_steps: 30, // 30 là chuẩn, giúp áo bám sát hơn
           seed: 42,
         },
       });
@@ -273,10 +289,55 @@ class VTONAIService {
     }
   }
 
-  async fileToDataURL(filePath) {
-    const fileBuffer = fs.readFileSync(filePath);
+  // Cập nhật để hỗ trợ cả đường dẫn local và URL (thường là Cloudinary)
+  async fileToDataURL(filePathOrUrl, resize = false) {
+    let fileBuffer;
+    let mimeType;
+
+    try {
+      if (filePathOrUrl.startsWith('http://') || filePathOrUrl.startsWith('https://')) {
+        // Nếu là URL, tải hình ảnh bằng axios
+        const response = await axios({
+          url: filePathOrUrl,
+          method: 'GET',
+          responseType: 'arraybuffer'
+        });
+        fileBuffer = Buffer.from(response.data);
+        mimeType = response.headers['content-type'] || 'image/jpeg';
+      } else {
+        // Nếu là file local
+        fileBuffer = fs.readFileSync(filePathOrUrl);
+        mimeType = this.getMimeType(filePathOrUrl);
+      }
+    } catch (err) {
+      console.error(`Lỗi khi đọc file/url ${filePathOrUrl}:`, err);
+      throw new Error(`Không thể đọc ảnh đầu vào: ${err.message}`);
+    }
+
+    // Tạm thời loại bỏ việc tự động resize bằng sharp theo yêu cầu
+    // vì nó bóp méo ảnh và không giữ đúng bố cục gốc.
+    // Nếu sau này API Replicate báo lỗi kích thước, ta có thể
+    // quay lại resize nhưng với sharp format giữ đúng tỉ lệ.
+    /*
+    if (resize) {
+      try {
+        fileBuffer = await sharp(fileBuffer)
+          .resize({
+            width: 768,
+            height: 1024,
+            fit: 'contain', // Thu nhỏ để vừa khung, phần thừa bù màu nền
+            background: { r: 255, g: 255, b: 255, alpha: 1 } // Viền trắng
+          })
+          .jpeg({ quality: 90 }) 
+          .toBuffer();
+        mimeType = "image/jpeg";
+      } catch (err) {
+        console.error("Lỗi khi resize ảnh với sharp:", err);
+      }
+    }
+    */
+
     const base64 = fileBuffer.toString("base64");
-    const mimeType = this.getMimeType(filePath);
     return `data:${mimeType};base64,${base64}`;
   }
 

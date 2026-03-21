@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { loginUser } from "../apis/auth.api";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -8,6 +8,20 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hiển thị toast khi backend redirect về /login?error=...
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const error = params.get("error");
+    if (!error) return;
+
+    if (error === "account_blocked") {
+      toast.error("Tài khoản của bạn đã bị chặn");
+    } else if (error === "google_login_failed") {
+      toast.error("Đăng nhập Google thất bại. Vui lòng thử lại!");
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

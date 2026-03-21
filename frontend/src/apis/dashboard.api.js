@@ -4,3 +4,7 @@ import api from './axiosConfig';
 export const getDashboardStats = async () => {
     return await api.get('/admin/dashboard');
 };
+
+export const getAdminVtonSessions = async (params) => {
+    return await api.get('/admin/dashboard/vton-sessions', { params });
+};

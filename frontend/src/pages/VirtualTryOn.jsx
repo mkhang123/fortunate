@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Smartphone, Upload, RotateCcw, Download, Info, Plus } from 'lucide-react';
 import { vtonAPI } from '../apis/vton.api';
-import VtonAdminConfig from '../components/VtonAdminConfig';
 
 export default function VirtualTryOn() {
   const location = useLocation();
@@ -31,8 +30,7 @@ export default function VirtualTryOn() {
   const [personImgSize, setPersonImgSize] = useState(null);
   const personImgRef = useRef(null);
 
-
-  // Danh sách sản phẩm mẫu từ hệ thống
+  // Danh sách sản phẩm mẫu từ hệ thống (chỉ áo)
   const clothesToTry = [
     { id: 1, name: "Basic White Tee", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80" },
     { id: 2, name: "Black Hoodie", image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80" },
@@ -60,7 +58,7 @@ export default function VirtualTryOn() {
         id: 'custom-' + Date.now(),
         name: "Đồ bạn tải lên",
         image: imageUrl,
-        isCustom: true
+        isCustom: true,
       };
       setCustomProductImage(customItem);
       setSelectedProduct(customItem); // Tự động chọn luôn sau khi tải
@@ -96,7 +94,11 @@ export default function VirtualTryOn() {
       // Hiển thị kết quả
       if (result.success && result.data.outputImage) {
         // Construct URL to result image
-        const resultImageUrl = `http://localhost:4000/${result.data.outputImage.replace(/\\/g, '/')}`;
+        let resultImageUrl = result.data.outputImage;
+        // Chỉ nối localhost nếu trả về đường dẫn tương đối (file lưu trên ổ cứng local)
+        if (!resultImageUrl.startsWith('http')) {
+          resultImageUrl = `http://localhost:4000/${resultImageUrl.replace(/\\/g, '/')}`;
+        }
         setResultImage(resultImageUrl);
       } else {
         throw new Error('Không nhận được kết quả từ server');
@@ -107,6 +109,20 @@ export default function VirtualTryOn() {
       setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi xử lý');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleDownloadResult = () => {
+    if (!resultImage) return;
+    try {
+      const link = document.createElement('a');
+      link.href = resultImage;
+      link.download = 'virtual-try-on-result.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      window.open(resultImage, '_blank');
     }
   };
 
@@ -165,9 +181,6 @@ export default function VirtualTryOn() {
               Lưu ý: Ảnh rõ nét, đứng thẳng sẽ giúp AI ghép đồ đẹp hơn.
             </p>
           </div>
-
-          {/* Panel cấu hình Colab — chỉ hiện với Admin */}
-          {isAdmin && <VtonAdminConfig />}
         </div>
 
         {/* CỘT 2: PHÒNG THAY ĐỒ (KẾT QUẢ AI) */}
@@ -195,12 +208,18 @@ export default function VirtualTryOn() {
               </div>
             ) : resultImage ? (
               <div
-                style={personImgSize ? { width: `${personImgSize.width}px` } : {}}
+                style={
+                  personImgSize
+                    ? {
+                        height: `${personImgSize.height}px`,
+                      }
+                    : {}
+                }
                 className="flex items-center justify-center"
               >
                 <img
                   src={resultImage}
-                  className="w-full object-contain animate-in fade-in zoom-in duration-700"
+                  className="h-full object-contain animate-in fade-in zoom-in duration-700"
                   alt="Result"
                 />
               </div>
@@ -281,7 +300,10 @@ export default function VirtualTryOn() {
           </div>
 
           {resultImage && (
-            <button className="w-full border-2 border-black py-3 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black hover:text-white transition-all">
+            <button
+              onClick={handleDownloadResult}
+              className="w-full border-2 border-black py-3 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black hover:text-white transition-all"
+            >
               <Download className="w-4 h-4" /> Tải kết quả HD
             </button>
           )}

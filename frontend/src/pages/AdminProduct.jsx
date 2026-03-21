@@ -15,7 +15,7 @@ export default function AdminProduct() {
     categoryId: "",
     price: "",
     stock: "",
-    color: "Basic",
+    style: "Basic",
     imageUrl: "",
     variants: [],
   });
@@ -89,13 +89,13 @@ export default function AdminProduct() {
         variants: isEditing
           ? formData.variants?.map((v) => ({
             id: v.id,
-            color: formData.color || "Basic",
+            color: formData.style || "Basic",
             size: v.size,
             price: Number(formData.price),
             stock: Number(formData.stock),
           })) || []
           : defaultSizes.map((s) => ({
-            color: formData.color || "Basic",
+            color: formData.style || "Basic",
             size: s,
             price: Number(formData.price),
             stock: Number(formData.stock),
@@ -136,7 +136,7 @@ export default function AdminProduct() {
       categoryId: p.categoryId,
       price: p.price || p.variants?.[0]?.price || "",
       stock: p.variants?.[0]?.stock || "",
-      color: p.variants?.[0]?.color || "Basic",
+      style: p.variants?.[0]?.color || "Basic",
       imageUrl: existingImage,
       variants: p.variants || [],
     });
@@ -152,7 +152,7 @@ export default function AdminProduct() {
       categoryId: categories[0]?.id || "",
       price: "",
       stock: "",
-      color: "Basic",
+      style: "Basic",
       imageUrl: "",
       variants: [],
     });
@@ -243,17 +243,17 @@ export default function AdminProduct() {
         />
         <input
           type="number"
-          placeholder="Kho"
+          placeholder="Số lượng"
           value={formData.stock}
           className="border p-2 rounded"
           onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
           required
         />
         <input
-          placeholder="Màu (Basic, Black...)"
-          value={formData.color}
+          placeholder="Phong cách (ví dụ Basic, Street, Classic...)"
+          value={formData.style}
           className="border p-2 rounded"
-          onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, style: e.target.value })}
           required
         />
 

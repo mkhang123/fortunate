@@ -7,231 +7,202 @@ datasource db {
   url      = env("DB_URL")
 }
 
-// --- NGƯỜI DÙNG ---
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  password      String?   // null nếu user đăng nhập bằng Google
+  email         String                @unique
+  password      String?
   name          String?
-  phone         String?   
   avatar        String?
-  isActive      Boolean   @default(true)
-  role          Role      @default(USER)
-  googleId      String?   @unique // Google OAuth ID
-  refreshToken  String?   // Lưu refresh token hiện tại, null khi đăng xuất
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
+  role          Role                  @default(USER)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  id            Int                   @id @default(autoincrement())
+  isActive      Boolean               @default(true)
+  phone         String?
+  refreshToken  String?
+  googleId      String?               @unique
   addresses     Address[]
   cart          Cart?
+  notifications Notification[]
   orders        Order[]
   reviews       Review[]
-  wishlist      Wishlist[]
   bodyProfile   UserBodyProfile?
   tryOns        VirtualTryOnSession[]
-  notifications Notification[]
+  wishlist      Wishlist[]
 
   @@index([email])
 }
 
-enum Role {
-  USER
-  ADMIN
-  CREATOR
-}
-
 model Address {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userName  String
   phone     String
   address   String
   city      String
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  userName  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isDefault])
 }
 
-// --- QUẢN LÝ SẢN PHẨM ---
 model Brand {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  slug        String    @unique
-  logo        String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
+  name      String    @unique
+  slug      String    @unique
+  logo      String?
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  isActive  Boolean   @default(true)
+  updatedAt DateTime  @updatedAt
+  products  Product[]
 }
 
 model Category {
-  id           Int        @id @default(autoincrement())
   name         String
-  slug         String     @unique
+  slug         String    @unique
+  id           Int       @id @default(autoincrement())
+  displayOrder Int       @default(0)
   image        String?
-  isActive     Boolean    @default(true)
-  displayOrder Int        @default(0)
+  isActive     Boolean   @default(true)
   products     Product[]
 
   @@index([slug])
 }
 
 model Product {
-  id          Int           @id @default(autoincrement())
-  name        String
-  slug        String        @unique
-  price       Float?        
-  status      ProductStatus @default(DRAFT)
-  images      String[]      
-  
-  brandId     Int?
-  brand       Brand?        @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  categoryId  Int
-  category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  variants  ProductVariant[]
-  reviews   Review[]
-  wishlists Wishlist[]
+  name       String
+  slug       String           @unique
+  status     ProductStatus    @default(DRAFT)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  id         Int              @id @default(autoincrement())
+  brandId    Int?
+  categoryId Int
+  images     String[]
+  price      Float?
+  brand      Brand?           @relation(fields: [brandId], references: [id])
+  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  variants   ProductVariant[]
+  reviews    Review[]
+  wishlists  Wishlist[]
 
   @@index([categoryId, status])
   @@index([brandId])
 }
 
-enum ProductStatus {
-  DRAFT
-  PUBLISHED
-  OUT_OF_STOCK
-  ARCHIVED
-}
-
 model ProductVariant {
-  id        Int     @id @default(autoincrement())
-  productId Int
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
-  color          String
-  size           String
-  price          Float 
-  stock          Int     @default(0)
-
-  measurement ProductMeasurement?
+  color       String
+  size        String
+  price       Float
+  stock       Int                   @default(0)
+  id          Int                   @id @default(autoincrement())
+  productId   Int
   cartItems   CartItem[]
   orderItems  OrderItem[]
+  measurement ProductMeasurement?
+  product     Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
   tryOns      VirtualTryOnSession[]
 
   @@unique([productId, color, size])
   @@index([productId])
 }
 
-// --- GIỎ HÀNG & ĐƠN HÀNG ---
-
 model Cart {
   id        Int        @id @default(autoincrement())
   userId    Int        @unique
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
 }
 
 model CartItem {
+  quantity  Int
   id        Int            @id @default(autoincrement())
   cartId    Int
   variantId Int
+  updatedAt DateTime       @default(now()) @updatedAt
   cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  quantity  Int
-  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([cartId, variantId])
 }
 
 model Order {
-  id                  Int         @id @default(autoincrement())
-  userId              Int
-  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status              OrderStatus @default(PENDING)
-  
-  receiverName        String?     
-  receiverPhone       String?
-  receiverEmail       String?     
-  shippingAddress     String
-  city                String?    
-  
-  trackingNumber      String?
-  notes               String?
-  total               Float
-  createdAt           DateTime    @default(now())
-
-  items               OrderItem[]
-  payment             Payment?
+  status          OrderStatus @default(PENDING)
+  total           Float
+  createdAt       DateTime    @default(now())
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  notes           String?
+  receiverEmail   String?
+  receiverName    String?
+  receiverPhone   String?
+  shippingAddress String
+  trackingNumber  String?
+  city            String?
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items           OrderItem[]
+  payment         Payment?
 
   @@index([userId, status])
   @@index([createdAt])
 }
 
 model OrderItem {
+  price     Float
+  quantity  Int
   id        Int            @id @default(autoincrement())
   orderId   Int
   variantId Int
   order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  price     Float          // Snapshot giá lúc mua
-  quantity  Int
 }
 
 model Payment {
-  id                Int           @id @default(autoincrement())
-  orderId           Int           @unique
-  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   method            PaymentMethod @default(VNPAY)
   status            PaymentStatus @default(PENDING)
-  
-  txnRef            String?       @unique // VNPAY transaction reference
   vnp_TransactionNo String?
   vnp_ResponseCode  String?
   vnp_OrderInfo     String?
-  
   paidAt            DateTime?
   amount            Float
+  id                Int           @id @default(autoincrement())
+  orderId           Int           @unique
   metadata          Json?
+  txnRef            String?       @unique
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([txnRef])
 }
 
-// --- TƯƠNG TÁC ---
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
-  type      String?  
-  link      String?  
-  isRead    Boolean  @default(false)
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  link      String?
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  type      String?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
 }
 
 model Review {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  productId       Int
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  rating          Int
-  comment         String?
-  images          String[] 
-  verifiedPurchase Boolean @default(false)
-  createdAt       DateTime @default(now())
+  rating           Int
+  comment          String?
+  createdAt        DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  productId        Int
+  images           String[]
+  verifiedPurchase Boolean  @default(false)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([productId, rating])
@@ -241,71 +212,83 @@ model Wishlist {
   id        Int      @id @default(autoincrement())
   userId    Int
   productId Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   addedAt   DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([userId])
 }
 
-// --- VIRTUAL TRY-ON ---
 model UserBodyProfile {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unit      String    @default("cm")
   height    Float
   weight    Float
   chest     Float
   waist     Float
   hip       Float
-  bodyType  BodyType? // Body shape category
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  unit      String    @default("cm")
   updatedAt DateTime  @updatedAt
-}
-
-enum BodyType {
-  RECTANGLE         // Straight, athletic build
-  TRIANGLE          // Pear-shaped (wider hips)
-  INVERTED_TRIANGLE // V-shaped (wider shoulders)
-  HOURGLASS         // Balanced bust-waist-hip
-  OVAL              // Apple-shaped (fuller midsection)
+  bodyType  BodyType?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ProductMeasurement {
-  id        Int            @id @default(autoincrement())
-  variantId Int            @unique
-  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  unit      String         @default("cm")
   chest     Float?
   waist     Float?
   hip       Float?
   length    Float?
+  id        Int            @id @default(autoincrement())
+  variantId Int            @unique
+  unit      String         @default("cm")
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 }
 
 model AIModel {
-  id          Int                   @id @default(autoincrement())
   name        String
   version     String
   description String?
+  id          Int                   @id @default(autoincrement())
   sessions    VirtualTryOnSession[]
 }
 
 model VirtualTryOnSession {
-  id             Int            @id @default(autoincrement())
+  inputImage     String
+  outputImage    String
+  createdAt      DateTime        @default(now())
+  id             Int             @id @default(autoincrement())
   userId         Int
   variantId      Int?
   aiModelId      Int?
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  variant        ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  aiModel        AIModel?        @relation(fields: [aiModelId], references: [id], onDelete: SetNull)
-  inputImage     String
-  outputImage    String
-  status         String         @default("COMPLETED") 
-  processingTime Int?           
-  createdAt      DateTime       @default(now())
+  processingTime Int?
+  status         String          @default("COMPLETED")
+  aiModel        AIModel?        @relation(fields: [aiModelId], references: [id])
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variant        ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@index([userId, createdAt])
+}
+
+enum Role {
+  USER
+  ADMIN
+  CREATOR
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  OUT_OF_STOCK
+  ARCHIVED
+}
+
+enum BodyType {
+  RECTANGLE
+  TRIANGLE
+  INVERTED_TRIANGLE
+  HOURGLASS
+  OVAL
 }
 
 enum OrderStatus {

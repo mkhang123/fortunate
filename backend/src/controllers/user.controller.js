@@ -44,6 +44,27 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
+// Admin: chặn/mở chặn user (theo cờ isActive)
+export const updateUserActive = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({ success: false, message: "isActive phải là boolean" });
+    }
+
+    const result = await userService.setUserActive(id, isActive);
+    res.json({
+      success: true,
+      message: isActive ? "Đã mở chặn người dùng" : "Đã chặn người dùng",
+      data: result,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+
 // Cập nhật thông tin cơ bản: name, phone
 export const updateProfile = async (req, res) => {
   try {

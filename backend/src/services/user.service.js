@@ -31,6 +31,25 @@ class UserService {
     return await userRepository.updateRole(userId, newRole);
   }
 
+  // Admin: chặn/mở chặn user theo cờ isActive
+  async setUserActive(userId, isActive) {
+    const user = await userRepository.getUserProfile(userId);
+    if (!user) {
+      const error = new Error("Người dùng không tồn tại");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Chỉ chặn tài khoản role USER theo yêu cầu
+    if (user.role !== "USER") {
+      const error = new Error("Chỉ có thể chặn người dùng có role USER");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    return await userRepository.updateActive(userId, isActive);
+  }
+
   // Cập nhật thông tin cơ bản (name, phone)
   async updateProfile(userId, { name, phone }) {
     // name không được để rỗng

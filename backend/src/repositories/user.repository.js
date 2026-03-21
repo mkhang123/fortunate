@@ -20,6 +20,7 @@ class UserRepository {
         name: true,
         email: true,
         role: true,
+        isActive: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -32,6 +33,16 @@ class UserRepository {
       where: { id },
       data: { role },
       select: { id: true, name: true, role: true },
+    });
+  }
+
+  // Admin: cập nhật trạng thái hoạt động của user (chặn/mở chặn)
+  async updateActive(userId, isActive) {
+    const id = Number(userId);
+    return await prisma.user.update({
+      where: { id },
+      data: { isActive },
+      select: { id: true, name: true, email: true, role: true, isActive: true },
     });
   }
 

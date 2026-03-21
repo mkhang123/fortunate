@@ -81,6 +81,11 @@ export const googleCallback = async (req, res) => {
       `${process.env.FRONTEND_URL}/auth/google/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&user=${userEncoded}`,
     );
   } catch (error) {
+    // Nếu tài khoản bị admin chặn, redirect về trang login để hiển thị toast đúng message
+    if (error?.statusCode === 403) {
+      res.redirect(`${process.env.FRONTEND_URL}/login?error=account_blocked`);
+      return;
+    }
     res.redirect(`${process.env.FRONTEND_URL}/login?error=google_login_failed`);
   }
 };

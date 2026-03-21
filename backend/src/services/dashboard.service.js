@@ -132,6 +132,52 @@ class DashboardService {
             })),
         };
     }
+
+    /**
+     * Lấy danh sách lịch sử thử đồ ảo cho admin
+     */
+    static async getVtonSessions(options = {}) {
+        const { page = 1, limit = 10, status, search } = options;
+        const skip = (page - 1) * limit;
+
+        const where = {};
+        if (status) where.status = status;
+        if (search) {
+            where.OR = [
+                { user: { name: { contains: search, mode: "insensitive" } } },
+                { user: { email: { contains: search, mode: "insensitive" } } },
+                { variant: { product: { name: { contains: search, mode: "insensitive" } } } },
+            ];
+        }
+
+        const [sessions, total] = await Promise.all([
+            prisma.virtualTryOnSession.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: "desc" },
+                include: {
+                    user: { select: { id: true, name: true, email: true } },
+                    variant: {
+                        include: {
+                            product: { select: { name: true } },
+                        },
+                    },
+                },
+            }),
+            prisma.virtualTryOnSession.count({ where }),
+        ]);
+
+        return {
+            sessions,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
 }
 
 export default DashboardService;
