@@ -9,7 +9,7 @@ class ProductController {
   async create(req, res) {
     try {
       const validatedData = createProductSchema.parse(req.body);
-      const result = await productService.createNewProduct(validatedData);
+      const result = await productService.createNewProduct(validatedData, req.user);
 
       return res.status(201).json({
         success: true,
@@ -53,7 +53,7 @@ class ProductController {
   async getAll(req, res) {
     try {
       // CẬP NHẬT: Thêm categorySlug để nhận từ URL (?categorySlug=...)
-      const { search, categoryId, categorySlug, status, sort } = req.query;
+      const { search, categoryId, categorySlug, status, sort, brand, style } = req.query;
 
       // Truyền tất cả filter vào service
       const products = await productService.getAllProducts({
@@ -62,6 +62,8 @@ class ProductController {
         categorySlug, // Thêm vào object truyền đi
         status,
         sort,
+        brand,
+        style,
       });
 
       return res.status(200).json({ success: true, data: products });
@@ -76,7 +78,7 @@ class ProductController {
     try {
       const { id } = req.params;
       const validatedData = updateProductSchema.parse(req.body);
-      const result = await productService.updateProduct(id, validatedData);
+      const result = await productService.updateProduct(id, validatedData, req.user);
 
       return res.status(200).json({
         success: true,
@@ -106,6 +108,40 @@ class ProductController {
       return res.status(error.statusCode || 500).json({
         success: false,
         message: error.message,
+      });
+    }
+  }
+
+  async approve(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await productService.approveProduct(id);
+      return res.status(200).json({
+        success: true,
+        message: "Duyệt sản phẩm thành công",
+        data: result,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || "Không thể duyệt sản phẩm",
+      });
+    }
+  }
+
+  async reject(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await productService.rejectProduct(id);
+      return res.status(200).json({
+        success: true,
+        message: "Đã từ chối sản phẩm",
+        data: result,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || "Không thể từ chối sản phẩm",
       });
     }
   }

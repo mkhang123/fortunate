@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../apis/auth.api";
 import NotificationBell from "../components/NotificationBell";
 import ChatAssistant from "../components/ChatAssistant";
+import api from "../apis/axiosConfig";
 import {
   User,
   Users,
@@ -18,6 +19,8 @@ import {
 export default function MainLayout() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isBrandHoverOpen, setIsBrandHoverOpen] = useState(false);
+  const [brands, setBrands] = useState([]);
 
   // Lấy thông tin user từ localStorage
   const user = JSON.parse(localStorage.getItem("user"));
@@ -39,23 +42,32 @@ export default function MainLayout() {
 
   const handleLogout = async () => {
     try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        // Vô hiệu hóa refreshToken trên server trước khi xóa local
-        await logoutUser(refreshToken);
-      }
+      await logoutUser();
     } catch (error) {
       // Vẫn tiếp tục logout dù API lỗi
       console.error("Logout API error:", error);
     } finally {
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
       setIsMenuOpen(false);
       navigate("/login");
       window.location.reload();
     }
   };
+
+  // ── Lấy danh sách thương hiệu dùng cho dropdown ───────────────────────────
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const res = await api.get("/brands");
+        setBrands(res.data?.data || []);
+      } catch (err) {
+        // Không chặn UI nếu lỗi brand
+        console.error("Lỗi tải thương hiệu:", err);
+      }
+    };
+
+    fetchBrands();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-gray-900">
@@ -94,7 +106,56 @@ export default function MainLayout() {
 
               {/* Dropdown Content */}
               <div className="absolute top-full left-0 w-64 bg-white border border-gray-100 shadow-xl py-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 mt-1">
-                {shopCategories.map((item, idx) => (
+                {/* Tất cả sản phẩm */}
+                {shopCategories.slice(0, 1).map((item, idx) => (
+                  <Link
+                    key={idx}
+                    to={item.path}
+                    className="block px-6 py-3 text-gray-600 hover:text-black hover:bg-gray-50 transition-colors text-xs font-semibold tracking-wide border-b border-gray-50"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+
+                {/* Thương hiệu (hover để hiện list) */}
+                <div className="relative group">
+                  <div
+                    onMouseEnter={() => setIsBrandHoverOpen(true)}
+                    onMouseLeave={() => setIsBrandHoverOpen(false)}
+                    className="block px-6 py-3 text-gray-600 hover:text-black hover:bg-gray-50 transition-colors text-xs font-semibold tracking-wide border-b border-gray-50 cursor-default"
+                  >
+                    THƯƠNG HIỆU
+                  </div>
+
+                  <div
+                    onMouseEnter={() => setIsBrandHoverOpen(true)}
+                    onMouseLeave={() => setIsBrandHoverOpen(false)}
+                    className={`absolute top-0 left-full w-72 bg-white border border-gray-100 shadow-xl rounded-lg py-2 transition-all duration-200 z-50 ${
+                      isBrandHoverOpen ? "opacity-100 visible" : "opacity-0 invisible"
+                    }`}
+                  >
+                    {brands.length === 0 ? (
+                      <div className="px-4 py-3 text-xs font-semibold text-gray-400">
+                        Đang tải...
+                      </div>
+                    ) : (
+                      brands.map((b) => (
+                        <Link
+                          key={b.id}
+                          to={`/clothes?brand=${encodeURIComponent(b.slug)}`}
+                          className="block px-4 py-2.5 text-xs font-semibold tracking-wide text-gray-600 hover:text-black hover:bg-gray-50 transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {b.name}
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Các nhóm áo/quần */}
+                {shopCategories.slice(1).map((item, idx) => (
                   <Link
                     key={idx}
                     to={item.path}

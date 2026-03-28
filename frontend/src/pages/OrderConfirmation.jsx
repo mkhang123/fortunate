@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import api from "../apis/axiosConfig";
 import {
     CheckCircle2,
@@ -17,17 +17,49 @@ import toast from "react-hot-toast";
 export default function OrderConfirmation() {
     const { orderId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
+    const user = JSON.parse(localStorage.getItem("user"));
 
     useEffect(() => {
         fetchOrder();
-    }, [orderId]);
+    }, [orderId, location.search]);
 
     const fetchOrder = async () => {
         try {
             setLoading(true);
-            const res = await api.get(`/orders/${orderId}`);
+            if (user) {
+                const res = await api.get(`/orders/${orderId}`);
+                setOrder(res.data.metadata);
+                return;
+            }
+
+            const params = new URLSearchParams(location.search);
+            const emailFromUrl = (params.get("email") || "").trim();
+            const phoneFromUrl = (params.get("phone") || "").trim();
+            const lookup = JSON.parse(localStorage.getItem("guestOrderLookup") || "{}");
+            const effectiveLookup = emailFromUrl && phoneFromUrl
+                ? { orderId, email: emailFromUrl, phone: phoneFromUrl }
+                : lookup;
+
+            if (
+                !effectiveLookup?.orderId ||
+                Number(effectiveLookup.orderId) !== Number(orderId) ||
+                !effectiveLookup?.email ||
+                !effectiveLookup?.phone
+            ) {
+                toast.error("Không thể xác thực đơn hàng khách");
+                navigate("/");
+                return;
+            }
+
+            const res = await api.get(`/orders/guest/${orderId}`, {
+                params: {
+                    email: effectiveLookup.email,
+                    phone: effectiveLookup.phone,
+                },
+            });
             setOrder(res.data.metadata);
         } catch (err) {
             console.error("Lỗi tải đơn hàng:", err);
@@ -249,10 +281,10 @@ export default function OrderConfirmation() {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-6">
                     <Link
-                        to="/my-orders"
+                        to={user ? "/my-orders" : "/"}
                         className="flex-1 bg-black text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-center hover:bg-gray-800 transition-all"
                     >
-                        Quản lý đơn hàng
+                        {user ? "Quản lý đơn hàng" : "Về trang chủ"}
                     </Link>
                     <Link
                         to="/clothes"

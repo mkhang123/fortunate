@@ -279,6 +279,7 @@ enum Role {
 enum ProductStatus {
   DRAFT
   PUBLISHED
+  REJECTED
   OUT_OF_STOCK
   ARCHIVED
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../apis/axiosConfig";
 import { reviewAPI } from "../apis/review.api";
@@ -15,6 +15,7 @@ import {
   Heart,
   Star,
   Send,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -32,8 +33,9 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState({ avgRating: 0, totalReviews: 0, ratingBreakdown: {} });
   const [eligibility, setEligibility] = useState({ canReview: false, hasPurchased: false, hasReviewed: false });
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', images: [] });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const reviewImageInputRef = useRef(null);
 
   // Lấy thông tin user từ localStorage để kiểm tra đăng nhập
   const user = JSON.parse(localStorage.getItem("user"));
@@ -124,13 +126,38 @@ export default function ProductDetail() {
           avgRating: Math.round(((prev.avgRating * prev.totalReviews + reviewForm.rating) / (prev.totalReviews + 1)) * 10) / 10,
         }));
         setEligibility(prev => ({ ...prev, canReview: false, hasReviewed: true }));
-        setReviewForm({ rating: 5, comment: '' });
+        setReviewForm({ rating: 5, comment: '', images: [] });
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Không thể gửi đánh giá');
     } finally {
       setSubmittingReview(false);
     }
+  };
+
+  const handleReviewImagesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const accepted = files.filter((file) => file.type.startsWith("image/"));
+    if (accepted.length !== files.length) {
+      toast.error("Chỉ hỗ trợ upload file ảnh");
+    }
+
+    const next = [...reviewForm.images, ...accepted].slice(0, 5);
+    if (next.length < reviewForm.images.length + accepted.length) {
+      toast.error("Tối đa 5 ảnh cho mỗi đánh giá");
+    }
+
+    setReviewForm((prev) => ({ ...prev, images: next }));
+    e.target.value = "";
+  };
+
+  const removeReviewImage = (idx) => {
+    setReviewForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== idx),
+    }));
   };
 
   // HÀM XỬ LÝ TOGGLE WISHLIST (YÊU THÍCH)
@@ -169,6 +196,38 @@ export default function ProductDetail() {
       return;
     }
 
+    if (!user) {
+      const raw = localStorage.getItem("guestCart");
+      const guestCart = raw ? JSON.parse(raw) : [];
+      const existing = guestCart.find((item) => item.variantId === selectedVariant.id);
+
+      if (existing) {
+        existing.quantity = Math.min(
+          existing.quantity + quantity,
+          selectedVariant.stock || existing.quantity + quantity,
+        );
+      } else {
+        guestCart.push({
+          id: `guest-${selectedVariant.id}`,
+          variantId: selectedVariant.id,
+          quantity,
+          variant: {
+            ...selectedVariant,
+            product: {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              images: product.images || [],
+            },
+          },
+        });
+      }
+
+      localStorage.setItem("guestCart", JSON.stringify(guestCart));
+      toast.success("Đã thêm vào giỏ hàng thành công!");
+      return;
+    }
+
     try {
       const res = await api.post("/cart/add", {
         variantId: selectedVariant.id,
@@ -179,9 +238,7 @@ export default function ProductDetail() {
         toast.success(`Đã thêm vào giỏ hàng thành công!`);
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Vui lòng đăng nhập để mua hàng",
-      );
+      toast.error(err.response?.data?.message || "Không thể thêm vào giỏ hàng");
     }
   };
 
@@ -470,6 +527,56 @@ export default function ProductDetail() {
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:border-black focus:outline-none transition-colors resize-none"
                 />
               </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
+                  Hình ảnh thực tế (tùy chọn, tối đa 5 ảnh)
+                </p>
+                <input
+                  ref={reviewImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleReviewImagesChange}
+                  className="hidden"
+                />
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => reviewImageInputRef.current?.click()}
+                    className="px-4 py-2 rounded-xl bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-colors"
+                  >
+                    Chọn hình ảnh
+                  </button>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    {reviewForm.images.length > 0
+                      ? `Đã chọn ${reviewForm.images.length}/5 ảnh`
+                      : "Chưa chọn ảnh"}
+                  </p>
+                </div>
+                {reviewForm.images.length > 0 && (
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mt-4">
+                    {reviewForm.images.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm"
+                      >
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`review-upload-${idx}`}
+                          className="w-full aspect-square object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeReviewImage(idx)}
+                          className="absolute top-1.5 right-1.5 bg-black/70 text-white rounded-full p-1 hover:bg-black"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button type="submit" disabled={submittingReview}
                 className="flex items-center gap-2 bg-black text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all disabled:opacity-50">
                 <Send className="w-4 h-4" />
@@ -532,6 +639,25 @@ export default function ProductDetail() {
                     </div>
                     {review.comment && (
                       <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
+                    )}
+                    {Array.isArray(review.images) && review.images.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                        {review.images.map((img, idx) => (
+                          <a
+                            key={`${img}-${idx}`}
+                            href={img}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm"
+                          >
+                            <img
+                              src={img}
+                              alt={`review-image-${idx}`}
+                              className="w-full aspect-square object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          </a>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>

@@ -9,6 +9,7 @@ import Accessory from "./pages/Accessory";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminProduct from "./pages/AdminProduct";
+import AdminProductForm from "./pages/AdminProductForm";
 import Profile from "./pages/Profile";
 import AdminUserManagement from "./pages/AdminUserManagement";
 import VirtualTryOn from "./pages/VirtualTryOn";
@@ -53,6 +54,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/products" element={<AdminProduct />} />
+          <Route path="/admin/products/form" element={<AdminProductForm />} />
+          <Route path="/admin/products/form/:id" element={<AdminProductForm />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin/users" element={<AdminUserManagement />} />
           <Route path="/virtual-try-on" element={<VirtualTryOn />} />

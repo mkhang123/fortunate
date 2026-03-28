@@ -66,6 +66,11 @@ export default function VirtualTryOn() {
   };
 
   const handleStartTryOn = async () => {
+    if (!currentUser) {
+      setError("Vui lòng đăng nhập để có thể thực hiện chức năng");
+      return;
+    }
+
     if (!userImageFile || !selectedProduct) {
       alert("Vui lòng tải ảnh cá nhân và chọn sản phẩm!");
       return;
@@ -106,7 +111,16 @@ export default function VirtualTryOn() {
 
     } catch (error) {
       console.error('Error in VTON:', error);
-      setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi xử lý');
+      const backendMessage = error.response?.data?.message || '';
+      const isAuthError =
+        error.response?.status === 401 ||
+        /không tìm thấy token|token/i.test(backendMessage);
+
+      setError(
+        isAuthError
+          ? "Vui lòng đăng nhập để có thể thực hiện chức năng"
+          : backendMessage || error.message || 'Có lỗi xảy ra khi xử lý'
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -185,7 +199,11 @@ export default function VirtualTryOn() {
 
         {/* CỘT 2: PHÒNG THAY ĐỒ (KẾT QUẢ AI) */}
         <div className="space-y-6">
-          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-center">Phòng thay đồ ảo</h2>
+          {/* Cùng hàng tiêu đề với cột 1 & 3 (badge 24px + gap-2) để khung ảnh bắt đầu cùng một đường */}
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 min-h-6">
+            <span className="w-6 h-6 shrink-0 rounded-full opacity-0 pointer-events-none" aria-hidden />
+            <span className="flex-1 text-center">Phòng thay đồ ảo</span>
+          </h2>
           <div className="relative bg-[#fdfdfd] rounded-sm overflow-hidden flex items-center justify-center border border-gray-100 shadow-inner">
             {isProcessing ? (
               <div className="text-center" style={{ minHeight: '280px' }}>

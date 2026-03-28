@@ -8,5 +8,13 @@ export const reviewAPI = {
     checkEligibility: (productId) => api.get(`/products/${productId}/reviews/eligibility`),
 
     // Tạo đánh giá mới
-    createReview: (productId, data) => api.post(`/products/${productId}/reviews`, data),
+    createReview: (productId, data) => {
+        const formData = new FormData();
+        formData.append("rating", String(data.rating));
+        formData.append("comment", data.comment || "");
+        (data.images || []).forEach((file) => {
+            formData.append("images", file);
+        });
+        return api.post(`/products/${productId}/reviews`, formData);
+    },
 };

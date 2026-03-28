@@ -30,8 +30,11 @@ class ReviewController {
             const { productId } = req.params;
             const userId = req.user.id;
             const { rating, comment } = req.body;
+            const images = Array.isArray(req.files)
+                ? req.files.map((file) => file.path).filter(Boolean)
+                : [];
 
-            const review = await reviewService.createReview(userId, productId, { rating, comment });
+            const review = await reviewService.createReview(userId, productId, { rating, comment, images });
             return res.status(201).json({ success: true, data: review, message: 'Đánh giá đã được gửi' });
         } catch (error) {
             return res.status(error.statusCode || 500).json({ success: false, message: error.message });

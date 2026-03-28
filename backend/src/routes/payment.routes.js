@@ -13,7 +13,6 @@ router.get("/methods", authMiddleware, PaymentController.getPaymentMethods);
 router.get("/statuses", authMiddleware, PaymentController.getPaymentStatuses);
 router.post(
     "/vnpay/create",
-    authMiddleware,
     PaymentController.createPaymentUrlToVNPay
 );
 router.get(

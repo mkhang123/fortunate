@@ -2,7 +2,9 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
 
 export const authMiddleware = async (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1];
+    const bearerToken = req.headers.authorization?.split(" ")[1];
+    const cookieToken = req.cookies?.accessToken;
+    const token = bearerToken || cookieToken;
     if (!token) return res.status(401).json({ message: "Không tìm thấy Token" });
 
     try {

@@ -3,6 +3,27 @@ import { Link } from 'react-router-dom';
 import { MoveRight, ArrowRight, Smartphone } from 'lucide-react';
 
 export default function MainDisplay() {
+  const styleCollections = [
+    {
+      name: "Basic",
+      image:
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80",
+      clothingTypes: ["Áo thun", "Áo sơ mi", "Quần dài", "Quần ngắn"],
+    },
+    {
+      name: "Street",
+      image:
+        "https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&q=80",
+      clothingTypes: ["Áo khoác", "Áo thun oversize", "Quần cargo", "Hoodie"],
+    },
+    {
+      name: "Sport",
+      image:
+        "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&q=80",
+      clothingTypes: ["Áo jersey", "Áo tank", "Quần short thể thao", "Quần jogger"],
+    },
+  ];
+
   return (
     <div className="bg-white">
       {/* 1. HERO SECTION - ĐÃ FIX CỨNG ẢNH TĨNH */}
@@ -29,48 +50,56 @@ export default function MainDisplay() {
         </div>
       </section>
 
-      {/* 2. COLLECTION GRID - DANH MỤC TĨNH */}
+      {/* 2. COLLECTION GRID - BỘ SƯU TẬP THEO PHONG CÁCH */}
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4 border-b border-gray-100 pb-8">
           <div>
             <h2 className="text-4xl font-black italic uppercase tracking-tighter">Collections</h2>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-2">Lựa chọn phong cách riêng của bạn</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-2">
+              Chọn bộ sưu tập theo phong cách thời trang
+            </p>
           </div>
           <Link to="/clothes" className="text-[11px] font-bold uppercase tracking-widest border-b-2 border-black pb-1 hover:pr-6 transition-all">
             Xem tất cả sản phẩm
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* Box 1: Áo Thun */}
-          <Link to="/clothes/ao-thun" className="relative h-[650px] overflow-hidden group rounded-sm">
-            <img 
-              src="https://images.unsplash.com/photo-1554568218-0f1715e72254?auto=format&fit=crop&q=80" 
-              className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-110" 
-              alt="T-Shirts Category"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-12 transition-all group-hover:from-black/80">
-              <h3 className="text-5xl font-black italic uppercase text-white mb-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">T-Shirts</h3>
-              <div className="flex items-center text-white text-[10px] font-black tracking-[0.3em] gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                KHÁM PHÁ NGAY <MoveRight className="w-4 h-4" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {styleCollections.map((collection) => (
+            <Link
+              key={collection.name}
+              to={`/clothes?style=${encodeURIComponent(collection.name)}`}
+              className="relative h-[520px] overflow-hidden group rounded-sm"
+            >
+              <img
+                src={collection.image}
+                className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-110"
+                alt={`${collection.name} Collection`}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex flex-col justify-end p-8 transition-all group-hover:from-black/85">
+                <h3 className="text-4xl font-black italic uppercase text-white mb-3 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                  {collection.name}
+                </h3>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-white/85 mb-4">
+                  {collection.clothingTypes.join(" • ")}
+                </p>
+                <div className="flex items-center text-white text-[10px] font-black tracking-[0.25em] gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  Khám phá ngay <MoveRight className="w-4 h-4" />
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          ))}
+        </div>
 
-          {/* Box 2: Áo Khoác */}
-          <Link to="/clothes/ao-khoac" className="relative h-[650px] overflow-hidden group rounded-sm">
-            <img 
-              src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80" 
-              className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-110" 
-              alt="Outerwear Category"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-12 transition-all group-hover:from-black/80">
-              <h3 className="text-5xl font-black italic uppercase text-white mb-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">Outerwears</h3>
-              <div className="flex items-center text-white text-[10px] font-black tracking-[0.3em] gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                KHÁM PHÁ NGAY <MoveRight className="w-4 h-4" />
-              </div>
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {styleCollections.map((collection) => (
+            <div key={`${collection.name}-tags`} className="border border-gray-100 rounded-lg p-4">
+              <h4 className="text-xs font-black uppercase tracking-widest mb-2">{collection.name}</h4>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                Gợi ý loại quần áo: {collection.clothingTypes.join(", ")}.
+              </p>
             </div>
-          </Link>
+          ))}
         </div>
       </section>
 

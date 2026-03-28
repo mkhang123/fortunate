@@ -1,5 +1,31 @@
 import * as authService from "../services/auth.service.js";
 
+const isProd = process.env.NODE_ENV === "production";
+
+const ACCESS_COOKIE = "accessToken";
+const REFRESH_COOKIE = "refreshToken";
+
+const accessCookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: "lax",
+  path: "/",
+  maxAge: 15 * 60 * 1000, // 15 minutes
+};
+
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: "lax",
+  path: "/",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
+function clearAuthCookies(res) {
+  res.clearCookie(ACCESS_COOKIE, { ...accessCookieOptions, maxAge: 0 });
+  res.clearCookie(REFRESH_COOKIE, { ...refreshCookieOptions, maxAge: 0 });
+}
+
 // ĐĂNG KÝ
 export const register = async (req, res) => {
   try {
@@ -13,7 +39,7 @@ export const register = async (req, res) => {
   }
 };
 
-// ĐĂNG NHẬP — Trả về accessToken (15 phút) + refreshToken (7 ngày)
+// ĐĂNG NHẬP — Set accessToken + refreshToken vào HttpOnly cookies
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -22,10 +48,11 @@ export const login = async (req, res) => {
       password,
     );
 
+    res.cookie(ACCESS_COOKIE, accessToken, accessCookieOptions);
+    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
+
     res.json({
       success: true,
-      accessToken,
-      refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -40,12 +67,14 @@ export const login = async (req, res) => {
   }
 };
 
-// LÀM MỚI ACCESS TOKEN — Dùng refreshToken còn hạn trong DB
+// LÀM MỚI ACCESS TOKEN — Dùng refreshToken trong cookie + DB
 export const refreshToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-    const { accessToken } = await authService.refresh(refreshToken);
-    res.json({ success: true, accessToken });
+    const token = req.cookies?.[REFRESH_COOKIE];
+    const { accessToken } = await authService.refresh(token);
+
+    res.cookie(ACCESS_COOKIE, accessToken, accessCookieOptions);
+    res.json({ success: true });
   } catch (error) {
     res
       .status(error.statusCode || 403)
@@ -53,13 +82,18 @@ export const refreshToken = async (req, res) => {
   }
 };
 
-// ĐĂNG XUẤT — Xóa refreshToken khỏi DB
+// ĐĂNG XUẤT — Xóa refreshToken khỏi DB + clear cookies
 export const logout = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-    await authService.logout(refreshToken);
+    const token = req.cookies?.[REFRESH_COOKIE];
+    if (token) {
+      await authService.logout(token);
+    }
+    clearAuthCookies(res);
     res.json({ success: true, message: "Đăng xuất thành công" });
   } catch (error) {
+    // Dù lỗi, vẫn clear cookie để client không giữ session "ma"
+    clearAuthCookies(res);
     res
       .status(error.statusCode || 500)
       .json({ success: false, message: error.message });
@@ -73,12 +107,15 @@ export const googleCallback = async (req, res) => {
       req.user,
     );
 
+    res.cookie(ACCESS_COOKIE, accessToken, accessCookieOptions);
+    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
+
     // Encode user thành JSON string rồi truyền qua query string
     const userEncoded = encodeURIComponent(JSON.stringify(user));
 
-    // Redirect về frontend kèm token
+    // Redirect về frontend (cookie đã được set)
     res.redirect(
-      `${process.env.FRONTEND_URL}/auth/google/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&user=${userEncoded}`,
+      `${process.env.FRONTEND_URL}/auth/google/callback?user=${userEncoded}`,
     );
   } catch (error) {
     // Nếu tài khoản bị admin chặn, redirect về trang login để hiển thị toast đúng message

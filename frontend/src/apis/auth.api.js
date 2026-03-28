@@ -11,11 +11,11 @@ export const loginUser = async (data) => {
 };
 
 // Làm mới accessToken bằng refreshToken
-export const refreshAccessToken = async (refreshToken) => {
-    return await api.post('/auth/refresh', { refreshToken });
+export const refreshAccessToken = async () => {
+    return await api.post('/auth/refresh');
 };
 
 // Đăng xuất - vô hiệu hóa refreshToken trên server
-export const logoutUser = async (refreshToken) => {
-    return await api.post('/auth/logout', { refreshToken });
+export const logoutUser = async () => {
+    return await api.post('/auth/logout');
 };

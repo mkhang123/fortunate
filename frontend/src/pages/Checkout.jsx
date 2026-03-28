@@ -16,6 +16,7 @@ export default function Checkout() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem("user"));
 
     // Form state
     const [formData, setFormData] = useState({
@@ -34,6 +35,26 @@ export default function Checkout() {
     }, []);
 
     const fetchCart = async () => {
+        if (!user) {
+            setLoading(true);
+            try {
+                const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+                const guestCart = { items: guestItems };
+                setCart(guestCart);
+                if (!guestItems.length) {
+                    toast.error("Giỏ hàng trống");
+                    navigate("/cart");
+                }
+            } catch (err) {
+                console.error("Lỗi lấy giỏ hàng guest:", err);
+                toast.error("Không thể tải giỏ hàng");
+                navigate("/cart");
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
         try {
             setLoading(true);
             const res = await api.get("/cart");
@@ -102,12 +123,34 @@ export default function Checkout() {
             setSubmitting(true);
 
             // Create order
-            const orderResponse = await api.post("/orders", formData);
+            const payload = user
+                ? formData
+                : {
+                    ...formData,
+                    items: (cart?.items || []).map((item) => ({
+                        variantId: item.variantId || item.variant?.id,
+                        quantity: item.quantity,
+                    })),
+                };
+
+            const orderResponse = await api.post(user ? "/orders" : "/orders/guest", payload);
             const { order, requiresPayment, paymentMethod } =
                 orderResponse.data.metadata;
 
             console.log("Order created:", order);
             toast.success(`Đơn hàng #${order.id} đã được tạo`);
+
+            if (!user) {
+                localStorage.setItem(
+                    "guestOrderLookup",
+                    JSON.stringify({
+                        orderId: order.id,
+                        email: formData.receiverEmail,
+                        phone: formData.receiverPhone,
+                    })
+                );
+                localStorage.removeItem("guestCart");
+            }
 
             // If VNPAY payment, get payment URL and redirect
             if (requiresPayment && paymentMethod === "VNPAY") {

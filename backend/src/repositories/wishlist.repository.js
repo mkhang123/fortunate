@@ -27,10 +27,10 @@ class WishlistRepository {
   async findByUserId(userId) {
     return await prisma.wishlist.findMany({
       where: { userId },
+      orderBy: { addedAt: "desc" },
       include: {
         product: {
           include: {
-            images: true,
             variants: true,
           },
         },

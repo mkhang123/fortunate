@@ -148,3 +148,99 @@ export async function searchProductsILIKE(patterns = [], limit = 6) {
   );
   return normalize(rows);
 }
+
+/**
+ * Gợi ý outfit theo phong cách: trước đây dùng findMany + OR rất lớn + include toàn bộ variants
+ * → PostgreSQL dễ chậm / “treo”. Dùng một câu SQL có EXISTS + unnest pattern, không SELECT hết variant.
+ */
+export async function getProductsByStyleAndType(style, type = "top", limit = 12) {
+  const normalizedStyle = String(style || "").trim();
+  if (!normalizedStyle) return [];
+
+  const topPatterns = [
+    "%áo%",
+    "%ao%",
+    "%shirt%",
+    "%t-shirt%",
+    "%tee%",
+    "%polo%",
+    "%hoodie%",
+    "%jacket%",
+    "%blazer%",
+    "%sweater%",
+  ];
+  const bottomPatterns = [
+    "%quần%",
+    "%quan%",
+    "%pant%",
+    "%pants%",
+    "%jean%",
+    "%short%",
+    "%skirt%",
+    "%trouser%",
+    "%jogger%",
+  ];
+
+  const typePatterns = type === "bottom" ? bottomPatterns : topPatterns;
+  const stylePattern = `%${normalizedStyle}%`;
+  const safeLimit = Math.min(50, Math.max(1, Number(limit) || 12));
+
+  const rows = await prisma.$queryRawUnsafe(
+    `
+    SELECT
+      p.id,
+      p.name,
+      p.slug,
+      COALESCE(
+        p.price,
+        (SELECT MIN(pv0.price) FROM "ProductVariant" pv0 WHERE pv0."productId" = p.id)
+      )::float AS price,
+      p.images,
+      b.name AS brand_name,
+      c.name AS category_name,
+      (
+        SELECT array_agg(DISTINCT pv_s.color)
+        FROM "ProductVariant" pv_s
+        WHERE pv_s."productId" = p.id
+      ) AS styles
+    FROM "Product" p
+    LEFT JOIN "Brand" b ON p."brandId" = b.id
+    LEFT JOIN "Category" c ON p."categoryId" = c.id
+    WHERE p.status = 'PUBLISHED'
+      AND EXISTS (
+        SELECT 1
+        FROM "ProductVariant" pv
+        WHERE pv."productId" = p.id
+          AND pv.color ILIKE $1
+      )
+      AND (
+        p.name ILIKE $1
+        OR EXISTS (
+          SELECT 1
+          FROM unnest($2::text[]) AS pat(pat)
+          WHERE p.name ILIKE pat
+            OR c.name ILIKE pat
+            OR c.slug ILIKE pat
+        )
+      )
+    ORDER BY p."createdAt" DESC
+    LIMIT $3
+    `,
+    stylePattern,
+    typePatterns,
+    safeLimit
+  );
+
+  return (rows || []).map((r) => ({
+    source: "product",
+    productId: Number(r.id),
+    name: r.name,
+    slug: r.slug,
+    price: Number(r.price ?? 0),
+    brandName: r.brand_name || "",
+    categoryName: r.category_name || "",
+    styles: Array.isArray(r.styles) ? r.styles.filter(Boolean) : [],
+    images: Array.isArray(r.images) ? r.images : r.images ? [r.images] : [],
+    score: 1,
+  }));
+}

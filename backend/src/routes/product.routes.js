@@ -28,5 +28,17 @@ router.patch(
   roleMiddleware(["ADMIN", "CREATOR"]),
   productController.update
 );
+router.patch(
+  "/:id/approve",
+  authMiddleware,
+  roleMiddleware(["ADMIN"]),
+  productController.approve
+);
+router.patch(
+  "/:id/reject",
+  authMiddleware,
+  roleMiddleware(["ADMIN"]),
+  productController.reject
+);
 
 export default router;

@@ -2,17 +2,14 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://localhost:4000/api",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// ─── REQUEST: Tự động đính kèm accessToken vào mọi request ───────────────────
+// ─── REQUEST: FormData thì để browser tự set boundary ────────────────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   if (config.data instanceof FormData) {
     delete config.headers["Content-Type"];
   }
@@ -21,14 +18,14 @@ api.interceptors.request.use((config) => {
 
 // ─── RESPONSE: Tự động làm mới accessToken khi hết hạn ───────────────────────
 let isRefreshing = false;           // Tránh gọi /refresh nhiều lần cùng lúc
-let failedQueue = [];               // Hàng đợi các request bị 401 chờ token mới
+let failedQueue = [];               // Hàng đợi các request bị 401 chờ refresh cookie
 
-const processQueue = (error, token = null) => {
+const processQueue = (error) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token);
+      prom.resolve(true);
     }
   });
   failedQueue = [];
@@ -51,42 +48,25 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+          .then(() => {
             return api(originalRequest);
           })
           .catch((err) => Promise.reject(err));
       }
 
       isRefreshing = true;
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      if (!refreshToken) {
-        // Không có refreshToken → buộc logout
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
-        return Promise.reject(error);
-      }
 
       try {
-        const { data } = await axios.post(
+        await axios.post(
           "http://localhost:4000/api/auth/refresh",
-          { refreshToken }
+          null,
+          { withCredentials: true }
         );
-
-        const newAccessToken = data.accessToken;
-        localStorage.setItem("token", newAccessToken);
-        api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
-
-        processQueue(null, newAccessToken);
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh thất bại → logout hoàn toàn
-        processQueue(refreshError, null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
+        processQueue(refreshError);
         localStorage.removeItem("user");
         window.location.href = "/login";
         return Promise.reject(refreshError);

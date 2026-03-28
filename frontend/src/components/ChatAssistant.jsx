@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import api from "../apis/axiosConfig";
 
 const API_BASE = "http://localhost:4000/api";
 
@@ -59,6 +60,27 @@ function renderMarkdown(text = "", navigate) {
   return parts;
 }
 
+function extractGuestOrderLookupInfo(message = "") {
+  const normalized = message.trim();
+  const hasLookupIntent =
+    /(?:tra\s*cứu|kiểm\s*tra|xem)\s*(?:đơn|đơn hàng)/i.test(normalized) ||
+    /mã\s*đơn/i.test(normalized);
+
+  if (!hasLookupIntent) return null;
+
+  const orderIdMatch = normalized.match(
+    /(?:mã\s*đơn|đơn(?:\s*hàng)?|#)\s*(?:(?:là|la|=|:|#|-)\s*)?(\d{1,12})/i
+  );
+  const emailMatch = normalized.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  const phoneMatch = normalized.match(/(?:\+84|0)[\s.\-]?\d(?:[\s.\-]?\d){7,10}/);
+
+  return {
+    orderId: orderIdMatch ? Number(orderIdMatch[1]) : null,
+    email: emailMatch ? emailMatch[0].toLowerCase() : "",
+    phone: phoneMatch ? phoneMatch[0].replace(/[^\d+]/g, "") : "",
+  };
+}
+
 export default function ChatAssistant() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -82,12 +104,10 @@ export default function ChatAssistant() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return;
 
-    fetch(`${API_BASE}/users/me`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-      .then((r) => r.json())
+    api
+      .get("/users/me")
       .then((res) => {
-        if (res.data?.bodyProfile) setBodyProfile(res.data.bodyProfile);
+        if (res.data?.data?.bodyProfile) setBodyProfile(res.data.data.bodyProfile);
       })
       .catch(() => {});
   }, []);
@@ -105,12 +125,48 @@ export default function ChatAssistant() {
     setMessages((prev) => [...prev, { role: "assistant", text: "" }]);
 
     try {
+      const lookup = extractGuestOrderLookupInfo(userText);
+      if (lookup?.orderId && lookup?.email && lookup?.phone) {
+        const res = await api.get(`/orders/guest/${lookup.orderId}`, {
+          params: {
+            email: lookup.email,
+            phone: lookup.phone,
+          },
+        });
+        const order = res.data?.metadata;
+        const createdAt = new Date(order.createdAt).toLocaleDateString("vi-VN");
+        const detailLink = `/order-confirmation/${order.id}?email=${encodeURIComponent(
+          lookup.email
+        )}&phone=${encodeURIComponent(lookup.phone)}`;
+        const quickReply = [
+          `Mình đã tìm thấy đơn #${order.id}.`,
+          `- Trạng thái: ${order.status}`,
+          `- Tổng tiền: ${order.total.toLocaleString("vi-VN")} VNĐ`,
+          `- Ngày đặt: ${createdAt}`,
+          `- Phương thức: ${order.payment?.method || "Chưa cập nhật"}`,
+          `[Xem chi tiết đơn hàng](${detailLink})`,
+        ].join("\n");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            text: quickReply,
+          };
+          return updated;
+        });
+        return;
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
       const response = await fetch(`${API_BASE}/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers,
+        credentials: "include",
         body: JSON.stringify({ message: userText, bodyProfile }),
       });
 

@@ -31,8 +31,6 @@ const Login = () => {
       const response = await loginUser(formData);
 
       if (response.data.success) {
-        localStorage.setItem("token", response.data.accessToken);
-        localStorage.setItem("refreshToken", response.data.refreshToken);
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
         toast.success("Đăng nhập thành công!");

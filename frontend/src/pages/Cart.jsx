@@ -15,9 +15,23 @@ export default function Cart() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
 
   // 1. Lấy dữ liệu giỏ hàng từ Backend
   const fetchCart = async () => {
+    if (!user) {
+      setLoading(true);
+      try {
+        const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+        setCart({ items: guestItems });
+      } catch {
+        setCart({ items: [] });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await api.get("/cart");
@@ -36,6 +50,15 @@ export default function Cart() {
 
   // 2. Xóa sản phẩm khỏi giỏ
   const removeItem = async (itemId) => {
+    if (!user) {
+      const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+      const next = guestItems.filter((item) => item.id !== itemId);
+      localStorage.setItem("guestCart", JSON.stringify(next));
+      setCart({ items: next });
+      toast.success("Đã xóa sản phẩm");
+      return;
+    }
+
     await api.delete(`/cart/item/${itemId}`);
     toast.success("Đã xóa sản phẩm");
     fetchCart(); // Tải lại giỏ hàng
@@ -47,6 +70,16 @@ export default function Cart() {
 
     // Chặn không cho giảm xuống dưới 1
     if (newQty < 1) return;
+
+    if (!user) {
+      const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+      const next = guestItems.map((item) =>
+        item.id === itemId ? { ...item, quantity: newQty } : item,
+      );
+      localStorage.setItem("guestCart", JSON.stringify(next));
+      setCart({ items: next });
+      return;
+    }
 
     try {
       // Gọi API patch để cập nhật số lượng trong DB

@@ -44,6 +44,18 @@ ChartJS.register(
     Legend
 );
 
+/** Ví dụ: 15_300_000 → "15 triệu 300 VND" */
+function formatRevenueReadableVND(amount) {
+    const n = Math.round(Number(amount) || 0);
+    if (n === 0) return "0 VND";
+    if (n < 1_000_000) return `${n.toLocaleString("vi-VN")} VND`;
+    const trieu = Math.floor(n / 1_000_000);
+    const du = n % 1_000_000;
+    const nghin = Math.round(du / 1_000);
+    if (nghin === 0) return `${trieu} triệu VND`;
+    return `${trieu} triệu ${nghin} VND`;
+}
+
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 function Sidebar({ user, onLogout }) {
     const location = useLocation();
@@ -117,7 +129,7 @@ function Sidebar({ user, onLogout }) {
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon: Icon, accent }) {
     return (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col gap-2 hover:shadow-md transition-shadow">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col gap-2 hover:shadow-md transition-shadow min-w-0">
             <div className="flex items-center justify-between">
                 <span
                     className={`w-9 h-9 rounded-xl flex items-center justify-center ${accent}`}
@@ -125,7 +137,9 @@ function StatCard({ label, value, icon: Icon, accent }) {
                     <Icon className="w-4 h-4" />
                 </span>
             </div>
-            <p className="text-2xl font-black leading-none mt-1">{value}</p>
+            <p className="text-lg sm:text-xl font-black leading-none mt-1 whitespace-nowrap overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {value}
+            </p>
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
                 {label}
             </p>
@@ -163,11 +177,8 @@ export default function AdminDashboard() {
 
     const handleLogout = async () => {
         try {
-            const rt = localStorage.getItem("refreshToken");
-            if (rt) await logoutUser(rt);
+            await logoutUser();
         } catch (_) { /* ignore */ }
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         navigate("/login");
         window.location.reload();
@@ -224,9 +235,7 @@ export default function AdminDashboard() {
                 callbacks: {
                     label: (ctx) => {
                         const val = ctx.parsed.y;
-                        if (val >= 1_000_000)
-                            return ` ${(val / 1_000_000).toFixed(2)}M đ`;
-                        return ` ${val.toLocaleString("vi-VN")} đ`;
+                        return ` ${formatRevenueReadableVND(val)}`;
                     },
                 },
                 backgroundColor: "#111",
@@ -306,10 +315,7 @@ export default function AdminDashboard() {
         },
         {
             label: "Doanh thu",
-            value:
-                summary.totalRevenue >= 1_000_000
-                    ? (summary.totalRevenue / 1_000_000).toFixed(1) + "M đ"
-                    : summary.totalRevenue.toLocaleString("vi-VN") + " đ",
+            value: formatRevenueReadableVND(summary.totalRevenue),
             icon: TrendingUp,
             accent: "bg-emerald-50 text-emerald-600",
         },
@@ -340,9 +346,9 @@ export default function AdminDashboard() {
     ];
 
     const statusLabels = {
-        PENDING: { label: "Chờ TT", bar: "bg-yellow-400" },
-        PAID: { label: "Đã TT", bar: "bg-blue-500" },
-        SHIPPED: { label: "Đang giao", bar: "bg-purple-500" },
+        PENDING: { label: "Chờ thanh toán", bar: "bg-yellow-400" },
+        PAID: { label: "Đã thanh toán", bar: "bg-blue-500" },
+        SHIPPED: { label: "Đang giao hàng", bar: "bg-purple-500" },
         COMPLETED: { label: "Hoàn thành", bar: "bg-emerald-500" },
         CANCELLED: { label: "Đã hủy", bar: "bg-red-400" },
     };

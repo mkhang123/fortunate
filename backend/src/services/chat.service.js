@@ -1,4 +1,8 @@
-import { searchProductsFT, searchProductsILIKE } from "../repositories/chat.repository.js";
+import {
+  searchProductsFT,
+  searchProductsILIKE,
+  getProductsByStyleAndType,
+} from "../repositories/chat.repository.js";
 import { tokenize } from "../utils/tokenize.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -35,23 +39,101 @@ export async function retrieve(query, k = 6) {
   return products.slice(0, limit);
 }
 
+function shuffle(array = []) {
+  const copied = [...array];
+  for (let i = copied.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copied[i], copied[j]] = [copied[j], copied[i]];
+  }
+  return copied;
+}
+
+function productCardLine(product) {
+  const productUrl = `/product/${product.slug}`;
+  const price = Number(product.price || 0).toLocaleString("vi-VN");
+  if (product.images?.[0]) {
+    return [
+      `[![${product.name}](${product.images[0]})](${productUrl})`,
+      `[${product.name} - ${price} VNĐ](${productUrl})`,
+    ].join("\n");
+  }
+  return `[${product.name} - ${price} VNĐ](${productUrl})`;
+}
+
+export async function recommendOutfitsByStyle(style) {
+  const [tops, bottoms] = await Promise.all([
+    getProductsByStyleAndType(style, "top", 20),
+    getProductsByStyleAndType(style, "bottom", 20),
+  ]);
+
+  if (tops.length < 2 || bottoms.length < 2) {
+    return {
+      ok: false,
+      text:
+        `Mình đã hiểu phong cách ${style}, nhưng hiện chưa đủ sản phẩm để gợi ý 2 bộ hoàn chỉnh (2 áo + 2 quần). ` +
+        "Bạn thử phong cách khác hoặc xem thêm ở trang collections nhé.",
+    };
+  }
+
+  const pickedTops = shuffle(tops).slice(0, 2);
+  const pickedBottoms = shuffle(bottoms).slice(0, 2);
+
+  const outfit1 = { top: pickedTops[0], bottom: pickedBottoms[0] };
+  const outfit2 = { top: pickedTops[1], bottom: pickedBottoms[1] };
+
+  const text = [
+    `Tuyệt vời! Dưới đây là 2 outfit ngẫu nhiên theo phong cách ${style}:`,
+    "",
+    "Bộ 1:",
+    "- Áo:",
+    productCardLine(outfit1.top),
+    "- Quần:",
+    productCardLine(outfit1.bottom),
+    "",
+    "Bộ 2:",
+    "- Áo:",
+    productCardLine(outfit2.top),
+    "- Quần:",
+    productCardLine(outfit2.bottom),
+  ].join("\n");
+
+  return { ok: true, text };
+}
+
 /**
  * Step 2: Initialize Gemini Model (Lazy load)
  */
-function getModel() {
+function getModel(modelNameOverride) {
   const apiKey = process.env.GEMINI_API_KEY;
-  const modelName = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
+  const modelName =
+    modelNameOverride || process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
   if (!apiKey) return null;
   const genAI = new GoogleGenerativeAI(apiKey);
   return genAI.getGenerativeModel({ model: modelName });
+}
+
+function isHighDemandError(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  return msg.includes("503") || msg.includes("service unavailable") || msg.includes("high demand");
 }
 
 /**
  * Step 3: Summarize / Generate Answer via Gemini using the retrieved context
  */
 export async function summarize(hits, userQuery, bodyProfile) {
-  const model = getModel();
-  if (!model) {
+  const primaryModel = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
+  const fallbackModels = (
+    process.env.GEMINI_MODEL_FALLBACKS ||
+    "gemini-2.0-flash-lite,gemini-1.5-flash"
+  )
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  const modelCandidates = [primaryModel, ...fallbackModels].filter(
+    (m, idx, arr) => arr.indexOf(m) === idx
+  );
+
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Chatbot chưa được cấu hình API key.");
   }
 
@@ -119,7 +201,26 @@ Nếu sản phẩm KHÔNG có ảnh, dùng link thường: [Tên Sản Phẩm](/
     { text: `Câu hỏi của khách hàng: ${userQuery}` },
   ];
 
-  return await model.generateContentStream({
-    contents: [{ role: "user", parts }],
-  });
+  let lastError = null;
+
+  for (let i = 0; i < modelCandidates.length; i += 1) {
+    const modelName = modelCandidates[i];
+    const model = getModel(modelName);
+    if (!model) continue;
+
+    try {
+      return await model.generateContentStream({
+        contents: [{ role: "user", parts }],
+      });
+    } catch (err) {
+      lastError = err;
+      const canTryNext = i < modelCandidates.length - 1;
+      if (isHighDemandError(err) && canTryNext) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error("Không thể kết nối AI để xử lý câu hỏi.");
 }

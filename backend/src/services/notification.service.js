@@ -1,4 +1,5 @@
 import notificationRepository from '../repositories/notification.repository.js';
+import prisma from "../config/prisma.js";
 
 class NotificationService {
   // Tạo thông báo (dùng nội bộ bởi các service khác)
@@ -26,6 +27,48 @@ class NotificationService {
   }
 
   // ── Các helper tạo thông báo theo event ─────────────────────────────────────
+  async notifyByRole(role, payloadBuilder) {
+    const users = await prisma.user.findMany({
+      where: { role, isActive: true },
+      select: { id: true },
+    });
+
+    if (!users.length) return;
+
+    await Promise.all(
+      users.map((u) => this.create({ userId: u.id, ...payloadBuilder(u.id) }))
+    );
+  }
+
+  // Khi creator gửi sản phẩm chờ duyệt -> báo cho admin
+  async notifyProductPendingApproval({ productId, productName }) {
+    return await this.notifyByRole("ADMIN", () => ({
+      title: "📝 Có sản phẩm chờ duyệt",
+      message: `Sản phẩm "${productName}" (#${productId}) vừa được gửi và đang chờ duyệt.`,
+      type: "PRODUCT_PENDING_APPROVAL",
+      link: "/admin/products",
+    }));
+  }
+
+  // Khi admin duyệt sản phẩm -> báo cho creator
+  async notifyProductApprovedToCreators({ productId, productName }) {
+    return await this.notifyByRole("CREATOR", () => ({
+      title: "✅ Sản phẩm đã được duyệt",
+      message: `Sản phẩm "${productName}" (#${productId}) đã được duyệt và hiển thị công khai.`,
+      type: "PRODUCT_APPROVED",
+      link: "/admin/products",
+    }));
+  }
+
+  // Khi admin từ chối sản phẩm -> báo cho creator
+  async notifyProductRejectedToCreators({ productId, productName }) {
+    return await this.notifyByRole("CREATOR", () => ({
+      title: "❌ Sản phẩm bị từ chối",
+      message: `Sản phẩm "${productName}" (#${productId}) đã bị từ chối. Vui lòng chỉnh sửa và gửi lại.`,
+      type: "PRODUCT_REJECTED",
+      link: "/admin/products",
+    }));
+  }
 
   // Khi user đặt hàng thành công
   async notifyOrderPlaced(userId, orderId) {

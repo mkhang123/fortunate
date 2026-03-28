@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../apis/axiosConfig";
-import { Link, useParams } from "react-router-dom"; // Thay useLocation bằng useParams
+import { Link, useLocation, useParams } from "react-router-dom"; // Thay useLocation bằng useParams
 import { Search, ChevronDown } from "lucide-react";
 
 export default function Clothes() {
@@ -11,6 +11,10 @@ export default function Clothes() {
 
   // Đọc categorySlug từ URL dạng /clothes/:categorySlug
   const { categorySlug } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const brand = searchParams.get("brand") || undefined;
+  const style = searchParams.get("style") || undefined;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -22,6 +26,8 @@ export default function Clothes() {
           search: searchTerm,
           sort: sortOption,
           categorySlug: categorySlug || undefined,
+          brand,
+          style,
           status: "PUBLISHED",
         };
 
@@ -39,7 +45,12 @@ export default function Clothes() {
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, sortOption, categorySlug]); // Lắng nghe categorySlug thay vì location.search
+  }, [searchTerm, sortOption, categorySlug, brand, style]); // Lắng nghe query params
+
+  const styleTitle = style ? `Phong cách ${style}` : null;
+  const pageTitle = categorySlug
+    ? categorySlug.replace("-", " ")
+    : styleTitle || "Tất cả sản phẩm";
 
   return (
     <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
@@ -47,7 +58,7 @@ export default function Clothes() {
         <div>
           <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-3">
             {/* Hiển thị tiêu đề dựa trên slug hiện tại */}
-            {categorySlug ? categorySlug.replace("-", " ") : "Tất cả sản phẩm"}
+            {pageTitle}
           </h1>
           <nav className="text-[10px] text-gray-400 uppercase tracking-[0.3em] font-bold">
             <Link to="/" className="hover:text-black transition-colors">
@@ -61,6 +72,12 @@ export default function Clothes() {
                 <span className="text-black uppercase">
                   {categorySlug.replace("-", " ")}
                 </span>
+              </>
+            )}
+            {!categorySlug && style && (
+              <>
+                <span className="mx-2">/</span>
+                <span className="text-black uppercase">{style}</span>
               </>
             )}
           </nav>

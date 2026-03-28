@@ -1,161 +1,55 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../apis/axiosConfig";
 import { toast } from "react-hot-toast";
 
 export default function AdminProduct() {
+  const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+  const isAdmin = currentUser?.role === "ADMIN";
+  const isCreator = currentUser?.role === "CREATOR";
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const [categoryForm, setCategoryForm] = useState({
     name: "",
-    categoryId: "",
-    price: "",
-    stock: "",
-    style: "Basic",
-    imageUrl: "",
-    variants: [],
+    image: "",
+    displayOrder: 0,
+    isActive: true,
   });
+  const [isCategoryEditing, setIsCategoryEditing] = useState(false);
+  const [categoryEditId, setCategoryEditId] = useState(null);
+  const [isCategorySaving, setIsCategorySaving] = useState(false);
+  const [productViewFilter, setProductViewFilter] = useState("all");
+
+  const fetchProducts = async () => {
+    const params = {};
+    if (isAdmin && productViewFilter === "pending") {
+      params.status = "DRAFT";
+    }
+    const res = await api.get("/products", { params });
+    setProducts(res.data?.data || []);
+  };
+
+  const fetchCategories = async () => {
+    const catRes = await api.get("/categories");
+    const catData = catRes.data?.data || [];
+    setCategories(catData);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [prodRes, catRes] = await Promise.all([
-          api.get("/products"),
-          api.get("/categories"),
-        ]);
-        setProducts(prodRes.data?.data || []);
-        const catData = catRes.data?.data || [];
-        setCategories(catData);
-        if (catData.length > 0) {
-          setFormData((prev) => ({ ...prev, categoryId: catData[0].id }));
-        }
+        await Promise.all([fetchProducts(), fetchCategories()]);
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu:", err);
       }
     };
     fetchData();
-  }, []);
-
-  const createSlug = (name) => {
-    return name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w ]+/g, "")
-      .replace(/ +/g, "-");
-  };
-
-  // Upload ảnh lên Cloudinary
-  const handleImageChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setImagePreview(URL.createObjectURL(file));
-    setIsUploading(true);
-    try {
-      const formPayload = new FormData();
-      formPayload.append("image", file);
-      const res = await api.post("/upload/image", formPayload, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const cloudUrl = res.data?.data?.url;
-      setFormData((prev) => ({ ...prev, imageUrl: cloudUrl }));
-      toast.success("Upload ảnh thành công!");
-    } catch (err) {
-      toast.error("Upload ảnh thất bại, bạn có thể nhập URL thủ công");
-      console.error("Upload error:", err);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const defaultSizes = ["S", "M", "L", "XL"];
-      const payload = {
-        name: formData.name,
-        slug: createSlug(formData.name),
-        status: "PUBLISHED",
-        categoryId: Number(formData.categoryId),
-        brandId: null,
-        price: Number(formData.price),
-        images: formData.imageUrl
-          ? [formData.imageUrl]
-          : ["https://via.placeholder.com/150"],
-        variants: isEditing
-          ? formData.variants?.map((v) => ({
-            id: v.id,
-            color: formData.style || "Basic",
-            size: v.size,
-            price: Number(formData.price),
-            stock: Number(formData.stock),
-          })) || []
-          : defaultSizes.map((s) => ({
-            color: formData.style || "Basic",
-            size: s,
-            price: Number(formData.price),
-            stock: Number(formData.stock),
-          })),
-      };
-
-      if (isEditing) {
-        await api.patch(`/products/${editId}`, payload);
-        toast.success("Cập nhật thành công");
-      } else {
-        await api.post("/products", payload);
-        toast.success("Thêm sản phẩm thành công");
-      }
-
-      const res = await api.get("/products");
-      setProducts(res.data?.data || []);
-      cancelEdit();
-    } catch (err) {
-      const errorData = err.response?.data;
-      if (errorData?.errors && Array.isArray(errorData.errors)) {
-        toast.error(`${errorData.errors[0].message}`);
-      } else if (errorData?.message) {
-        toast.error(errorData.message);
-      } else {
-        toast.error("Lỗi thao tác dữ liệu.");
-      }
-      console.error("Chi tiết lỗi hệ thống:", errorData);
-    }
-  };
+  }, [productViewFilter]);
 
   const handleEdit = (p) => {
-    setIsEditing(true);
-    setEditId(p.id);
-    const existingImage = Array.isArray(p.images) ? p.images[0] : "";
-    setImagePreview(existingImage);
-    setFormData({
-      name: p.name,
-      categoryId: p.categoryId,
-      price: p.price || p.variants?.[0]?.price || "",
-      stock: p.variants?.[0]?.stock || "",
-      style: p.variants?.[0]?.color || "Basic",
-      imageUrl: existingImage,
-      variants: p.variants || [],
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const cancelEdit = () => {
-    setIsEditing(false);
-    setEditId(null);
-    setImagePreview("");
-    setFormData({
-      name: "",
-      categoryId: categories[0]?.id || "",
-      price: "",
-      stock: "",
-      style: "Basic",
-      imageUrl: "",
-      variants: [],
-    });
+    navigate(`/admin/products/form/${p.id}`, { state: { product: p } });
   };
 
   const handleDelete = async (id) => {
@@ -164,122 +58,142 @@ export default function AdminProduct() {
     toast.success("Đã xóa sản phẩm");
   };
 
+  const handleApproveProduct = async (id) => {
+    try {
+      await api.patch(`/products/${id}/approve`);
+      toast.success("Đã duyệt sản phẩm");
+      await fetchProducts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể duyệt sản phẩm");
+    }
+  };
+
+  const handleRejectProduct = async (id) => {
+    try {
+      await api.patch(`/products/${id}/reject`);
+      toast.success("Đã từ chối sản phẩm");
+      await fetchProducts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể từ chối sản phẩm");
+    }
+  };
+
+  const statusLabelMap = {
+    DRAFT: "Chờ duyệt",
+    PUBLISHED: "Đã duyệt",
+    REJECTED: "Từ chối",
+    ARCHIVED: "Lưu trữ",
+    OUT_OF_STOCK: "Hết hàng",
+  };
+
+  const statusClassMap = {
+    DRAFT: "bg-yellow-100 text-yellow-700",
+    PUBLISHED: "bg-green-100 text-green-700",
+    REJECTED: "bg-red-100 text-red-700",
+    ARCHIVED: "bg-slate-200 text-slate-700",
+    OUT_OF_STOCK: "bg-gray-200 text-gray-600",
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryForm({
+      name: "",
+      image: "",
+      displayOrder: 0,
+      isActive: true,
+    });
+    setIsCategoryEditing(false);
+    setCategoryEditId(null);
+  };
+
+  const handleCategoryEdit = (category) => {
+    setIsCategoryEditing(true);
+    setCategoryEditId(category.id);
+    setCategoryForm({
+      name: category.name || "",
+      image: category.image || "",
+      displayOrder: category.displayOrder ?? 0,
+      isActive: category.isActive ?? true,
+    });
+  };
+
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    setIsCategorySaving(true);
+    try {
+      const payload = {
+        name: categoryForm.name.trim(),
+        image: categoryForm.image.trim() || undefined,
+        displayOrder: Number(categoryForm.displayOrder) || 0,
+        isActive: categoryForm.isActive,
+      };
+
+      if (isCategoryEditing && categoryEditId) {
+        await api.patch(`/categories/${categoryEditId}`, payload);
+        toast.success("Cập nhật danh mục thành công");
+      } else {
+        await api.post("/categories", payload);
+        toast.success("Tạo danh mục thành công");
+      }
+
+      await fetchCategories();
+      resetCategoryForm();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể lưu danh mục");
+    } finally {
+      setIsCategorySaving(false);
+    }
+  };
+
+  const handleCategoryDelete = async (id) => {
+    try {
+      await api.delete(`/categories/${id}`);
+      toast.success("Đã xóa danh mục");
+      await fetchCategories();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể xóa danh mục");
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto font-sans">
-      <h1 className="text-2xl font-bold mb-6 uppercase tracking-widest text-gray-800">
-        {isEditing ? "Chỉnh sửa sản phẩm" : "Quản lý Sản phẩm"}
-      </h1>
-
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-6 rounded-lg shadow-sm mb-8 bg-white"
-      >
-        <input
-          placeholder="Tên sản phẩm"
-          value={formData.name}
-          className="border p-2 rounded col-span-2 focus:ring-1 focus:ring-black outline-none"
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-
-        {/* Upload ảnh Cloudinary */}
-        <div className="col-span-2 flex items-center gap-3">
-          <label className="cursor-pointer flex items-center gap-2 border border-dashed border-gray-400 px-3 py-2 rounded hover:border-black transition-all whitespace-nowrap">
-            <span className="text-sm text-gray-600">
-              {isUploading ? "⏳ Đang upload..." : "📷 Chọn ảnh"}
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-              disabled={isUploading}
-            />
-          </label>
-          {imagePreview && (
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="w-12 h-12 object-cover rounded border shadow-sm flex-shrink-0"
-            />
-          )}
-          <input
-            placeholder="Hoặc nhập URL ảnh"
-            value={formData.imageUrl}
-            className="flex-1 border p-2 rounded text-sm focus:ring-1 focus:ring-black outline-none"
-            onChange={(e) => {
-              setFormData({ ...formData, imageUrl: e.target.value });
-              setImagePreview(e.target.value);
-            }}
-          />
-        </div>
-
-
-        <select
-          className="border p-2 rounded bg-white cursor-pointer"
-          value={formData.categoryId}
-          onChange={(e) =>
-            setFormData({ ...formData, categoryId: e.target.value })
-          }
-          required
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-bold uppercase tracking-widest text-gray-800">
+          Quản lý Sản phẩm
+        </h1>
+        <button
+          type="button"
+          onClick={() => navigate("/admin/products/form")}
+          className="bg-black text-white px-4 py-2 text-xs font-bold uppercase rounded hover:bg-gray-800 transition-colors"
         >
-          <option value="" disabled>
-            -- Danh mục --
-          </option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="number"
-          placeholder="Giá (VNĐ)"
-          value={formData.price}
-          className="border p-2 rounded"
-          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Số lượng"
-          value={formData.stock}
-          className="border p-2 rounded"
-          onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-          required
-        />
-        <input
-          placeholder="Phong cách (ví dụ Basic, Street, Classic...)"
-          value={formData.style}
-          className="border p-2 rounded"
-          onChange={(e) => setFormData({ ...formData, style: e.target.value })}
-          required
-        />
-
-        <div className="col-span-full flex gap-2">
-          <button
-            type="submit"
-            className={`text-white font-bold p-3 flex-1 rounded uppercase transition-all shadow-md ${isEditing
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-black hover:bg-gray-800"
-              }`}
-          >
-            {isEditing ? "Lưu thay đổi" : "Tạo sản phẩm mới"}
-          </button>
-          {isEditing && (
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="bg-gray-200 text-black font-bold p-3 px-8 rounded uppercase hover:bg-gray-300 transition-all shadow-sm"
-            >
-              Hủy
-            </button>
-          )}
-        </div>
-      </form>
+          Tạo sản phẩm
+        </button>
+      </div>
 
       <div className="overflow-hidden border rounded-xl shadow-sm bg-white">
+        {isAdmin && (
+          <div className="px-4 py-3 border-b bg-gray-50 flex items-center gap-2">
+            <button
+              onClick={() => setProductViewFilter("all")}
+              className={`px-3 py-1.5 text-[11px] font-bold uppercase rounded-full transition-colors ${
+                productViewFilter === "all"
+                  ? "bg-black text-white"
+                  : "bg-white text-gray-500 border border-gray-200"
+              }`}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => setProductViewFilter("pending")}
+              className={`px-3 py-1.5 text-[11px] font-bold uppercase rounded-full transition-colors ${
+                productViewFilter === "pending"
+                  ? "bg-black text-white"
+                  : "bg-white text-gray-500 border border-gray-200"
+              }`}
+            >
+              Chờ duyệt
+            </button>
+          </div>
+        )}
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
@@ -288,7 +202,13 @@ export default function AdminProduct() {
                 Sản phẩm
               </th>
               <th className="p-4 text-left font-semibold text-gray-600">
+                Thương hiệu
+              </th>
+              <th className="p-4 text-left font-semibold text-gray-600">
                 Giá niêm yết
+              </th>
+              <th className="p-4 text-center font-semibold text-gray-600">
+                Trạng thái
               </th>
               <th className="p-4 text-center font-semibold text-gray-600">
                 Thao tác
@@ -313,8 +233,20 @@ export default function AdminProduct() {
                   />
                 </td>
                 <td className="p-4 font-medium text-gray-700">{p.name}</td>
+                <td className="p-4 text-gray-600 font-semibold uppercase">
+                  {p.brand?.name || "---"}
+                </td>
                 <td className="p-4 text-blue-600 font-bold">
                   {(p.price || p.variants?.[0]?.price || 0).toLocaleString()}₫
+                </td>
+                <td className="p-4 text-center">
+                  <span
+                    className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${
+                      statusClassMap[p.status] || "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {statusLabelMap[p.status] || p.status}
+                  </span>
                 </td>
                 <td className="p-4 text-center">
                   <button
@@ -329,11 +261,157 @@ export default function AdminProduct() {
                   >
                     Xóa
                   </button>
+                  {isAdmin && p.status === "DRAFT" && (
+                    <>
+                      <button
+                        onClick={() => handleApproveProduct(p.id)}
+                        className="text-green-600 font-bold ml-4 hover:underline"
+                      >
+                        Duyệt
+                      </button>
+                      <button
+                        onClick={() => handleRejectProduct(p.id)}
+                        className="text-orange-600 font-bold ml-4 hover:underline"
+                      >
+                        Từ chối
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <form
+          onSubmit={handleCategorySubmit}
+          className="lg:col-span-1 border rounded-xl shadow-sm bg-white p-5 space-y-4"
+        >
+          <h2 className="text-sm font-black uppercase tracking-wider">
+            {isCategoryEditing ? "Sửa danh mục" : "Tạo danh mục"}
+          </h2>
+
+          <input
+            value={categoryForm.name}
+            onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+            placeholder="Tên danh mục"
+            className="w-full border p-2 rounded text-sm"
+            required
+          />
+
+          <input
+            value={categoryForm.image}
+            onChange={(e) => setCategoryForm({ ...categoryForm, image: e.target.value })}
+            placeholder="URL ảnh (tùy chọn)"
+            className="w-full border p-2 rounded text-sm"
+          />
+
+          <input
+            type="number"
+            min="0"
+            value={categoryForm.displayOrder}
+            onChange={(e) =>
+              setCategoryForm({ ...categoryForm, displayOrder: e.target.value })
+            }
+            placeholder="Thứ tự hiển thị"
+            className="w-full border p-2 rounded text-sm"
+          />
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={categoryForm.isActive}
+              onChange={(e) =>
+                setCategoryForm({ ...categoryForm, isActive: e.target.checked })
+              }
+            />
+            Kích hoạt danh mục
+          </label>
+
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={isCategorySaving}
+              className="flex-1 bg-black text-white font-bold text-xs uppercase rounded p-2.5 hover:bg-gray-800 transition-colors disabled:opacity-60"
+            >
+              {isCategorySaving
+                ? "Đang lưu..."
+                : isCategoryEditing
+                  ? "Lưu thay đổi"
+                  : "Tạo danh mục"}
+            </button>
+            {isCategoryEditing && (
+              <button
+                type="button"
+                onClick={resetCategoryForm}
+                className="px-4 bg-gray-200 text-black font-bold text-xs uppercase rounded p-2.5 hover:bg-gray-300 transition-colors"
+              >
+                Hủy
+              </button>
+            )}
+          </div>
+        </form>
+
+        <div className="lg:col-span-2 overflow-hidden border rounded-xl shadow-sm bg-white">
+          <div className="px-5 py-4 border-b bg-gray-50">
+            <h2 className="text-sm font-black uppercase tracking-wider">
+              Danh sách danh mục
+            </h2>
+          </div>
+          <table className="w-full text-sm">
+            <thead className="border-b">
+              <tr>
+                <th className="p-3 text-left font-semibold text-gray-600">Tên</th>
+                <th className="p-3 text-left font-semibold text-gray-600">Slug</th>
+                <th className="p-3 text-center font-semibold text-gray-600">Thứ tự</th>
+                <th className="p-3 text-center font-semibold text-gray-600">Trạng thái</th>
+                <th className="p-3 text-center font-semibold text-gray-600">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="p-3 font-medium text-gray-800">{cat.name}</td>
+                  <td className="p-3 text-gray-500">{cat.slug}</td>
+                  <td className="p-3 text-center text-gray-700">{cat.displayOrder ?? 0}</td>
+                  <td className="p-3 text-center">
+                    <span
+                      className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${cat.isActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-500"
+                        }`}
+                    >
+                      {cat.isActive ? "Hoạt động" : "Ẩn"}
+                    </span>
+                  </td>
+                  <td className="p-3 text-center">
+                    <button
+                      onClick={() => handleCategoryEdit(cat)}
+                      className="text-blue-600 font-bold mr-4 hover:underline"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleCategoryDelete(cat.id)}
+                      className="text-red-500 font-bold hover:underline"
+                    >
+                      Xóa
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {categories.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-6 text-center text-gray-400 font-semibold">
+                    Chưa có danh mục nào
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -8,12 +8,10 @@ const GoogleCallback = () => {
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const accessToken = params.get("accessToken");
-        const refreshToken = params.get("refreshToken");
         const userRaw = params.get("user");
         const error = params.get("error");
 
-        if (error || !accessToken || !userRaw) {
+        if (error || !userRaw) {
             toast.error("Đăng nhập Google thất bại. Vui lòng thử lại!");
             navigate("/login");
             return;
@@ -21,8 +19,6 @@ const GoogleCallback = () => {
 
         try {
             const user = JSON.parse(decodeURIComponent(userRaw));
-            localStorage.setItem("token", accessToken);
-            localStorage.setItem("refreshToken", refreshToken);
             localStorage.setItem("user", JSON.stringify(user));
             toast.success(`Chào mừng ${user.name || "bạn"}!`);
             window.location.href = "/"; // reload để navbar cập nhật

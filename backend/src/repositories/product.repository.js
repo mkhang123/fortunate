@@ -2,14 +2,50 @@
 import prisma from "../config/prisma.js";
 
 class ProductRepository {
+  _createBrandSlug(name = "") {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\w ]+/g, "")
+      .trim()
+      .replace(/ +/g, "-");
+  }
+
+  async _resolveBrandId(db, data = {}, currentBrandId = null) {
+    const brandName = data.brandName?.trim();
+    if (brandName) {
+      const slug = this._createBrandSlug(brandName);
+      if (!slug) return currentBrandId;
+
+      const brand = await db.brand.upsert({
+        where: { slug },
+        update: { name: brandName },
+        create: {
+          name: brandName,
+          slug,
+        },
+      });
+
+      return brand.id;
+    }
+
+    if (data.brandId !== undefined) {
+      return data.brandId ? Number(data.brandId) : null;
+    }
+
+    return currentBrandId;
+  }
+
   async createProduct(data) {
+    const brandId = await this._resolveBrandId(prisma, data, null);
     return await prisma.product.create({
       data: {
         name: data.name,
         slug: data.slug,
         // Bỏ description vì không tồn tại trong Prisma schema
         categoryId: Number(data.categoryId),
-        brandId: data.brandId ? Number(data.brandId) : null,
+        brandId,
         status: data.status ?? "DRAFT",
         price: data.price ? Number(data.price) : null,
 
@@ -22,6 +58,7 @@ class ProductRepository {
       },
       include: {
         variants: true,
+        brand: true,
       },
     });
   }
@@ -94,11 +131,14 @@ class ProductRepository {
   }
 
   async getAll(filters = {}) {
-    const { search, categoryId, categorySlug, status, sort } = filters;
+    const { search, categoryId, categorySlug, status, sort, brand, style } = filters;
     const where = {};
 
     if (search) {
-      where.name = { contains: search, mode: "insensitive" };
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { brand: { name: { contains: search, mode: "insensitive" } } },
+      ];
     }
 
     if (categoryId) {
@@ -113,6 +153,23 @@ class ProductRepository {
       where.status = status;
     }
 
+    if (brand) {
+      where.brand = {
+        OR: [
+          { name: { contains: brand, mode: "insensitive" } },
+          { slug: { contains: this._createBrandSlug(brand), mode: "insensitive" } },
+        ],
+      };
+    }
+
+    if (style) {
+      where.variants = {
+        some: {
+          color: { contains: style, mode: "insensitive" },
+        },
+      };
+    }
+
     // Với price sort → fetch trước rồi sort bằng JS
     const isPriceSort = sort === "price_asc" || sort === "price_desc";
 
@@ -122,7 +179,7 @@ class ProductRepository {
 
     const products = await prisma.product.findMany({
       where,
-      include: { variants: true, category: true },
+      include: { variants: true, category: true, brand: true },
       orderBy,
     });
 
@@ -152,6 +209,16 @@ class ProductRepository {
     const productId = Number(id);
 
     return await prisma.$transaction(async (tx) => {
+      const existingProduct = await tx.product.findUnique({
+        where: { id: productId },
+        select: { brandId: true },
+      });
+      const resolvedBrandId = await this._resolveBrandId(
+        tx,
+        data,
+        existingProduct?.brandId ?? null
+      );
+
       // 1. Cập nhật thông tin cơ bản và MẢNG ẢNH
       // Prisma sẽ ghi đè mảng cũ bằng mảng mới trong data.images
       const updatedProduct = await tx.product.update({
@@ -162,7 +229,7 @@ class ProductRepository {
           status: data.status,
           images: data.images, // Ghi đè mảng chuỗi trực tiếp
           categoryId: data.categoryId ? Number(data.categoryId) : undefined,
-          brandId: data.brandId ? Number(data.brandId) : undefined,
+          brandId: resolvedBrandId,
           price: data.price ? Number(data.price) : undefined,
         },
       });
@@ -192,7 +259,15 @@ class ProductRepository {
   async findById(id) {
     return await prisma.product.findUnique({
       where: { id: Number(id) },
-      include: { variants: true }, // SỬA: Bỏ include images
+      include: { variants: true, brand: true, category: true },
+    });
+  }
+
+  async updateStatus(id, status) {
+    return await prisma.product.update({
+      where: { id: Number(id) },
+      data: { status },
+      include: { variants: true, brand: true, category: true },
     });
   }
 }

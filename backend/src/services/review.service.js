@@ -28,7 +28,7 @@ class ReviewService {
     }
 
     // Tạo đánh giá mới
-    async createReview(userId, productId, { rating, comment }) {
+    async createReview(userId, productId, { rating, comment, images = [] }) {
         if (!rating || rating < 1 || rating > 5) {
             const err = new Error('Rating phải từ 1 đến 5 sao');
             err.statusCode = 400;
@@ -54,6 +54,7 @@ class ReviewService {
             productId,
             rating,
             comment,
+            images,
             verifiedPurchase: true,
         });
     }

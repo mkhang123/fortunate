@@ -43,13 +43,14 @@ class ReviewRepository {
     }
 
     // Tạo đánh giá mới
-    async create({ userId, productId, rating, comment, verifiedPurchase }) {
+    async create({ userId, productId, rating, comment, images = [], verifiedPurchase }) {
         return await prisma.review.create({
             data: {
                 userId: Number(userId),
                 productId: Number(productId),
                 rating: Number(rating),
                 comment: comment || null,
+                images: Array.isArray(images) ? images : [],
                 verifiedPurchase,
             },
             include: {

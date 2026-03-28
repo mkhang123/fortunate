@@ -18,7 +18,8 @@ export const createProductSchema = z.object({
   // Bỏ description vì không có trong Prisma Product schema
   categoryId: z.coerce.number().int().positive(),
   brandId: z.coerce.number().int().positive().optional().nullable(),
-  status: z.enum(["DRAFT", "PUBLISHED", "OUT_OF_STOCK", "ARCHIVED"]).default("DRAFT"),
+  brandName: z.string().trim().min(1).optional(),
+  status: z.enum(["DRAFT", "PUBLISHED", "REJECTED", "OUT_OF_STOCK", "ARCHIVED"]).default("DRAFT"),
   // QUAN TRỌNG: Chỉ chấp nhận mảng các String (URL)
   images: z.array(z.string().url("Link ảnh không hợp lệ")).min(1, "Phải có ít nhất 1 ảnh"),
   variants: z.array(productVariantSchema).min(1, "Phải có ít nhất 1 biến thể"),

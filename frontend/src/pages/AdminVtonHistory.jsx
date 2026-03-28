@@ -120,13 +120,10 @@ export default function AdminVtonHistory() {
 
     const handleLogout = async () => {
         try {
-            const rt = localStorage.getItem("refreshToken");
-            if (rt) await logoutUser(rt);
+            await logoutUser();
         } catch (_) {
             // ignore
         }
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         navigate("/login");
         window.location.reload();
