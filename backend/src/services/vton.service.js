@@ -8,7 +8,7 @@ class VTONService {
    * Xử lý toàn bộ quy trình Try-On
    * personImageFile và garmentImageFile đã có .path là Cloudinary URL
    */
-  async processTryOn(userId, personImageFile, garmentImageFile, variantId = null) {
+  async processTryOn(userId, personImageFile, garmentImageFile, productId = null) {
     const startTime = Date.now();
     let session = null;
 
@@ -24,7 +24,7 @@ class VTONService {
       // personImageFile.path là Cloudinary URL (đã upload qua multer middleware)
       session = await vtonRepo.createSession({
         userId,
-        variantId,
+        productId,
         aiModelId: aiModel.id,
         inputImage: personImageFile.path,  // Cloudinary URL
         status: 'PROCESSING',

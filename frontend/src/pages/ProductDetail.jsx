@@ -47,9 +47,9 @@ export default function ProductDetail() {
         const res = await api.get(`/products/${slug}`);
         const productData = res.data.data;
 
-        // --- BẮT ĐẦU PHẦN SỬA LỖI LẶP SIZE ---
-        // Lọc để chỉ giữ lại các variant có size duy nhất
+        // Lọc variant trùng size và sắp xếp theo thứ tự S → M → L → XL
         if (productData && productData.variants) {
+          const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
           const uniqueVariants = [];
           const seenSizes = new Set();
 
@@ -59,9 +59,17 @@ export default function ProductDetail() {
               uniqueVariants.push(variant);
             }
           });
+
+          uniqueVariants.sort((a, b) => {
+            const ia = SIZE_ORDER.indexOf(a.size.toUpperCase());
+            const ib = SIZE_ORDER.indexOf(b.size.toUpperCase());
+            const orderA = ia === -1 ? SIZE_ORDER.length : ia;
+            const orderB = ib === -1 ? SIZE_ORDER.length : ib;
+            return orderA - orderB;
+          });
+
           productData.variants = uniqueVariants;
         }
-        // --- KẾT THÚC PHẦN SỬA LỖI ---
 
         setProduct(productData);
         setMainImage(
@@ -197,34 +205,12 @@ export default function ProductDetail() {
     }
 
     if (!user) {
-      const raw = localStorage.getItem("guestCart");
-      const guestCart = raw ? JSON.parse(raw) : [];
-      const existing = guestCart.find((item) => item.variantId === selectedVariant.id);
-
-      if (existing) {
-        existing.quantity = Math.min(
-          existing.quantity + quantity,
-          selectedVariant.stock || existing.quantity + quantity,
-        );
-      } else {
-        guestCart.push({
-          id: `guest-${selectedVariant.id}`,
-          variantId: selectedVariant.id,
-          quantity,
-          variant: {
-            ...selectedVariant,
-            product: {
-              id: product.id,
-              name: product.name,
-              slug: product.slug,
-              images: product.images || [],
-            },
-          },
-        });
-      }
-
-      localStorage.setItem("guestCart", JSON.stringify(guestCart));
-      toast.success("Đã thêm vào giỏ hàng thành công!");
+      navigate("/login", {
+        state: {
+          from: `/product/${slug}`,
+          message: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!",
+        },
+      });
       return;
     }
 
@@ -527,8 +513,8 @@ export default function ProductDetail() {
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:border-black focus:outline-none transition-colors resize-none"
                 />
               </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
+              <div className="w-full max-w-md mx-auto flex flex-col items-stretch gap-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">
                   Hình ảnh thực tế (tùy chọn, tối đa 5 ảnh)
                 </p>
                 <input
@@ -539,22 +525,22 @@ export default function ProductDetail() {
                   onChange={handleReviewImagesChange}
                   className="hidden"
                 />
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={() => reviewImageInputRef.current?.click()}
-                    className="px-4 py-2 rounded-xl bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-colors"
+                    className="px-6 py-3 min-h-[44px] rounded-2xl bg-black text-white text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 transition-colors"
                   >
                     Chọn hình ảnh
                   </button>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 text-center">
                     {reviewForm.images.length > 0
                       ? `Đã chọn ${reviewForm.images.length}/5 ảnh`
                       : "Chưa chọn ảnh"}
                   </p>
                 </div>
                 {reviewForm.images.length > 0 && (
-                  <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mt-4">
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-3 w-full">
                     {reviewForm.images.map((file, idx) => (
                       <div
                         key={`${file.name}-${idx}`}
@@ -576,12 +562,12 @@ export default function ProductDetail() {
                     ))}
                   </div>
                 )}
+                <button type="submit" disabled={submittingReview}
+                  className="inline-flex self-center items-center justify-center gap-2 bg-black text-white px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all disabled:opacity-50">
+                  <Send className="w-4 h-4" />
+                  {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                </button>
               </div>
-              <button type="submit" disabled={submittingReview}
-                className="flex items-center gap-2 bg-black text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all disabled:opacity-50">
-                <Send className="w-4 h-4" />
-                {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
-              </button>
             </form>
           )}
 

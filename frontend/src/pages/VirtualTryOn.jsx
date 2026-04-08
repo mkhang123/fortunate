@@ -91,8 +91,8 @@ export default function VirtualTryOn() {
         garmentImageUrl = selectedProduct.image;
       }
 
-      // Gọi API
-      const result = await vtonAPI.tryOn(userImageFile, garmentFile, null, garmentImageUrl);
+      const productId = !selectedProduct.isCustom ? selectedProduct.id : null;
+      const result = await vtonAPI.tryOn(userImageFile, garmentFile, productId, garmentImageUrl);
 
       console.log('VTON Result:', result);
 

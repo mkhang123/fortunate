@@ -2,7 +2,7 @@ import api from './axiosConfig';
 
 export const vtonAPI = {
   // Thử đồ ảo
-  async tryOn(personImage, garmentImage, variantId = null, garmentImageUrl = null) {
+  async tryOn(personImage, garmentImage, productId = null, garmentImageUrl = null) {
     const formData = new FormData();
     formData.append('personImage', personImage);
 
@@ -14,7 +14,7 @@ export const vtonAPI = {
       formData.append('garmentImageUrl', garmentImageUrl);
     }
 
-    if (variantId) formData.append('variantId', variantId);
+    if (productId) formData.append('productId', productId);
 
     const response = await api.post('/vton/try-on', formData);
     return response.data;

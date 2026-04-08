@@ -29,6 +29,13 @@ export default function Checkout() {
         paymentMethod: "VNPAY",
     });
 
+    const [errors, setErrors] = useState({
+        receiverName: "",
+        receiverPhone: "",
+        receiverEmail: "",
+        shippingAddress: "",
+    });
+
     // Fetch cart on mount
     useEffect(() => {
         fetchCart();
@@ -82,36 +89,46 @@ export default function Checkout() {
     };
 
     const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+        if (errors[name]) {
+            setErrors({ ...errors, [name]: "" });
+        }
     };
 
     const validateForm = () => {
-        const { receiverName, receiverPhone, receiverEmail, shippingAddress } =
-            formData;
+        const { receiverName, receiverPhone, receiverEmail, shippingAddress } = formData;
+        const newErrors = { receiverName: "", receiverPhone: "", receiverEmail: "", shippingAddress: "" };
+        let isValid = true;
 
-        if (!receiverName || !receiverPhone || !receiverEmail || !shippingAddress) {
-            toast.error("Vui lòng điền đầy đủ thông tin");
-            return false;
+        if (!receiverName.trim()) {
+            newErrors.receiverName = "Vui lòng nhập họ và tên!";
+            isValid = false;
         }
 
-        // Validate email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(receiverEmail)) {
-            toast.error("Email không hợp lệ");
-            return false;
+        if (!receiverPhone.trim()) {
+            newErrors.receiverPhone = "Vui lòng nhập số điện thoại!";
+            isValid = false;
+        } else if (!/^(0|\+84)[0-9]{9}$/.test(receiverPhone.replace(/\s/g, ""))) {
+            newErrors.receiverPhone = "Số điện thoại không hợp lệ!";
+            isValid = false;
         }
 
-        // Validate phone (Vietnamese phone format)
-        const phoneRegex = /^(0|\+84)[0-9]{9}$/;
-        if (!phoneRegex.test(receiverPhone.replace(/\s/g, ""))) {
-            toast.error("Số điện thoại không hợp lệ");
-            return false;
+        if (!receiverEmail.trim()) {
+            newErrors.receiverEmail = "Vui lòng nhập email!";
+            isValid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(receiverEmail)) {
+            newErrors.receiverEmail = "Email không hợp lệ. Vui lòng kiểm tra lại!";
+            isValid = false;
         }
 
-        return true;
+        if (!shippingAddress.trim()) {
+            newErrors.shippingAddress = "Vui lòng nhập địa chỉ giao hàng!";
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
     };
 
     const handleSubmit = async (e) => {
@@ -201,7 +218,7 @@ export default function Checkout() {
                 Thanh toán
             </h1>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
                     {/* FORM (LEFT) */}
                     <div className="lg:col-span-7 space-y-8">
@@ -221,10 +238,15 @@ export default function Checkout() {
                                         name="receiverName"
                                         value={formData.receiverName}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:border-black focus:outline-none transition-colors"
+                                        className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none transition-colors ${errors.receiverName ? "border-red-400 focus:border-red-400" : "border-gray-200 focus:border-black"}`}
                                         placeholder="Nguyễn Văn A"
-                                        required
                                     />
+                                    {errors.receiverName && (
+                                        <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                                            <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                                            {errors.receiverName}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -237,10 +259,15 @@ export default function Checkout() {
                                             name="receiverPhone"
                                             value={formData.receiverPhone}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:border-black focus:outline-none transition-colors"
+                                            className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none transition-colors ${errors.receiverPhone ? "border-red-400 focus:border-red-400" : "border-gray-200 focus:border-black"}`}
                                             placeholder="0901234567"
-                                            required
                                         />
+                                        {errors.receiverPhone && (
+                                            <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                                                <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                                                {errors.receiverPhone}
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div>
@@ -252,10 +279,15 @@ export default function Checkout() {
                                             name="receiverEmail"
                                             value={formData.receiverEmail}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:border-black focus:outline-none transition-colors"
+                                            className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none transition-colors ${errors.receiverEmail ? "border-red-400 focus:border-red-400" : "border-gray-200 focus:border-black"}`}
                                             placeholder="email@example.com"
-                                            required
                                         />
+                                        {errors.receiverEmail && (
+                                            <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                                                <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                                                {errors.receiverEmail}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -268,10 +300,15 @@ export default function Checkout() {
                                         value={formData.shippingAddress}
                                         onChange={handleInputChange}
                                         rows={3}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:border-black focus:outline-none transition-colors resize-none"
+                                        className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none transition-colors resize-none ${errors.shippingAddress ? "border-red-400 focus:border-red-400" : "border-gray-200 focus:border-black"}`}
                                         placeholder="Số nhà, tên đường, phường/xã, quận/huyện"
-                                        required
                                     />
+                                    {errors.shippingAddress && (
+                                        <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                                            <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                                            {errors.shippingAddress}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>

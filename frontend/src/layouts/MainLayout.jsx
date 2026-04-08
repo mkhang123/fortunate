@@ -308,7 +308,7 @@ export default function MainLayout() {
       {/* CONTENT */}
       <main className="flex-1 relative">
         <Outlet />
-        <ChatAssistant />
+        {user && <ChatAssistant />}
       </main>
 
       {/* FOOTER */}

@@ -8,7 +8,7 @@ class VTONRepository {
     return await prisma.virtualTryOnSession.create({
       data: {
         userId: data.userId,
-        variantId: data.variantId || null,
+        productId: data.productId || null,
         aiModelId: data.aiModelId || null,
         inputImage: data.inputImage,
         outputImage: data.outputImage || '',
@@ -16,9 +16,7 @@ class VTONRepository {
         processingTime: data.processingTime || null,
       },
       include: {
-        variant: {
-          include: { product: true }
-        },
+        product: true,
         aiModel: true,
       }
     });
@@ -32,7 +30,7 @@ class VTONRepository {
       where: { id: sessionId },
       data,
       include: {
-        variant: { include: { product: true } },
+        product: true,
         aiModel: true,
       }
     });
@@ -45,7 +43,7 @@ class VTONRepository {
     return await prisma.virtualTryOnSession.findUnique({
       where: { id: sessionId },
       include: {
-        variant: { include: { product: true } },
+        product: true,
         aiModel: true,
         user: {
           select: { id: true, name: true, email: true }
@@ -71,7 +69,7 @@ class VTONRepository {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          variant: { include: { product: true } },
+          product: true,
           aiModel: true,
         }
       }),

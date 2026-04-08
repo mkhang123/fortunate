@@ -11,21 +11,62 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const validate = () => {
+    const newErrors = { name: "", email: "", password: "", confirmPassword: "" };
+    let isValid = true;
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Vui lòng nhập họ và tên!";
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Vui lòng nhập email!";
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Email không hợp lệ. Vui lòng kiểm tra lại!";
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Vui lòng nhập mật khẩu!";
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự!";
+      isValid = false;
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Vui lòng nhập lại mật khẩu!";
+      isValid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu nhập lại không khớp!";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: "" });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate password match
-    if (formData.password !== formData.confirmPassword) {
-      return toast.error("Mật khẩu nhập lại không khớp!");
-    }
-
-    // Validate password length
-    if (formData.password.length < 6) {
-      return toast.error("Mật khẩu phải có ít nhất 6 ký tự!");
-    }
+    if (!validate()) return;
 
     setLoading(true);
     try {
@@ -66,7 +107,7 @@ const Register = () => {
 
         {/* Register Form */}
         <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {/* Name Input */}
             <div>
               <label className="block text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-gray-700">
@@ -76,15 +117,22 @@ const Register = () => {
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
+                  className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none transition-colors text-sm ${
+                    errors.name
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-gray-200 focus:border-black"
+                  }`}
                   placeholder="Nguyễn Văn A"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
+                  onChange={(e) => handleChange("name", e.target.value)}
                 />
               </div>
+              {errors.name && (
+                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                  {errors.name}
+                </p>
+              )}
             </div>
 
             {/* Email Input */}
@@ -96,15 +144,22 @@ const Register = () => {
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
+                  className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none transition-colors text-sm ${
+                    errors.email
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-gray-200 focus:border-black"
+                  }`}
                   placeholder="example@gmail.com"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  required
+                  onChange={(e) => handleChange("email", e.target.value)}
                 />
               </div>
+              {errors.email && (
+                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             {/* Password Input */}
@@ -116,15 +171,22 @@ const Register = () => {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="password"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
+                  className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none transition-colors text-sm ${
+                    errors.password
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-gray-200 focus:border-black"
+                  }`}
                   placeholder="Ít nhất 6 ký tự"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  required
+                  onChange={(e) => handleChange("password", e.target.value)}
                 />
               </div>
+              {errors.password && (
+                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             {/* Confirm Password Input */}
@@ -136,18 +198,22 @@ const Register = () => {
                 <CheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="password"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
+                  className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none transition-colors text-sm ${
+                    errors.confirmPassword
+                      ? "border-red-400 focus:border-red-400"
+                      : "border-gray-200 focus:border-black"
+                  }`}
                   placeholder="Nhập lại mật khẩu"
                   value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  required
+                  onChange={(e) => handleChange("confirmPassword", e.target.value)}
                 />
               </div>
+              {errors.confirmPassword && (
+                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                  {errors.confirmPassword}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}

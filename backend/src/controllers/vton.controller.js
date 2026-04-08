@@ -9,7 +9,7 @@ class VTONController {
   async tryOn(req, res) {
     try {
       const userId = req.user.id;
-      const { variantId, garmentImageUrl } = req.body;
+      const { productId, garmentImageUrl } = req.body;
 
       // Kiểm tra ảnh người
       if (!req.files || !req.files.personImage) {
@@ -49,9 +49,9 @@ class VTONController {
         });
       }
 
-      const variantIdInt = variantId ? parseInt(variantId) : null;
+      const productIdInt = productId ? parseInt(productId) : null;
 
-      const session = await vtonService.processTryOn(userId, personImage, garmentImage, variantIdInt);
+      const session = await vtonService.processTryOn(userId, personImage, garmentImage, productIdInt);
 
       return res.status(201).json({
         success: true,

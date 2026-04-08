@@ -46,11 +46,8 @@ class DashboardService {
                 orderBy: { createdAt: "desc" },
                 include: {
                     user: { select: { name: true, email: true } },
-                    variant: {
-                        include: {
-                            product: { select: { name: true } },
-                        },
-                    },
+                    product: { select: { name: true, images: true } },
+                    aiModel: { select: { name: true } },
                 },
             }),
 
@@ -158,11 +155,8 @@ class DashboardService {
                 orderBy: { createdAt: "desc" },
                 include: {
                     user: { select: { id: true, name: true, email: true } },
-                    variant: {
-                        include: {
-                            product: { select: { name: true } },
-                        },
-                    },
+                    product: { select: { name: true, images: true } },
+                    aiModel: { select: { name: true } },
                 },
             }),
             prisma.virtualTryOnSession.count({ where }),

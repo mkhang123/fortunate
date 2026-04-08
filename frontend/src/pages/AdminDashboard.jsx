@@ -559,11 +559,11 @@ export default function AdminDashboard() {
                                                     </td>
                                                     <td className="py-3 px-3">
                                                         <p className="text-[11px] font-black">
-                                                            {s.variant?.product?.name || "Custom"}
+                                                            {s.product?.name || "Custom"}
                                                         </p>
-                                                        {s.variant && (
+                                                        {s.aiModel && (
                                                             <p className="text-[9px] text-gray-400">
-                                                                {s.variant.color} · {s.variant.size}
+                                                                {s.aiModel.name}
                                                             </p>
                                                         )}
                                                     </td>

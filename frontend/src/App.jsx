@@ -24,6 +24,7 @@ import AdminOrders from './pages/AdminOrders';
 import AdminDashboard from './pages/AdminDashboard';
 import GoogleCallback from './pages/GoogleCallback';
 import AdminVtonHistory from "./pages/AdminVtonHistory";
+import PrivateRoute from "./components/PrivateRoute";
 
 export default function App() {
   return (
@@ -56,15 +57,15 @@ export default function App() {
           <Route path="/admin/products" element={<AdminProduct />} />
           <Route path="/admin/products/form" element={<AdminProductForm />} />
           <Route path="/admin/products/form/:id" element={<AdminProductForm />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<PrivateRoute message="Vui lòng đăng nhập để xem thông tin tài khoản!"><Profile /></PrivateRoute>} />
           <Route path="/admin/users" element={<AdminUserManagement />} />
           <Route path="/virtual-try-on" element={<VirtualTryOn />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
-          <Route path="cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-          <Route path="/my-orders" element={<MyOrders />} />
-          <Route path="/my-orders/:orderId" element={<OrderDetail />} />
+          <Route path="cart" element={<PrivateRoute message="Vui lòng đăng nhập để xem giỏ hàng!"><Cart /></PrivateRoute>} />
+          <Route path="/checkout" element={<PrivateRoute message="Vui lòng đăng nhập để thanh toán!"><Checkout /></PrivateRoute>} />
+          <Route path="/order-confirmation/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng!"><OrderConfirmation /></PrivateRoute>} />
+          <Route path="/my-orders" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng của bạn!"><MyOrders /></PrivateRoute>} />
+          <Route path="/my-orders/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem chi tiết đơn hàng!"><OrderDetail /></PrivateRoute>} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/vton-history" element={<AdminVtonHistory />} />
