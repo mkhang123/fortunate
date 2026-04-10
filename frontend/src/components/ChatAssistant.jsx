@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { MessageCircle, X, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { MessageCircle, X, Loader2, Send, Mic, MicOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../apis/axiosConfig";
 
@@ -72,7 +72,7 @@ function extractGuestOrderLookupInfo(message = "") {
     /(?:mã\s*đơn|đơn(?:\s*hàng)?|#)\s*(?:(?:là|la|=|:|#|-)\s*)?(\d{1,12})/i
   );
   const emailMatch = normalized.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-  const phoneMatch = normalized.match(/(?:\+84|0)[\s.\-]?\d(?:[\s.\-]?\d){7,10}/);
+  const phoneMatch = normalized.match(/(?:\+84|0)[\s.-]?\d(?:[\s.-]?\d){7,10}/);
 
   return {
     orderId: orderIdMatch ? Number(orderIdMatch[1]) : null,
@@ -93,6 +93,9 @@ export default function ChatAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [bodyProfile, setBodyProfile] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const recognitionRef = useRef(null);
   const bottomRef = useRef(null);
 
   // Tự động cuộn xuống cuối khi có tin nhắn mới
@@ -111,6 +114,70 @@ export default function ChatAssistant() {
       })
       .catch(() => {});
   }, []);
+
+  // Kiểm tra và khởi tạo Web Speech API
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    setVoiceSupported(true);
+    const recognition = new SpeechRecognition();
+    recognition.lang = "vi-VN";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    let finalTranscript = "";
+
+    recognition.onstart = () => {
+      finalTranscript = "";
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interim = transcript;
+        }
+      }
+      // Hiển thị interim + final để user thấy realtime
+      setInput(finalTranscript + interim);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      // Giữ lại finalTranscript (không xóa)
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error !== "no-speech") {
+        console.warn("Speech recognition error:", event.error);
+      }
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognition.abort();
+    };
+  }, []);
+
+  const toggleVoice = useCallback(() => {
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    if (isListening) {
+      recognition.stop();
+    } else {
+      setInput("");
+      recognition.start();
+    }
+  }, [isListening]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -256,10 +323,9 @@ export default function ChatAssistant() {
       {/* Nút mở chat */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 rounded-full bg-black text-white p-4 shadow-xl hover:bg-gray-800 transition-all flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em]"
+        className="fixed bottom-6 right-6 z-40 rounded-full bg-black text-white p-4 shadow-xl hover:bg-gray-800 transition-all"
       >
         <MessageCircle className="w-5 h-5" />
-        <span className="hidden sm:inline">Hỏi trợ lý</span>
       </button>
 
       {/* Hộp chat */}
@@ -312,28 +378,62 @@ export default function ChatAssistant() {
           </div>
 
           <div className="border-t bg-white px-3 py-2">
-            <textarea
-              rows={2}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Mô tả chiều cao, cân nặng hoặc yêu cầu outfit..."
-              className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-black"
-            />
-            <button
-              onClick={handleSend}
-              disabled={loading || !input.trim()}
-              className="mt-2 w-full bg-black text-white text-[10px] font-black uppercase tracking-[0.3em] py-2 rounded-xl hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Đang trả lời...
-                </>
-              ) : (
-                "Gửi"
-              )}
-            </button>
+            <div className="flex items-stretch gap-2">
+              <textarea
+                rows={2}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isListening ? "Đang nghe..." : "Mô tả chiều cao, cân nặng hoặc yêu cầu outfit..."}
+                className={`flex-1 text-xs border rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-1 transition-all ${
+                  isListening
+                    ? "border-red-400 focus:ring-red-400 bg-red-50"
+                    : "border-gray-200 focus:ring-black bg-white"
+                }`}
+              />
+              <div className="flex flex-col gap-1.5 shrink-0">
+                {/* Nút gửi */}
+                <button
+                  onClick={handleSend}
+                  disabled={loading || !input.trim()}
+                  className="flex-1 bg-black text-white px-3 rounded-xl hover:bg-gray-800 disabled:opacity-40 flex items-center justify-center transition-all"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* Nút mic (chỉ hiện khi trình duyệt hỗ trợ) */}
+                {voiceSupported && (
+                  <button
+                    onClick={toggleVoice}
+                    disabled={loading}
+                    title={isListening ? "Dừng ghi âm" : "Nói yêu cầu"}
+                    className={`flex-1 px-3 rounded-xl flex items-center justify-center transition-all ${
+                      isListening
+                        ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    } disabled:opacity-40`}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Chú thích trạng thái voice */}
+            {isListening && (
+              <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping inline-block" />
+                Đang nghe... Nhấn mic để dừng
+              </p>
+            )}
           </div>
         </div>
       )}

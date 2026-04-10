@@ -155,6 +155,7 @@ export default function AdminProduct() {
   };
 
   return (
+    <main className="flex-1 overflow-auto">
     <div className="p-8 max-w-7xl mx-auto font-sans">
       <div className="flex items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold uppercase tracking-widest text-gray-800">
@@ -414,5 +415,6 @@ export default function AdminProduct() {
         </div>
       </div>
     </div>
+    </main>
   );
 }

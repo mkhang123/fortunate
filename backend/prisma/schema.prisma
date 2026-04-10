@@ -223,9 +223,9 @@ model Wishlist {
 model UserBodyProfile {
   height    Float
   weight    Float
-  chest     Float
-  waist     Float
-  hip       Float
+  chest     Float?
+  waist     Float?
+  hip       Float?
   id        Int       @id @default(autoincrement())
   userId    Int       @unique
   unit      String    @default("cm")

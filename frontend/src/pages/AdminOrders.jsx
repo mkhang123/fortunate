@@ -85,6 +85,7 @@ export default function AdminOrders() {
     };
 
     return (
+        <main className="flex-1 overflow-auto">
         <div className="max-w-[1600px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
             <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-8">
                 Quản lý đơn hàng
@@ -279,5 +280,6 @@ export default function AdminOrders() {
                 </>
             )}
         </div>
+        </main>
     );
 }

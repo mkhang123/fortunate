@@ -2,30 +2,47 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../apis/axiosConfig";
 
 const GoogleCallback = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const userRaw = params.get("user");
-        const error = params.get("error");
+        const run = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const userRaw = params.get("user");
+            const error = params.get("error");
 
-        if (error || !userRaw) {
-            toast.error("Đăng nhập Google thất bại. Vui lòng thử lại!");
-            navigate("/login");
-            return;
-        }
+            if (error || !userRaw) {
+                toast.error("Đăng nhập Google thất bại. Vui lòng thử lại!");
+                navigate("/login");
+                return;
+            }
 
-        try {
-            const user = JSON.parse(decodeURIComponent(userRaw));
-            localStorage.setItem("user", JSON.stringify(user));
-            toast.success(`Chào mừng ${user.name || "bạn"}!`);
-            window.location.href = "/"; // reload để navbar cập nhật
-        } catch {
-            toast.error("Đã có lỗi xảy ra. Vui lòng thử lại!");
-            navigate("/login");
-        }
+            try {
+                const user = JSON.parse(decodeURIComponent(userRaw));
+                localStorage.setItem("user", JSON.stringify(user));
+                toast.success(`Chào mừng ${user.name || "bạn"}!`);
+
+                // Kiểm tra body profile sau Google login
+                try {
+                    const meRes = await api.get("/users/me");
+                    if (!meRes.data.data?.bodyProfile) {
+                        localStorage.setItem("needsBodyProfile", "1");
+                    } else {
+                        localStorage.removeItem("needsBodyProfile");
+                    }
+                } catch {
+                    // Bỏ qua lỗi mạng
+                }
+
+                window.location.href = "/";
+            } catch {
+                toast.error("Đã có lỗi xảy ra. Vui lòng thử lại!");
+                navigate("/login");
+            }
+        };
+        run();
     }, [navigate]);
 
     return (

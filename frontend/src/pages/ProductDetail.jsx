@@ -16,8 +16,187 @@ import {
   Star,
   Send,
   X,
+  Ruler,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
+// ─── SIZE CHART DATA ──────────────────────────────────────────────────────────
+const SIZE_CHARTS = {
+  "ao-thun": {
+    label: "Áo Thun",
+    headers: ["Size", "Vai (cm)", "Ngực (cm)", "Ngang áo (cm)", "Dài áo (cm)"],
+    rows: [
+      ["S",  "40", "92", "46", "64"],
+      ["M",  "42", "96", "48", "66"],
+      ["L",  "44", "100","50", "68"],
+      ["XL", "46", "104","52", "70"],
+    ],
+  },
+  "quan-dai": {
+    label: "Quần Dài",
+    headers: ["Size", "Vòng eo (cm)", "Vòng mông (cm)", "Dài quần (cm)", "Gối (cm)"],
+    rows: [
+      ["S",  "70", "92", "99", "54"],
+      ["M",  "74", "96", "100","56"],
+      ["L",  "78", "100","101","58"],
+      ["XL", "82", "104","102","60"],
+    ],
+  },
+  "ao-khoac": {
+    label: "Áo Khoác",
+    headers: ["Size", "Vai (cm)", "Ngực (cm)", "Ngang áo (cm)", "Dài áo (cm)", "Tay áo (cm)"],
+    rows: [
+      ["S",  "42", "96", "48", "66", "59"],
+      ["M",  "44", "100","50", "68", "60"],
+      ["L",  "46", "104","52", "70", "61"],
+      ["XL", "48", "108","54", "72", "62"],
+    ],
+  },
+  "ao-so-mi": {
+    label: "Áo Sơ Mi",
+    headers: ["Size", "Vai (cm)", "Ngực (cm)", "Dài áo (cm)", "Tay áo (cm)", "Cổ (cm)"],
+    rows: [
+      ["S",  "40", "92", "72", "58", "37"],
+      ["M",  "42", "96", "74", "59", "38"],
+      ["L",  "44", "100","76", "60", "39"],
+      ["XL", "46", "104","78", "61", "40"],
+    ],
+  },
+  "quan-ngan": {
+    label: "Quần Ngắn",
+    headers: ["Size", "Vòng eo (cm)", "Vòng mông (cm)", "Dài quần (cm)"],
+    rows: [
+      ["S",  "70", "92", "44"],
+      ["M",  "74", "96", "46"],
+      ["L",  "78", "100","48"],
+      ["XL", "82", "104","50"],
+    ],
+  },
+};
+
+// Matches a category name/slug to a SIZE_CHARTS key
+function detectChartKey(category) {
+  if (!category) return null;
+  const haystack = `${category.name || ""} ${category.slug || ""}`.toLowerCase();
+  if (/khoác|khoac|jacket|coat|hoodie/.test(haystack)) return "ao-khoac";
+  if (/sơ mi|so mi|shirt/.test(haystack)) return "ao-so-mi";
+  if (/thun|t.shirt|tee/.test(haystack)) return "ao-thun";
+  if (/ngắn|ngan|short/.test(haystack)) return "quan-ngan";
+  if (/dài|dai|pant|trouser|jeans/.test(haystack)) return "quan-dai";
+  return null;
+}
+
+// ─── SIZE CHART MODAL ─────────────────────────────────────────────────────────
+function SizeChartModal({ category, onClose }) {
+  const chartKey = detectChartKey(category);
+  const allKeys = Object.keys(SIZE_CHARTS);
+  const [activeKey, setActiveKey] = useState(chartKey || allKeys[0]);
+  const chart = SIZE_CHARTS[activeKey];
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-black flex items-center justify-center">
+              <Ruler className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.25em]">Bảng Size</h2>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                Đơn vị đo: cm
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-2xl bg-gray-100 hover:bg-black hover:text-white flex items-center justify-center transition-all duration-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* TABS */}
+        <div className="px-8 pt-5 flex gap-2 flex-wrap">
+          {allKeys.map((key) => (
+            <button
+              key={key}
+              onClick={() => setActiveKey(key)}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${
+                activeKey === key
+                  ? "bg-black text-white shadow-md"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {SIZE_CHARTS[key].label}
+            </button>
+          ))}
+        </div>
+
+        {/* TABLE */}
+        <div className="overflow-auto flex-1 px-8 py-6">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-black text-white">
+                {chart.headers.map((h, i) => (
+                  <th
+                    key={i}
+                    className={`py-3 px-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${
+                      i === 0 ? "rounded-tl-xl text-center" : ""
+                    } ${i === chart.headers.length - 1 ? "rounded-tr-xl text-center" : "text-center"}`}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {chart.rows.map((row, ri) => (
+                <tr
+                  key={ri}
+                  className={`border-b border-gray-50 transition-colors hover:bg-gray-50 ${
+                    ri % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                  }`}
+                >
+                  {row.map((cell, ci) => (
+                    <td
+                      key={ci}
+                      className={`py-3.5 px-4 text-center ${
+                        ci === 0
+                          ? "font-black text-xs uppercase tracking-widest"
+                          : "font-semibold text-gray-600 text-[13px]"
+                      }`}
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* FOOTER NOTE */}
+        <div className="px-8 py-5 border-t border-gray-100 bg-gray-50/50">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">
+            Số đo là số đo cơ thể — vui lòng chọn size lớn hơn nếu bạn thích mặc rộng
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -28,6 +207,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   // Review states
   const [reviews, setReviews] = useState([]);
@@ -350,7 +530,11 @@ export default function ProductDetail() {
                     : "⚠ Vui lòng chọn size"}
                 </p>
               </div>
-              <button className="text-[10px] font-black uppercase tracking-widest border-b-2 border-black pb-0.5 hover:text-red-600 transition-all">
+              <button
+                onClick={() => setShowSizeChart(true)}
+                className="text-[10px] font-black uppercase tracking-widest border-b-2 border-black pb-0.5 hover:text-red-600 transition-all flex items-center gap-1"
+              >
+                <Ruler className="w-3 h-3" />
                 Size Chart
               </button>
             </div>
@@ -652,6 +836,14 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* SIZE CHART MODAL */}
+      {showSizeChart && (
+        <SizeChartModal
+          category={product.category}
+          onClose={() => setShowSizeChart(false)}
+        />
+      )}
     </div>
   );
 }

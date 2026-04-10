@@ -1,6 +1,8 @@
 import { Routes, Route } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 import MainLayout from "./layouts/MainLayout";
+import AdminLayout from "./layouts/AdminLayout";
 import MainDisplay from "./pages/MainDisplay";
 import Featured from "./pages/Featured";
 import AboutUs from "./pages/AboutUs";
@@ -25,8 +27,41 @@ import AdminDashboard from './pages/AdminDashboard';
 import GoogleCallback from './pages/GoogleCallback';
 import AdminVtonHistory from "./pages/AdminVtonHistory";
 import PrivateRoute from "./components/PrivateRoute";
+import BodyProfileModal from "./components/BodyProfileModal";
+import api from "./apis/axiosConfig";
 
 export default function App() {
+  const [showBodyModal, setShowBodyModal] = useState(false);
+
+  useEffect(() => {
+    const user = (() => {
+      try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
+    })();
+
+    if (!user || user.role === "ADMIN") return;
+
+    // Ưu tiên 1: flag được set ngay tại thời điểm login (không cần chờ API)
+    if (localStorage.getItem("needsBodyProfile") === "1") {
+      setShowBodyModal(true);
+      return;
+    }
+
+    // Ưu tiên 2: fallback cho session cũ chưa có flag — chỉ check 1 lần/session
+    if (sessionStorage.getItem("bodyProfileChecked")) return;
+
+    api.get("/users/me")
+      .then((res) => {
+        sessionStorage.setItem("bodyProfileChecked", "1");
+        if (!res.data.data?.bodyProfile) {
+          localStorage.setItem("needsBodyProfile", "1");
+          setShowBodyModal(true);
+        }
+      })
+      .catch(() => {
+        // Token hết hạn hoặc lỗi mạng — bỏ qua
+      });
+  }, []);
+
   return (
     <>
       <Toaster
@@ -44,6 +79,16 @@ export default function App() {
         }}
       />
 
+      {showBodyModal && (
+        <BodyProfileModal
+          onComplete={() => {
+            setShowBodyModal(false);
+            localStorage.removeItem("needsBodyProfile");
+            sessionStorage.setItem("bodyProfileChecked", "1");
+          }}
+        />
+      )}
+
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<MainDisplay />} />
@@ -54,11 +99,7 @@ export default function App() {
           <Route path="/accessory" element={<Accessory />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin/products" element={<AdminProduct />} />
-          <Route path="/admin/products/form" element={<AdminProductForm />} />
-          <Route path="/admin/products/form/:id" element={<AdminProductForm />} />
           <Route path="/profile" element={<PrivateRoute message="Vui lòng đăng nhập để xem thông tin tài khoản!"><Profile /></PrivateRoute>} />
-          <Route path="/admin/users" element={<AdminUserManagement />} />
           <Route path="/virtual-try-on" element={<VirtualTryOn />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="cart" element={<PrivateRoute message="Vui lòng đăng nhập để xem giỏ hàng!"><Cart /></PrivateRoute>} />
@@ -66,9 +107,17 @@ export default function App() {
           <Route path="/order-confirmation/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng!"><OrderConfirmation /></PrivateRoute>} />
           <Route path="/my-orders" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng của bạn!"><MyOrders /></PrivateRoute>} />
           <Route path="/my-orders/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem chi tiết đơn hàng!"><OrderDetail /></PrivateRoute>} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/vton-history" element={<AdminVtonHistory />} />
+
+          {/* Admin routes — sidebar luôn hiển thị khi điều hướng giữa các trang */}
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/products" element={<AdminProduct />} />
+            <Route path="/admin/products/form" element={<AdminProductForm />} />
+            <Route path="/admin/products/form/:id" element={<AdminProductForm />} />
+            <Route path="/admin/users" element={<AdminUserManagement />} />
+            <Route path="/admin/vton-history" element={<AdminVtonHistory />} />
+          </Route>
           <Route path="/auth/google/callback" element={<GoogleCallback />} />
         </Route>
       </Routes>

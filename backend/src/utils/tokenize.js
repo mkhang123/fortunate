@@ -40,6 +40,44 @@ const VN_STOP = new Set([
   "ạ",
   "nhỉ",
   // Note: "quần", "áo", "váy", "đầm" được giữ lại vì là từ khóa sản phẩm quan trọng của fashion shop
+
+  // Unaccented forms - needed because tokenizer strips accents before checking stop words
+  // so accented entries above (e.g. "tôi", "muốn") never match the stripped tokens
+  "toi",    // tôi
+  "muon",   // muốn
+  "tim",    // tìm
+  "oi",     // ơi
+  "tu",     // tư (as in "tư vấn" - to advise; NOT a product keyword)
+  "van",    // vấn (as in "tư vấn"; prevents matching brand names like Stussy via "stu")
+  "goi",    // gợi (as in "gợi ý" - to suggest)
+  "y",      // ý  (as in "gợi ý"; also filtered by length>=2 but keep here for clarity)
+  "hay",    // hãy (imperative particle)
+  "gi",     // gì
+  "la",     // là
+  "khong",  // không
+  "co",     // có
+  "duoc",   // được
+  "lam",    // làm
+  "nao",    // nào
+  "nhu",    // như
+  "cua",    // của
+  "den",    // đến
+  "de",     // để
+  "nhung",  // những
+  "cac",    // các
+  "mot",    // một
+  "trong",
+  "ve",     // về
+  "va",     // và
+  "hoac",   // hoặc
+  "theo",
+  "phan",   // phần
+  "tom",    // tóm
+  "tat",    // tắt
+  "xin",
+  "hoi",    // hỏi
+  "giup",   // giúp
+  "nhung",  // những
 ]);
 
 export const noAccent = (s = "") =>

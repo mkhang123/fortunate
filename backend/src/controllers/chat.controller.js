@@ -78,6 +78,102 @@ function prefersStyleProductListing(message = "") {
   return /\bsản\s*phẩm\b|\bsan\s*pham\b/.test(n);
 }
 
+// ─── SIZE ADVICE INTENT ──────────────────────────────────────────────────────
+
+/**
+ * Phát hiện ý định tư vấn size áo / quần.
+ * Trả về "top" | "bottom" | "both" | null
+ */
+function extractSizeAdviceIntent(message = "") {
+  const n = String(message || "").toLowerCase();
+
+  const isSizeQuery =
+    /tư\s*vấn\s*size|chọn\s*size|size\s*(nào|bao nhiêu|phù hợp|cho tôi|cho mình)|mặc\s*size|size\s*(áo|quần)|nên\s*(lấy|chọn|mặc)\s*size/i.test(n);
+
+  if (!isSizeQuery) return null;
+
+  const wantsTop =
+    /áo|khoác|thun|sơ mi|so mi|\btop\b|\bt-shirt\b|\btee\b|\bshirt\b/i.test(n);
+  const wantsBottom =
+    /quần|\bpants?\b|\bjeans?\b|\bshorts?\b|\btrousers?\b/i.test(n);
+
+  if (wantsTop && wantsBottom) return "both";
+  if (wantsTop) return "top";
+  if (wantsBottom) return "bottom";
+
+  // Hỏi size chung (không rõ áo/quần) → tư vấn cả hai
+  return "both";
+}
+
+const SIZE_ORDER = ["S", "M", "L", "XL"];
+
+/** Tính size cơ bản dựa trên chiều cao + cân nặng */
+function getBaseSize(height, weight) {
+  // Điểm số: chiều cao (trọng số 60%) + cân nặng (trọng số 40%)
+  // Ngưỡng theo bảng size Fortunate (S→M→L→XL)
+  const h = Number(height) || 0;
+  const w = Number(weight) || 0;
+
+  if (h < 163 || w < 55) return "S";
+  if (h < 168 || w < 63) return (h < 165 && w < 58) ? "S" : "M";
+  if (h < 174 || w < 71) return "M";
+  if (h < 180 || w < 80) return "L";
+  return "XL";
+}
+
+/** Tăng 1 size (cho áo khoác vì mặc layering) */
+function upOneSize(size) {
+  const idx = SIZE_ORDER.indexOf(size);
+  return idx < SIZE_ORDER.length - 1 ? SIZE_ORDER[idx + 1] : size;
+}
+
+/**
+ * Tạo phản hồi tư vấn size dựa trên body profile.
+ * type: "top" | "bottom" | "both"
+ */
+function buildSizeAdviceReply(type, bodyProfile) {
+  if (!bodyProfile || !bodyProfile.height || !bodyProfile.weight) {
+    return (
+      "Mình chưa có thông tin chiều cao và cân nặng của bạn. " +
+      "Bạn vui lòng cập nhật trong **Trang cá nhân** để mình tư vấn size chính xác hơn nhé!"
+    );
+  }
+
+  const { height, weight } = bodyProfile;
+  const base = getBaseSize(height, weight);
+  const jacket = upOneSize(base);
+
+  const lines = [
+    `Dựa trên chiều cao **${height} cm** và cân nặng **${weight} kg** của bạn, đây là gợi ý size:`,
+    "",
+  ];
+
+  if (type === "top" || type === "both") {
+    lines.push("**Áo:**");
+    lines.push(`- Áo thun: **Size ${base}**`);
+    lines.push(`- Áo sơ mi: **Size ${base}**`);
+    lines.push(
+      `- Áo khoác: **Size ${jacket}** _(lên 1 size so với chuẩn để mặc thoải mái khi layering)_`
+    );
+  }
+
+  if (type === "both") lines.push("");
+
+  if (type === "bottom" || type === "both") {
+    lines.push("**Quần:**");
+    lines.push(`- Quần dài: **Size ${base}**`);
+    lines.push(`- Quần ngắn: **Size ${base}**`);
+  }
+
+  lines.push("");
+  lines.push(
+    "_Lưu ý: Đây là gợi ý dựa trên chiều cao và cân nặng. " +
+    "Nếu bạn có số đo vòng ngực/eo/hông, hãy cập nhật thêm để mình tư vấn chính xác hơn nhé!_"
+  );
+
+  return lines.join("\n");
+}
+
 function buildLocalFallbackReply(hits = []) {
   if (!Array.isArray(hits) || hits.length === 0) {
     return (
@@ -186,6 +282,16 @@ export const handleChat = async (req, res) => {
     if (style && !prefersStyleProductListing(message)) {
       const result = await recommendOutfitsByStyle(style);
       sendEvent("chunk", { text: result.text });
+      sendEvent("done", { success: true });
+      res.end();
+      return;
+    }
+
+    // --- Tư vấn size áo / quần (không dùng RAG, tính trực tiếp từ body profile) ---
+    const sizeIntent = extractSizeAdviceIntent(message);
+    if (sizeIntent) {
+      const reply = buildSizeAdviceReply(sizeIntent, bodyProfile);
+      sendEvent("chunk", { text: reply });
       sendEvent("done", { success: true });
       res.end();
       return;

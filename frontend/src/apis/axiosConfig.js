@@ -35,12 +35,26 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isTokenExpired =
-      error.response?.status === 401 &&
-      error.response?.data?.code === "TOKEN_EXPIRED" &&
-      !originalRequest._retry; // Chỉ retry 1 lần duy nhất
 
-    if (isTokenExpired) {
+    // Trigger refresh khi:
+    // 1. Token còn trong cookie nhưng hết hạn (code: TOKEN_EXPIRED)
+    // 2. Cookie đã bị browser xóa sau 15p → request đến không kèm token (401 không có code)
+    // Điều kiện chung: phải có user trong localStorage (đang đăng nhập),
+    // chưa retry, và không phải request refresh (tránh vòng lặp vô hạn)
+    const is401 = error.response?.status === 401;
+    const isTokenExpiredCode = error.response?.data?.code === "TOKEN_EXPIRED";
+    const isMissingToken = !error.response?.data?.code; // 401 không có code = cookie bị mất
+    const isLoggedIn = !!localStorage.getItem("user");
+    const isRefreshRequest = originalRequest.url?.includes("/auth/refresh");
+
+    const shouldRefresh =
+      is401 &&
+      (isTokenExpiredCode || isMissingToken) &&
+      isLoggedIn &&
+      !originalRequest._retry &&
+      !isRefreshRequest;
+
+    if (shouldRefresh) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -48,9 +62,7 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => {
-            return api(originalRequest);
-          })
+          .then(() => api(originalRequest))
           .catch((err) => Promise.reject(err));
       }
 
@@ -65,7 +77,7 @@ api.interceptors.response.use(
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh thất bại → logout hoàn toàn
+        // Refresh token cũng hết hạn (7 ngày) → logout hoàn toàn
         processQueue(refreshError);
         localStorage.removeItem("user");
         window.location.href = "/login";

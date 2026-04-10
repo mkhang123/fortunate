@@ -120,6 +120,8 @@ export async function searchProductsILIKE(patterns = [], limit = 6) {
               AND unaccent(pv2."color") ILIKE tok
           )
         ) * 0.1
+        +
+        (SELECT COUNT(*) FROM unnest($1::text[]) tok WHERE unaccent(c.name) ILIKE tok) * 0.06
       ) AS score
     FROM "Product" p
     LEFT JOIN "Brand" b ON p."brandId" = b.id

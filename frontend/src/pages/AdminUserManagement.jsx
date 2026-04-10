@@ -50,6 +50,7 @@ export default function AdminUserManagement() {
   if (loading) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
 
   return (
+    <main className="flex-1 overflow-auto">
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý Người dùng (Admin)</h1>
 
@@ -140,5 +141,6 @@ export default function AdminUserManagement() {
         </table>
       </div>
     </div>
+    </main>
   );
 }

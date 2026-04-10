@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { loginUser } from "../apis/auth.api";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../apis/axiosConfig";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -64,13 +65,24 @@ const Login = () => {
       const response = await loginUser(formData);
 
       if (response.data.success) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        const user = response.data.user;
+        localStorage.setItem("user", JSON.stringify(user));
         toast.success("Đăng nhập thành công!");
 
-        const user = response.data.user;
         if (user.role === "ADMIN") {
           window.location.href = "/admin/dashboard";
         } else {
+          // Kiểm tra body profile trước khi chuyển trang
+          try {
+            const meRes = await api.get("/users/me");
+            if (!meRes.data.data?.bodyProfile) {
+              localStorage.setItem("needsBodyProfile", "1");
+            } else {
+              localStorage.removeItem("needsBodyProfile");
+            }
+          } catch {
+            // Bỏ qua lỗi mạng, App.jsx sẽ fallback check sau
+          }
           const redirectTo = location.state?.from || "/";
           window.location.href = redirectTo;
         }
