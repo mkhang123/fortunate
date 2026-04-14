@@ -107,7 +107,7 @@ function SizeChartModal({ category, onClose }) {
  >
  <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
  {/* HEADER */}
- <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+ <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 gap-3">
  <div className="flex items-center gap-3">
  <div className="w-9 h-9 rounded-2xl bg-black flex items-center justify-center">
  <Ruler className="w-4 h-4 text-white" />
@@ -128,7 +128,7 @@ function SizeChartModal({ category, onClose }) {
  </div>
 
  {/* TABS */}
- <div className="px-8 pt-5 flex gap-2 flex-wrap">
+ <div className="px-4 sm:px-8 pt-4 sm:pt-5 flex gap-2 flex-wrap">
  {allKeys.map((key) => (
  <button
  key={key}
@@ -145,7 +145,7 @@ function SizeChartModal({ category, onClose }) {
  </div>
 
  {/* TABLE */}
- <div className="overflow-auto flex-1 px-8 py-6">
+ <div className="overflow-auto flex-1 px-3 sm:px-8 py-4 sm:py-6">
  <table className="w-full text-sm border-collapse">
  <thead>
  <tr className="bg-black text-white">
@@ -188,7 +188,7 @@ function SizeChartModal({ category, onClose }) {
  </div>
 
  {/* FOOTER NOTE */}
- <div className="px-8 py-5 border-t border-gray-100 bg-gray-50/50">
+ <div className="px-4 sm:px-8 py-4 sm:py-5 border-t border-gray-100 bg-gray-50/50">
  <p className="text-[10px] font-bold tracking-widest text-gray-400 text-center">
  Số đo là số đo cơ thể — vui lòng chọn size lớn hơn nếu bạn thích mặc rộng
  </p>
@@ -440,7 +440,7 @@ export default function ProductDetail() {
  return (
  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-8 lg:py-12 bg-white">
  {/* BREADCRUMB */}
- <nav className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-gray-400 mb-8 lg:mb-12">
+ <nav className="flex flex-wrap items-center gap-2 text-[10px] font-bold tracking-widest text-gray-400 mb-8 lg:mb-12 min-w-0">
  <span
  className="cursor-pointer hover:text-black transition-colors"
  onClick={() => navigate("/")}
@@ -448,7 +448,7 @@ export default function ProductDetail() {
  Trang chủ
  </span>
  <ChevronRight className="w-3 h-3" />
- <span className="text-black truncate max-w-[200px] font-black italic">
+ <span className="text-black truncate max-w-[min(200px,55vw)] sm:max-w-[280px] font-black italic min-w-0">
  {product.name}
  </span>
  </nav>
@@ -539,7 +539,7 @@ export default function ProductDetail() {
  </button>
  </div>
 
- <div className="grid grid-cols-4 gap-3">
+ <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
  {product.variants?.map((variant) => {
  const isSelected = selectedVariant?.id === variant.id;
  const isOutOfStock = variant.stock === 0;

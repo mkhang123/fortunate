@@ -177,18 +177,18 @@ export default function VirtualTryOn() {
  };
 
  return (
- <div className="max-w-7xl mx-auto px-6 py-12 min-h-screen bg-white">
+ <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 min-h-screen bg-white">
  {/* HEADER SECTION */}
- <div className="mb-12 border-b border-gray-100 pb-8">
- <h1 className="text-4xl font-black italic tracking-tighter mb-4 flex items-center gap-4">
+ <div className="mb-8 sm:mb-12 border-b border-gray-100 pb-6 sm:pb-8">
+ <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter mb-3 sm:mb-4 flex flex-wrap items-center gap-2 sm:gap-4">
  Virtual Try-On
  </h1>
- <p className="text-gray-500 text-sm max-w-2xl">
+ <p className="text-gray-500 text-xs sm:text-sm max-w-2xl leading-relaxed">
  Tải ảnh chân dung, chọn trang phục từ máy hoặc từ sản phẩm khi vào từ trang chi tiết. Hai sản phẩm gợi ý bên dưới chỉ để tham khảo, không chọn được.
  </p>
  </div>
 
- <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+ <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
 
  {/* CỘT 1: TẢI ẢNH NGƯỜI DÙNG */}
  <div className="space-y-6">

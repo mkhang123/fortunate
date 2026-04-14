@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+/* Tránh cuộn ngang toàn trang trên mobile */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}

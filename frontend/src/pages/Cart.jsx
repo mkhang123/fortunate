@@ -108,9 +108,9 @@ export default function Cart() {
  );
 
  return (
- <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
+ <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-8 sm:py-12 bg-white min-h-screen">
  {/* BREADCRUMB */}
- <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
+ <nav className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-400 mb-8 sm:mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
  </Link>
@@ -118,7 +118,7 @@ export default function Cart() {
  <span className="text-black">Giỏ hàng của bạn</span>
  </nav>
 
- <h1 className="text-4xl font-black italic tracking-tighter mb-12">
+ <h1 className="text-3xl sm:text-4xl font-black italic tracking-tighter mb-8 sm:mb-12">
  Giỏ hàng
  </h1>
 
@@ -136,16 +136,16 @@ export default function Cart() {
  </Link>
  </div>
  ) : (
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+ <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
  {/* DANH SÁCH SẢN PHẨM (LEFT) */}
- <div className="lg:col-span-8 space-y-8">
+ <div className="lg:col-span-8 space-y-6 sm:space-y-8">
  {cart.items.map((item) => (
  <div
  key={item.id}
- className="flex gap-6 pb-8 border-b border-gray-50 group"
+ className="flex flex-col sm:flex-row gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-gray-50 group"
  >
  {/* Ảnh sản phẩm */}
- <div className="w-32 aspect-[3/4] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative shrink-0">
+ <div className="w-full max-w-[8rem] sm:w-32 mx-auto sm:mx-0 aspect-[3/4] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative shrink-0">
  <img
  src={
  item.variant.product.images[0] ||
@@ -221,7 +221,7 @@ export default function Cart() {
 
  {/* TỔNG KẾT & THANH TOÁN (RIGHT) */}
  <div className="lg:col-span-4">
- <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 space-y-8 sticky top-32">
+ <div className="bg-gray-50 p-6 sm:p-8 rounded-3xl border border-gray-100 space-y-6 sm:space-y-8 lg:sticky lg:top-24 xl:top-32">
  <h2 className="text-sm font-black tracking-tight">
  Tóm tắt đơn hàng
  </h2>

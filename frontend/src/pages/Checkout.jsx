@@ -200,9 +200,9 @@ export default function Checkout() {
  );
 
  return (
- <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
+ <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-8 sm:py-12 bg-white min-h-screen">
  {/* BREADCRUMB */}
- <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
+ <nav className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-400 mb-8 sm:mb-12">
  <button onClick={() => navigate("/")} className="hover:text-black">
  Trang chủ
  </button>
@@ -214,12 +214,12 @@ export default function Checkout() {
  <span className="text-black">Thanh toán</span>
  </nav>
 
- <h1 className="text-4xl font-black italic tracking-tighter mb-12">
+ <h1 className="text-3xl sm:text-4xl font-black italic tracking-tighter mb-8 sm:mb-12">
  Thanh toán
  </h1>
 
  <form onSubmit={handleSubmit} noValidate>
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+ <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
  {/* FORM (LEFT) */}
  <div className="lg:col-span-7 space-y-8">
  {/* Thông tin người nhận */}
@@ -411,7 +411,7 @@ export default function Checkout() {
 
  {/* ORDER SUMMARY (RIGHT) */}
  <div className="lg:col-span-5">
- <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 space-y-6 sticky top-32">
+ <div className="bg-gray-50 p-6 sm:p-8 rounded-3xl border border-gray-100 space-y-6 lg:sticky lg:top-24 xl:top-32">
  <h2 className="text-sm font-black tracking-tight">
  Đơn hàng ({cart?.items?.length || 0} sản phẩm)
  </h2>

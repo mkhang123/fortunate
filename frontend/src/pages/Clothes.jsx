@@ -53,10 +53,10 @@ export default function Clothes() {
  : styleTitle || "Tất cả sản phẩm";
 
  return (
- <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
- <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+ <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-8 sm:py-12 bg-white min-h-screen">
+ <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 gap-6 sm:gap-8">
  <div>
- <h1 className="text-4xl font-black italic tracking-tighter mb-3">
+ <h1 className="text-3xl sm:text-4xl font-black italic tracking-tighter mb-3 break-words">
  {/* Hiển thị tiêu đề dựa trên slug hiện tại */}
  {pageTitle}
  </h1>
@@ -118,7 +118,7 @@ export default function Clothes() {
  Đang tải dữ liệu...
  </div>
  ) : (
- <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-20">
+ <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-6 md:gap-x-8 lg:gap-x-10 gap-y-10 sm:gap-y-16 lg:gap-y-20">
  {products.length > 0 ? (
  products.map((product) => {
  const totalStock =

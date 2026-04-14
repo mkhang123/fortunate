@@ -338,17 +338,19 @@ export default function ChatAssistant() {
 
  return (
  <>
- {/* Nút mở chat */}
+ {/* Nút mở chat — tránh che nội dung trên mobile */}
  <button
  onClick={() => setOpen(true)}
- className="fixed bottom-6 right-6 z-40 rounded-full bg-black text-white p-4 shadow-xl hover:bg-gray-800 transition-all"
+ className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 rounded-full bg-black text-white p-3.5 sm:p-4 shadow-xl hover:bg-gray-800 transition-all [padding-bottom:max(0.875rem,env(safe-area-inset-bottom,0px))]"
+ aria-label="Mở trợ lý chat"
  >
  <MessageCircle className="w-5 h-5" />
  </button>
 
- {/* Hộp chat */}
+ {/* Hộp chat — full width gần full trên màn nhỏ */}
  {open && (
- <div className="fixed bottom-24 right-6 w-80 sm:w-96 h-96 bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden">
+ <div className="fixed inset-x-3 bottom-[4.5rem] sm:inset-x-auto sm:left-auto sm:right-6 sm:bottom-24 z-50 flex justify-center sm:justify-end pointer-events-none">
+ <div className="pointer-events-auto w-full max-w-[min(100%,24rem)] sm:w-96 h-[min(24rem,calc(100dvh-8rem))] sm:h-96 bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
  <div className="flex items-center justify-between px-4 py-3 border-b bg-black text-white">
  <div>
  <p className="text-xs font-black tracking-[0.3em]">
@@ -452,6 +454,7 @@ export default function ChatAssistant() {
  Đang nghe... Nhấn mic để dừng
  </p>
  )}
+ </div>
  </div>
  </div>
  )}
