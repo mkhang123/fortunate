@@ -157,7 +157,11 @@ function shouldTryNextModel(error) {
     msg.includes("429") ||
     msg.includes("resource_exhausted") ||
     msg.includes("quota exceeded") ||
-    msg.includes("rate limit")
+    msg.includes("rate limit") ||
+    msg.includes("not found") ||
+    msg.includes("404") ||
+    msg.includes("invalid") ||
+    msg.includes("does not exist")
   );
 }
 
@@ -165,7 +169,7 @@ function shouldTryNextModel(error) {
  * Step 3: Summarize / Generate Answer via Gemini using the retrieved context
  */
 export async function summarize(hits, userQuery, bodyProfile) {
-  const primaryModel = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
+  const primaryModel = process.env.GEMINI_MODEL || "gemini-2.0-flash-lite";
   const fallbackModels = (
     process.env.GEMINI_MODEL_FALLBACKS ||
     "gemini-2.0-flash-lite,gemini-1.5-flash"

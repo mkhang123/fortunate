@@ -22,10 +22,11 @@ function isDailyQuotaExhausted(err) {
 }
 
 function extractOrderLookupInfo(message = "") {
-  const normalized = message.trim();
+  const normalized = message.trim().normalize("NFC"); // giữ NFC cho email/phone regex
+  const na = noAccent(message);
   const hasLookupIntent =
-    /(?:tra\s*cứu|kiểm\s*tra|xem)\s*(?:đơn|đơn hàng)/i.test(normalized) ||
-    /mã\s*đơn/i.test(normalized);
+    /(?:tra\s*cuu|kiem\s*tra|xem)\s*(?:don|don hang)/i.test(na) ||
+    /ma\s*don/i.test(na);
 
   if (!hasLookupIntent) return null;
 
@@ -43,59 +44,66 @@ function extractOrderLookupInfo(message = "") {
 }
 
 function extractStyleIntent(message = "") {
-  const normalized = String(message || "").toLowerCase();
-  // Ưu tiên cụm dài (vd. "cơ bản") trước từ ngắn để khớp đúng
-  const styleMatch = normalized.match(
-    /(cơ\s*bản|đơn\s*giản|đường\s*phố|năng\s*động|tối\s*giản|thể\s*thao|basic|street|sport|classic|minimal)/
+  const n = noAccent(message);
+
+  const styleMatch = n.match(
+    /(co\s*ban|don\s*gian|duong\s*pho|nang\s*dong|toi\s*gian|the\s*thao|basic|street|sport|classic|minimal)/
   );
   const hasStyleIntent =
-    /phong\s*cách|style|theo\s*(?:gu|kiểu)/i.test(normalized) ||
-    /(gợi ý|goi y|mix|phối|phoi).*(bộ|set|outfit)/i.test(normalized);
+    /phong\s*cach|style|theo\s*(gu|kieu)/i.test(n) ||
+    /(goi\s*y|mix|phoi).*(bo|set|outfit)/i.test(n);
 
   if (!hasStyleIntent || !styleMatch) return null;
 
   const rawStyle = styleMatch[1].replace(/\s+/g, " ");
   const styleMap = {
-    "cơ bản": "Basic",
-    "đơn giản": "Basic",
-    "tối giản": "Basic",
+    "co ban": "Basic",
+    "don gian": "Basic",
+    "toi gian": "Basic",
     minimal: "Basic",
     basic: "Basic",
-    "đường phố": "Street",
+    "duong pho": "Street",
     street: "Street",
-    "năng động": "Sport",
+    "nang dong": "Sport",
     sport: "Sport",
-    "thể thao": "Sport",
+    "the thao": "Sport",
     classic: "Classic",
   };
 
   return styleMap[rawStyle] || null;
 }
 
-/** Hỏi danh sách / gợi ý sản phẩm → nên dùng RAG+AI (giống "gợi ý sản phẩm street"), không ép luồng 2 outfit. */
+/** Hỏi danh sách / gợi ý sản phẩm → nên dùng RAG+AI, không ép luồng 2 outfit. */
 function prefersStyleProductListing(message = "") {
-  const n = String(message || "").toLowerCase();
-  return /\bsản\s*phẩm\b|\bsan\s*pham\b/.test(n);
+  const n = noAccent(message);
+  return /\bsan\s*pham\b/.test(n);
 }
 
 // ─── SIZE ADVICE INTENT ──────────────────────────────────────────────────────
 
+/** Bỏ dấu tiếng Việt để so regex không bị lệch encoding */
+function noAccent(s = "") {
+  return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 /**
  * Phát hiện ý định tư vấn size áo / quần.
+ * Dùng no-accent để tránh mismatch Unicode NFC/NFD.
  * Trả về "top" | "bottom" | "both" | null
  */
 function extractSizeAdviceIntent(message = "") {
-  const n = String(message || "").toLowerCase();
+  // Bỏ dấu hoàn toàn → loại bỏ mọi nguy cơ encoding mismatch
+  const n = noAccent(message);
 
   const isSizeQuery =
-    /tư\s*vấn\s*size|chọn\s*size|size\s*(nào|bao nhiêu|phù hợp|cho tôi|cho mình)|mặc\s*size|size\s*(áo|quần)|nên\s*(lấy|chọn|mặc)\s*size/i.test(n);
+    /tu\s*van\s*size|chon\s*size|size\s*(nao|bao nhieu|phu hop|cho toi|cho minh)|mac\s*size|size\s*(ao|quan)|nen\s*(lay|chon|mac)\s*size|dua\s*vao\s*so\s*do|theo\s*so\s*do|goi\s*y\s*size|tu\s*van\s*kich\s*co|ho\s*tro\s*size|size\s*may/i.test(n);
 
   if (!isSizeQuery) return null;
 
   const wantsTop =
-    /áo|khoác|thun|sơ mi|so mi|\btop\b|\bt-shirt\b|\btee\b|\bshirt\b/i.test(n);
+    /\bao\b|khoac|thun|so\s*mi|\btop\b|\bt-shirt\b|\btee\b|\bshirt\b|hoodie|jacket|blazer|sweater/i.test(n);
   const wantsBottom =
-    /quần|\bpants?\b|\bjeans?\b|\bshorts?\b|\btrousers?\b/i.test(n);
+    /\bquan\b|\bpants?\b|\bjeans?\b|\bshorts?\b|\btrousers?\b|jogger|skirt/i.test(n);
 
   if (wantsTop && wantsBottom) return "both";
   if (wantsTop) return "top";
@@ -218,8 +226,12 @@ export const handleChat = async (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  let resEnded = false;
   const sendEvent = (event, data) => {
-    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    if (!resEnded) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+  const endRes = () => {
+    if (!resEnded) { resEnded = true; res.end(); }
   };
 
   try {
@@ -231,7 +243,7 @@ export const handleChat = async (req, res) => {
             "Mình có thể tra cứu đơn hàng cho bạn. Vui lòng gửi đủ theo mẫu: `mã đơn 1234, email abc@gmail.com, sđt 0901234567`.",
         });
         sendEvent("done", { success: true });
-        res.end();
+        endRes();
         return;
       }
 
@@ -243,7 +255,7 @@ export const handleChat = async (req, res) => {
           text: "Không tìm thấy đơn hàng tương ứng. Bạn kiểm tra lại mã đơn giúp mình nhé.",
         });
         sendEvent("done", { success: true });
-        res.end();
+        endRes();
         return;
       }
       const orderEmail = (order.receiverEmail || "").trim().toLowerCase();
@@ -255,7 +267,7 @@ export const handleChat = async (req, res) => {
             "Mình chưa xác thực được đơn hàng này. Bạn kiểm tra lại mã đơn, email và số điện thoại đã dùng khi đặt hàng nhé.",
         });
         sendEvent("done", { success: true });
-        res.end();
+        endRes();
         return;
       }
 
@@ -274,7 +286,7 @@ export const handleChat = async (req, res) => {
 
       sendEvent("chunk", { text: summary });
       sendEvent("done", { success: true });
-      res.end();
+      endRes();
       return;
     }
 
@@ -283,17 +295,18 @@ export const handleChat = async (req, res) => {
       const result = await recommendOutfitsByStyle(style);
       sendEvent("chunk", { text: result.text });
       sendEvent("done", { success: true });
-      res.end();
+      endRes();
       return;
     }
 
     // --- Tư vấn size áo / quần (không dùng RAG, tính trực tiếp từ body profile) ---
     const sizeIntent = extractSizeAdviceIntent(message);
     if (sizeIntent) {
+      await new Promise((r) => setTimeout(r, 800));
       const reply = buildSizeAdviceReply(sizeIntent, bodyProfile);
       sendEvent("chunk", { text: reply });
       sendEvent("done", { success: true });
-      res.end();
+      endRes();
       return;
     }
 
@@ -317,7 +330,7 @@ export const handleChat = async (req, res) => {
 
         // Successfully ended stream
         sendEvent("done", { success: true });
-        res.end();
+        endRes();
         return;
 
       } catch (err) {
@@ -360,13 +373,11 @@ export const handleChat = async (req, res) => {
         if (isQuota) {
           sendEvent("chunk", { text: buildLocalFallbackReply(hits) });
           sendEvent("done", { success: true });
-          res.end();
+          endRes();
           return;
         }
         sendEvent("error", {
-          message: isQuota
-            ? "API chatbot đang hết quota. Bạn kiểm tra gói/giới hạn Gemini hoặc đổi API key rồi thử lại nhé."
-            : "Xin lỗi, trợ lý đang gặp sự cố. Bạn thử lại sau nhé.",
+          message: "Xin lỗi, trợ lý đang gặp sự cố. Bạn thử lại sau nhé.",
         });
       }
     }
@@ -374,6 +385,6 @@ export const handleChat = async (req, res) => {
     console.error("Chatbot Error:", error);
     sendEvent("error", { message: "Đã có lỗi xảy ra trong quá trình xử lý câu hỏi." });
   } finally {
-    res.end();
+    endRes();
   }
 };

@@ -8,6 +8,7 @@ const router = express.Router();
 
 // Guest endpoints (no auth required)
 router.post("/guest", asyncHandler(OrderController.createGuestOrder));
+router.get("/guest/:id/invoice", asyncHandler(OrderController.downloadGuestInvoice));
 router.get("/guest/:id", asyncHandler(OrderController.getGuestOrderById));
 
 // All remaining order routes require authentication
@@ -21,6 +22,7 @@ router.get("/me", asyncHandler(OrderController.getUserOrders));
 router.get("/all", roleMiddleware(["ADMIN"]), asyncHandler(OrderController.getAllOrders));
 
 // This must come after /me and /all to avoid conflicts
+router.get("/:id/invoice", asyncHandler(OrderController.downloadInvoice));
 router.get("/:id", asyncHandler(OrderController.getOrderById));
 router.patch(
     "/:id/status",

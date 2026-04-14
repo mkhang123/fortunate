@@ -1,146 +1,146 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import api from "../apis/axiosConfig";
 import toast from "react-hot-toast";
 
 export default function AdminUserManagement() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+ const [users, setUsers] = useState([]);
+ const [loading, setLoading] = useState(true);
 
-  // 1. Lấy danh sách toàn bộ người dùng
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/users/all");
-      setUsers(res.data?.data || []);
-    } catch (err) {
-      console.error("Lỗi khi lấy danh sách người dùng:", err);
-      toast.error("Không có quyền truy cập hoặc lỗi server");
-    } finally {
-      setLoading(false);
-    }
-  };
+ // 1. Lấy danh sách toàn bộ người dùng
+ const fetchUsers = async () => {
+ try {
+ setLoading(true);
+ const res = await api.get("/users/all");
+ setUsers(res.data?.data || []);
+ } catch (err) {
+ console.error("Lỗi khi lấy danh sách người dùng:", err);
+ toast.error("Không có quyền truy cập hoặc lỗi server");
+ } finally {
+ setLoading(false);
+ }
+ };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+ useEffect(() => {
+ fetchUsers();
+ }, []);
 
-  // 2. Hàm xử lý cập nhật Role
-  const handleUpdateRole = async (userId, newRole) => {
+ // 2. Hàm xử lý cập nhật Role
+ const handleUpdateRole = async (userId, newRole) => {
 
-    try {
-      await api.put(`/users/role/${userId}`, { role: newRole });
-      toast.success(`Cập nhật quyền thành ${newRole} thành công!`);
-      fetchUsers(); // Tải lại danh sách để cập nhật giao diện
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi khi cập nhật quyền");
-    }
-  };
+ try {
+ await api.put(`/users/role/${userId}`, { role: newRole });
+ toast.success(`Cập nhật quyền thành ${newRole} thành công!`);
+ fetchUsers(); // Tải lại danh sách để cập nhật giao diện
+ } catch (err) {
+ toast.error(err.response?.data?.message || "Lỗi khi cập nhật quyền");
+ }
+ };
 
-  // 3. Hàm xử lý chặn/mở chặn user
-  const handleToggleActive = async (userId, isActive) => {
-    try {
-      await api.put(`/users/active/${userId}`, { isActive });
-      toast.success(isActive ? "Đã mở chặn người dùng" : "Đã chặn người dùng");
-      fetchUsers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi khi cập nhật trạng thái người dùng");
-    }
-  };
+ // 3. Hàm xử lý chặn/mở chặn user
+ const handleToggleActive = async (userId, isActive) => {
+ try {
+ await api.put(`/users/active/${userId}`, { isActive });
+ toast.success(isActive ? "Đã mở chặn người dùng" : "Đã chặn người dùng");
+ fetchUsers();
+ } catch (err) {
+ toast.error(err.response?.data?.message || "Lỗi khi cập nhật trạng thái người dùng");
+ }
+ };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
+ if (loading) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
 
-  return (
-    <main className="flex-1 overflow-auto">
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý Người dùng (Admin)</h1>
+ return (
+ <main className="flex-1 overflow-auto">
+ <div className="p-8 max-w-7xl mx-auto">
+ <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý Người dùng (Admin)</h1>
 
-      <div className="overflow-x-auto border rounded-lg shadow-sm bg-white">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100 border-b text-left">
-              <th className="p-4 font-semibold text-gray-600">ID</th>
-              <th className="p-4 font-semibold text-gray-600">Tên người dùng</th>
-              <th className="p-4 font-semibold text-gray-600">Email</th>
-              <th className="p-4 font-semibold text-gray-600">Quyền hiện tại</th>
-              <th className="p-4 font-semibold text-gray-600 text-center">Thay đổi quyền</th>
-              <th className="p-4 font-semibold text-gray-600 text-center">Chặn / Mở chặn</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length > 0 ? (
-              users.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-gray-50 transition-colors">
-                  <td className="p-4 text-gray-500 text-sm">#{user.id}</td>
-                  <td className="p-4 font-medium text-gray-800">{user.name}</td>
-                  <td className="p-4 text-gray-600">{user.email}</td>
-                  <td className="p-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${user.role === 'ADMIN' ? 'bg-red-100 text-red-600' :
-                      user.role === 'CREATOR' ? 'bg-blue-100 text-blue-600' :
-                        'bg-green-100 text-green-600'
-                      }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    {user.role === "ADMIN" ? (
-                      <div className="flex justify-center">
-                        <span className="px-3 py-1 text-xs bg-gray-100 text-gray-400 rounded font-medium italic">
-                          Không thể thay đổi
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex justify-center gap-2">
-                        <button
-                          onClick={() => handleUpdateRole(user.id, "USER")}
-                          disabled={user.role === "USER"}
-                          className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-30"
-                        >
-                          USER
-                        </button>
-                        <button
-                          onClick={() => handleUpdateRole(user.id, "CREATOR")}
-                          disabled={user.role === "CREATOR"}
-                          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-30"
-                        >
-                          CREATOR
-                        </button>
-                        <button
-                          onClick={() => handleUpdateRole(user.id, "ADMIN")}
-                          className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                        >
-                          ADMIN
-                        </button>
-                      </div>
-                    )}
-                  </td>
+ <div className="overflow-x-auto border rounded-lg shadow-sm bg-white">
+ <table className="w-full border-collapse">
+ <thead>
+ <tr className="bg-gray-100 border-b text-left">
+ <th className="p-4 font-semibold text-gray-600">ID</th>
+ <th className="p-4 font-semibold text-gray-600">Tên người dùng</th>
+ <th className="p-4 font-semibold text-gray-600">Email</th>
+ <th className="p-4 font-semibold text-gray-600">Quyền hiện tại</th>
+ <th className="p-4 font-semibold text-gray-600 text-center">Thay đổi quyền</th>
+ <th className="p-4 font-semibold text-gray-600 text-center">Chặn / Mở chặn</th>
+ </tr>
+ </thead>
+ <tbody>
+ {users.length > 0 ? (
+ users.map((user) => (
+ <tr key={user.id} className="border-b hover:bg-gray-50 transition-colors">
+ <td className="p-4 text-gray-500 text-sm">#{user.id}</td>
+ <td className="p-4 font-medium text-gray-800">{user.name}</td>
+ <td className="p-4 text-gray-600">{user.email}</td>
+ <td className="p-4">
+ <span className={`px-3 py-1 rounded-full text-xs font-bold ${user.role === 'ADMIN' ? 'bg-red-100 text-red-600' :
+ user.role === 'CREATOR' ? 'bg-blue-100 text-blue-600' :
+ 'bg-green-100 text-green-600'
+ }`}>
+ {user.role}
+ </span>
+ </td>
+ <td className="p-4">
+ {user.role === "ADMIN" ? (
+ <div className="flex justify-center">
+ <span className="px-3 py-1 text-xs bg-gray-100 text-gray-400 rounded font-medium italic">
+ Không thể thay đổi
+ </span>
+ </div>
+ ) : (
+ <div className="flex justify-center gap-2">
+ <button
+ onClick={() => handleUpdateRole(user.id, "USER")}
+ disabled={user.role === "USER"}
+ className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-30"
+ >
+ USER
+ </button>
+ <button
+ onClick={() => handleUpdateRole(user.id, "CREATOR")}
+ disabled={user.role === "CREATOR"}
+ className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-30"
+ >
+ CREATOR
+ </button>
+ <button
+ onClick={() => handleUpdateRole(user.id, "ADMIN")}
+ className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+ >
+ ADMIN
+ </button>
+ </div>
+ )}
+ </td>
 
-                  <td className="p-4 text-center">
-                    {user.role === "USER" ? (
-                      <button
-                        onClick={() => handleToggleActive(user.id, !user.isActive)}
-                        className={`px-3 py-1 text-xs rounded font-bold text-white ${
-                          user.isActive ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
-                        }`}
-                      >
-                        {user.isActive ? "CHẶN" : "MỞ CHẶN"}
-                      </button>
-                    ) : (
-                      <span className="px-3 py-1 text-xs bg-gray-100 text-gray-400 rounded font-medium italic">
-                        Không áp dụng
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="p-8 text-center text-gray-400">Không có người dùng nào</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    </main>
-  );
+ <td className="p-4 text-center">
+ {user.role === "USER" ? (
+ <button
+ onClick={() => handleToggleActive(user.id, !user.isActive)}
+ className={`px-3 py-1 text-xs rounded font-bold text-white ${
+ user.isActive ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+ }`}
+ >
+ {user.isActive ? "CHẶN" : "MỞ CHẶN"}
+ </button>
+ ) : (
+ <span className="px-3 py-1 text-xs bg-gray-100 text-gray-400 rounded font-medium italic">
+ Không áp dụng
+ </span>
+ )}
+ </td>
+ </tr>
+ ))
+ ) : (
+ <tr>
+ <td colSpan="6" className="p-8 text-center text-gray-400">Không có người dùng nào</td>
+ </tr>
+ )}
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </main>
+ );
 }

@@ -1,6 +1,7 @@
 import { OKResponse, CreatedResponse } from "../response/success.js";
 import { BadRequestError } from "../response/error.js";
 import OrderService from "../services/order.service.js";
+import { generateInvoicePDF } from "../utils/generateInvoicePDF.js";
 
 class OrderController {
     /**
@@ -196,6 +197,55 @@ class OrderController {
                 message: "Order status updated successfully",
                 metadata: order,
             }).send(res);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Download invoice PDF for authenticated user
+     * GET /api/orders/:id/invoice
+     */
+    static async downloadInvoice(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            const order = await OrderService.findById(+id);
+
+            if (order.userId !== userId && req.user.role !== "ADMIN") {
+                throw new BadRequestError("Unauthorized to access this order");
+            }
+
+            generateInvoicePDF(order, res);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Download invoice PDF for guest order
+     * GET /api/orders/guest/:id/invoice?email=...&phone=...
+     */
+    static async downloadGuestInvoice(req, res) {
+        try {
+            const { id } = req.params;
+            const email = (req.query.email || "").toString().trim().toLowerCase();
+            const phone = (req.query.phone || "").toString().replace(/\s/g, "");
+
+            if (!email || !phone) {
+                throw new BadRequestError("Email và số điện thoại là bắt buộc");
+            }
+
+            const order = await OrderService.findById(+id);
+            const orderEmail = (order.receiverEmail || "").trim().toLowerCase();
+            const orderPhone = (order.receiverPhone || "").replace(/\s/g, "");
+
+            if (orderEmail !== email || orderPhone !== phone) {
+                throw new BadRequestError("Không thể xác thực thông tin đơn hàng");
+            }
+
+            generateInvoicePDF(order, res);
         } catch (error) {
             throw error;
         }

@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+﻿import { Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 import MainLayout from "./layouts/MainLayout";
@@ -31,96 +31,95 @@ import BodyProfileModal from "./components/BodyProfileModal";
 import api from "./apis/axiosConfig";
 
 export default function App() {
-  const [showBodyModal, setShowBodyModal] = useState(false);
+ const [showBodyModal, setShowBodyModal] = useState(false);
 
-  useEffect(() => {
-    const user = (() => {
-      try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
-    })();
+ useEffect(() => {
+ const user = (() => {
+ try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
+ })();
 
-    if (!user || user.role === "ADMIN") return;
+ if (!user || user.role === "ADMIN") return;
 
-    // Ưu tiên 1: flag được set ngay tại thời điểm login (không cần chờ API)
-    if (localStorage.getItem("needsBodyProfile") === "1") {
-      setShowBodyModal(true);
-      return;
-    }
+ // Ưu tiên 1: flag được set ngay tại thời điểm login (không cần chờ API)
+ if (localStorage.getItem("needsBodyProfile") === "1") {
+ setShowBodyModal(true);
+ return;
+ }
 
-    // Ưu tiên 2: fallback cho session cũ chưa có flag — chỉ check 1 lần/session
-    if (sessionStorage.getItem("bodyProfileChecked")) return;
+ // Ưu tiên 2: fallback cho session cũ chưa có flag — chỉ check 1 lần/session
+ if (sessionStorage.getItem("bodyProfileChecked")) return;
 
-    api.get("/users/me")
-      .then((res) => {
-        sessionStorage.setItem("bodyProfileChecked", "1");
-        if (!res.data.data?.bodyProfile) {
-          localStorage.setItem("needsBodyProfile", "1");
-          setShowBodyModal(true);
-        }
-      })
-      .catch(() => {
-        // Token hết hạn hoặc lỗi mạng — bỏ qua
-      });
-  }, []);
+ api.get("/users/me")
+ .then((res) => {
+ sessionStorage.setItem("bodyProfileChecked", "1");
+ if (!res.data.data?.bodyProfile) {
+ localStorage.setItem("needsBodyProfile", "1");
+ setShowBodyModal(true);
+ }
+ })
+ .catch(() => {
+ // Token hết hạn hoặc lỗi mạng — bỏ qua
+ });
+ }, []);
 
-  return (
-    <>
-      <Toaster
-        position="bottom-left"
-        reverseOrder={false}
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: "#333",
-            color: "#fff",
-            fontSize: "12px",
-            fontWeight: "bold",
-            textTransform: "uppercase",
-          },
-        }}
-      />
+ return (
+ <>
+ <Toaster
+ position="bottom-left"
+ reverseOrder={false}
+ toastOptions={{
+ duration: 3000,
+ style: {
+ background: "#333",
+ color: "#fff",
+ fontSize: "12px",
+ fontWeight: "bold",
+ },
+ }}
+ />
 
-      {showBodyModal && (
-        <BodyProfileModal
-          onComplete={() => {
-            setShowBodyModal(false);
-            localStorage.removeItem("needsBodyProfile");
-            sessionStorage.setItem("bodyProfileChecked", "1");
-          }}
-        />
-      )}
+ {showBodyModal && (
+ <BodyProfileModal
+ onComplete={() => {
+ setShowBodyModal(false);
+ localStorage.removeItem("needsBodyProfile");
+ sessionStorage.setItem("bodyProfileChecked", "1");
+ }}
+ />
+ )}
 
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<MainDisplay />} />
-          <Route path="/featured" element={<Featured />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/clothes" element={<Clothes />} />
-          <Route path="/clothes/:categorySlug" element={<Clothes />} />
-          <Route path="/accessory" element={<Accessory />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<PrivateRoute message="Vui lòng đăng nhập để xem thông tin tài khoản!"><Profile /></PrivateRoute>} />
-          <Route path="/virtual-try-on" element={<VirtualTryOn />} />
-          <Route path="/product/:slug" element={<ProductDetail />} />
-          <Route path="cart" element={<PrivateRoute message="Vui lòng đăng nhập để xem giỏ hàng!"><Cart /></PrivateRoute>} />
-          <Route path="/checkout" element={<PrivateRoute message="Vui lòng đăng nhập để thanh toán!"><Checkout /></PrivateRoute>} />
-          <Route path="/order-confirmation/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng!"><OrderConfirmation /></PrivateRoute>} />
-          <Route path="/my-orders" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng của bạn!"><MyOrders /></PrivateRoute>} />
-          <Route path="/my-orders/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem chi tiết đơn hàng!"><OrderDetail /></PrivateRoute>} />
+ <Routes>
+ <Route element={<MainLayout />}>
+ <Route path="/" element={<MainDisplay />} />
+ <Route path="/featured" element={<Featured />} />
+ <Route path="/about" element={<AboutUs />} />
+ <Route path="/clothes" element={<Clothes />} />
+ <Route path="/clothes/:categorySlug" element={<Clothes />} />
+ <Route path="/accessory" element={<Accessory />} />
+ <Route path="/login" element={<Login />} />
+ <Route path="/register" element={<Register />} />
+ <Route path="/profile" element={<PrivateRoute message="Vui lòng đăng nhập để xem thông tin tài khoản!"><Profile /></PrivateRoute>} />
+ <Route path="/virtual-try-on" element={<VirtualTryOn />} />
+ <Route path="/product/:slug" element={<ProductDetail />} />
+ <Route path="cart" element={<PrivateRoute message="Vui lòng đăng nhập để xem giỏ hàng!"><Cart /></PrivateRoute>} />
+ <Route path="/checkout" element={<PrivateRoute message="Vui lòng đăng nhập để thanh toán!"><Checkout /></PrivateRoute>} />
+ <Route path="/order-confirmation/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng!"><OrderConfirmation /></PrivateRoute>} />
+ <Route path="/my-orders" element={<PrivateRoute message="Vui lòng đăng nhập để xem đơn hàng của bạn!"><MyOrders /></PrivateRoute>} />
+ <Route path="/my-orders/:orderId" element={<PrivateRoute message="Vui lòng đăng nhập để xem chi tiết đơn hàng!"><OrderDetail /></PrivateRoute>} />
 
-          {/* Admin routes — sidebar luôn hiển thị khi điều hướng giữa các trang */}
-          <Route element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/products" element={<AdminProduct />} />
-            <Route path="/admin/products/form" element={<AdminProductForm />} />
-            <Route path="/admin/products/form/:id" element={<AdminProductForm />} />
-            <Route path="/admin/users" element={<AdminUserManagement />} />
-            <Route path="/admin/vton-history" element={<AdminVtonHistory />} />
-          </Route>
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
-        </Route>
-      </Routes>
-    </>
-  );
+ {/* Admin routes — sidebar luôn hiển thị khi điều hướng giữa các trang */}
+ <Route element={<AdminLayout />}>
+ <Route path="/admin/dashboard" element={<AdminDashboard />} />
+ <Route path="/admin/orders" element={<AdminOrders />} />
+ <Route path="/admin/products" element={<AdminProduct />} />
+ <Route path="/admin/products/form" element={<AdminProductForm />} />
+ <Route path="/admin/products/form/:id" element={<AdminProductForm />} />
+ <Route path="/admin/users" element={<AdminUserManagement />} />
+ <Route path="/admin/vton-history" element={<AdminVtonHistory />} />
+ </Route>
+ <Route path="/auth/google/callback" element={<GoogleCallback />} />
+ </Route>
+ </Routes>
+ </>
+ );
 }
