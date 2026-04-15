@@ -60,22 +60,63 @@ function renderMarkdown(text = "", navigate) {
  return parts;
 }
 
-function extractGuestOrderLookupInfo(message = "") {
+function noAccentLookup(s = "") {
+ return String(s)
+ .normalize("NFD")
+ .replace(/[\u0300-\u036f]/g, "")
+ .toLowerCase();
+}
+
+function extractOrderLookupInfo(message = "") {
  const normalized = message.trim();
+ const na = noAccentLookup(message);
+
  const hasLookupIntent =
- /(?:tra\s*cứu|kiểm\s*tra|xem)\s*(?:đơn|đơn hàng)/i.test(normalized) ||
- /mã\s*đơn/i.test(normalized);
+ /(?:tra\s*cứu|kiểm\s*tra|xem|tìm)\s*(?:đơn|đơn\s*hàng)/i.test(normalized) ||
+ /(?:chi\s*tiết|trạng\s*thái)\s*(?:đơn|đơn\s*hàng)/i.test(normalized) ||
+ /mã\s*đơn/i.test(normalized) ||
+ /\bđơn\s*hàng\s*(?:số|#)?\s*\d/i.test(normalized) ||
+ /\bđơn\s*hàng\s*:\s*\d/i.test(normalized) ||
+ /(?:order|tracking)\s*#?\s*\d/i.test(normalized) ||
+ /(?:tra\s*cuu|kiem\s*tra|xem|tim)\s*(?:don|don\s*hang)/i.test(na) ||
+ /(?:chi\s*tiet|trang\s*thai)\s*(?:don|don\s*hang)/i.test(na) ||
+ /ma\s*don/i.test(na) ||
+ /\bdon\s*hang\s*(?:so|#)?\s*\d/i.test(na);
 
  if (!hasLookupIntent) return null;
 
- const orderIdMatch = normalized.match(
- /(?:mã\s*đơn|đơn(?:\s*hàng)?|#)\s*(?:(?:là|la|=|:|#|-)\s*)?(\d{1,12})/i
- );
+ let orderId = null;
+ const idPatterns = [
+ /(?:mã\s*đơn|đơn(?:\s*hàng)?|#|order\s*#?)\s*(?:(?:là|la|=|:|#|-)\s*)?(\d{1,12})/i,
+ /(?:đơn|don)\s*(?:hàng|hang)?\s*(?:số|so|#)?\s*(\d{1,12})/i,
+ /tra\s*cứu\s*(?:đơn(?:\s*hàng)?\s*)?(\d{1,12})/i,
+ /tra\s*cuu\s*(?:don(?:\s*hang)?\s*)?(\d{1,12})/i,
+ /#(\d{1,12})\b/,
+ ];
+ for (const re of idPatterns) {
+ const m = normalized.match(re);
+ if (m) {
+ const n = Number(m[1]);
+ if (n > 0) {
+ orderId = n;
+ break;
+ }
+ }
+ }
+
+ if (!orderId) {
+ const nums = normalized.match(/\d{1,12}/g);
+ if (nums && nums.length === 1) {
+ const n = Number(nums[0]);
+ if (n > 0) orderId = n;
+ }
+ }
+
  const emailMatch = normalized.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
  const phoneMatch = normalized.match(/(?:\+84|0)[\s.-]?\d(?:[\s.-]?\d){7,10}/);
 
  return {
- orderId: orderIdMatch ? Number(orderIdMatch[1]) : null,
+ orderId,
  email: emailMatch ? emailMatch[0].toLowerCase() : "",
  phone: phoneMatch ? phoneMatch[0].replace(/[^\d+]/g, "") : "",
  };
@@ -192,19 +233,38 @@ export default function ChatAssistant() {
  setMessages((prev) => [...prev, { role: "assistant", text: "" }]);
 
  try {
- const lookup = extractGuestOrderLookupInfo(userText);
- if (lookup?.orderId && lookup?.email && lookup?.phone) {
+ const lookup = extractOrderLookupInfo(userText);
+ if (lookup?.orderId) {
+ let order = null;
+ let detailLink = "";
+
+ try {
+ const res = await api.get(`/orders/${lookup.orderId}`);
+ order = res.data?.metadata;
+ detailLink = `/my-orders/${order.id}`;
+ } catch {
+ order = null;
+ }
+
+ if (!order && lookup.email && lookup.phone) {
+ try {
  const res = await api.get(`/orders/guest/${lookup.orderId}`, {
  params: {
  email: lookup.email,
  phone: lookup.phone,
  },
  });
- const order = res.data?.metadata;
- const createdAt = new Date(order.createdAt).toLocaleDateString("vi-VN");
- const detailLink = `/order-confirmation/${order.id}?email=${encodeURIComponent(
+ order = res.data?.metadata;
+ detailLink = `/order-confirmation/${order.id}?email=${encodeURIComponent(
  lookup.email
  )}&phone=${encodeURIComponent(lookup.phone)}`;
+ } catch {
+ order = null;
+ }
+ }
+
+ if (order) {
+ const createdAt = new Date(order.createdAt).toLocaleDateString("vi-VN");
  const quickReply = [
  `Mình đã tìm thấy đơn #${order.id}.`,
  `- Trạng thái: ${order.status}`,
@@ -226,16 +286,57 @@ export default function ChatAssistant() {
  return;
  }
 
+ const needGuestVerify = lookup && !localStorage.getItem("user");
+ const failText = needGuestVerify
+ ? "Để tra cứu theo **mã đơn**, bạn **đăng nhập** tài khoản đã đặt hàng, hoặc gửi thêm **email** và **SĐT** nhận hàng (như lúc đặt), ví dụ: `mã đơn 123, email a@b.com, sdt 0901234567`."
+ : "Không tìm thấy đơn hoặc đơn không thuộc tài khoản của bạn. Nếu là **đơn khách**, gửi kèm **email** và **SĐT** đặt hàng.";
+
+ await new Promise((resolve) => setTimeout(resolve, 600));
+ setMessages((prev) => {
+ const updated = [...prev];
+ updated[updated.length - 1] = {
+ role: "assistant",
+ text: failText,
+ };
+ return updated;
+ });
+ return;
+ }
+
+ if (lookup && !lookup.orderId) {
+ await new Promise((resolve) => setTimeout(resolve, 400));
+ setMessages((prev) => {
+ const updated = [...prev];
+ updated[updated.length - 1] = {
+ role: "assistant",
+ text:
+ "Bạn gửi giúp mình **mã đơn** (số đơn), ví dụ: `tra cứu đơn 123` hoặc `mã đơn 123`. Nếu đã **đăng nhập**, chỉ cần mã đơn là được.",
+ };
+ return updated;
+ });
+ return;
+ }
+
  const headers = {
  "Content-Type": "application/json",
  };
 
- const response = await fetch(`${API_BASE}/chat`, {
+ const chatAbort = new AbortController();
+ const chatTimeoutMs = 150000;
+ const chatTimeoutId = setTimeout(() => chatAbort.abort(), chatTimeoutMs);
+
+ let response;
+ try {
+ response = await fetch(`${API_BASE}/chat`, {
  method: "POST",
  headers,
  credentials: "include",
+ signal: chatAbort.signal,
  body: JSON.stringify({ message: userText, bodyProfile }),
  });
+ } finally {
+ clearTimeout(chatTimeoutId);
+ }
 
  if (!response.ok || !response.body) {
  const errData = await response.json().catch(() => ({}));
@@ -315,12 +416,15 @@ export default function ChatAssistant() {
         return updated;
       });
     }
-  } catch {
+  } catch (err) {
+ const isAbort = err?.name === "AbortError";
  setMessages((prev) => {
  const updated = [...prev];
  updated[updated.length - 1] = {
  role: "assistant",
- text: "Xin lỗi, không thể kết nối đến trợ lý. Bạn thử lại sau nhé.",
+ text: isAbort
+ ? "Phản hồi quá lâu hoặc kết nối bị gián đoạn. Bạn thử gửi lại câu hỏi (ngắn gọn hơn) hoặc kiểm tra backend đang chạy nhé."
+ : "Xin lỗi, không thể kết nối đến trợ lý. Bạn thử lại sau nhé.",
  };
  return updated;
  });

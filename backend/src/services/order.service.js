@@ -101,22 +101,34 @@ class OrderService {
                 }
             }
 
-            // 4. Tạo đơn hàng
-            const createdOrder = await tx.order.create({
-                data: {
-                    userId,
-                    receiverName,
-                    receiverPhone,
-                    receiverEmail,
-                    shippingAddress,
-                    city: city || "TP. Hồ Chí Minh",
-                    notes,
-                    total,
-                    status: "PENDING",
-                    items: {
-                        create: orderItems,
-                    },
+            // 4. Tạo đơn hàng (+ bản ghi thanh toán COD để admin / chi tiết đơn hiển thị đúng)
+            const orderCreateData = {
+                userId,
+                receiverName,
+                receiverPhone,
+                receiverEmail,
+                shippingAddress,
+                city: city || "TP. Hồ Chí Minh",
+                notes,
+                total,
+                status: "PENDING",
+                items: {
+                    create: orderItems,
                 },
+            };
+
+            if (paymentMethod === "COD") {
+                orderCreateData.payment = {
+                    create: {
+                        method: "COD",
+                        status: "PENDING",
+                        amount: total,
+                    },
+                };
+            }
+
+            const createdOrder = await tx.order.create({
+                data: orderCreateData,
                 include: {
                     items: {
                         include: {
@@ -222,21 +234,33 @@ class OrderService {
                 });
             }
 
-            return tx.order.create({
-                data: {
-                    userId: guestUserId,
-                    receiverName,
-                    receiverPhone,
-                    receiverEmail,
-                    shippingAddress,
-                    city: city || "TP. Hồ Chí Minh",
-                    notes,
-                    total,
-                    status: "PENDING",
-                    items: {
-                        create: orderItems,
-                    },
+            const guestOrderData = {
+                userId: guestUserId,
+                receiverName,
+                receiverPhone,
+                receiverEmail,
+                shippingAddress,
+                city: city || "TP. Hồ Chí Minh",
+                notes,
+                total,
+                status: "PENDING",
+                items: {
+                    create: orderItems,
                 },
+            };
+
+            if (paymentMethod === "COD") {
+                guestOrderData.payment = {
+                    create: {
+                        method: "COD",
+                        status: "PENDING",
+                        amount: total,
+                    },
+                };
+            }
+
+            return tx.order.create({
+                data: guestOrderData,
                 include: {
                     items: {
                         include: {

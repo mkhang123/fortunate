@@ -312,7 +312,7 @@ export default function VirtualTryOn() {
  </h2>
 
  <div className="flex flex-col gap-3">
- {/* Chưa tải: một hàng rộng. Đã tải: hai ô vuông — tải | ảnh */}
+ {/* Hai ô vuông cạnh nhau: tải đồ | ảnh — áp dụng cả khi có đồ từ máy hoặc sản phẩm từ trang chi tiết */}
  {customProductImage ? (
  <div className="grid grid-cols-2 gap-3 w-full">
  <label className="cursor-pointer aspect-square w-full border-2 border-dashed border-gray-200 rounded-sm flex flex-col items-center justify-center gap-2 hover:border-black transition-all bg-gray-50/50 group min-h-0">
@@ -340,6 +340,38 @@ export default function VirtualTryOn() {
  </p>
  </div>
  </div>
+ ) : fromProductItem ? (
+ <div className="grid grid-cols-2 gap-3 w-full">
+ <label className="cursor-pointer aspect-square w-full border-2 border-dashed border-gray-200 rounded-sm flex flex-col items-center justify-center gap-2 hover:border-black transition-all bg-gray-50/50 group min-h-0">
+ <Plus className="w-6 h-6 text-gray-300 group-hover:text-black shrink-0" />
+ <span className="text-[9px] font-black text-center px-2 leading-tight">Tải đồ từ máy</span>
+ <input type="file" className="hidden" onChange={handleCustomProductUpload} accept="image/*" />
+ </label>
+ <div
+ role="button"
+ tabIndex={0}
+ onClick={() => setSelectedProduct(fromProductItem)}
+ onKeyDown={(e) => {
+ if (e.key === 'Enter' || e.key === ' ') {
+ e.preventDefault();
+ setSelectedProduct(fromProductItem);
+ }
+ }}
+ className={`flex flex-col aspect-square w-full min-h-0 rounded-sm border-2 overflow-hidden cursor-pointer transition-all ${selectedProduct?.id === fromProductItem.id ? 'border-black bg-gray-50' : 'border-gray-200 bg-white'}`}
+ >
+ <div className="flex-1 min-h-0 overflow-hidden bg-white flex items-center justify-center">
+ {fromProductItem.image ? (
+ <img src={fromProductItem.image} className="w-full h-full object-contain mix-blend-multiply" alt={fromProductItem.name} />
+ ) : (
+ <div className="text-[9px] text-gray-300 font-bold">No Image</div>
+ )}
+ </div>
+ <p className="text-[9px] font-black text-center truncate px-1 py-1.5 shrink-0 text-blue-600 italic tracking-tighter bg-white border-t border-gray-100">
+ Đã chọn
+ </p>
+ <p className="text-[8px] font-bold text-center truncate px-1 pb-1.5 text-gray-500 bg-white">{fromProductItem.name}</p>
+ </div>
+ </div>
  ) : (
  <label className="cursor-pointer w-full border-2 border-dashed border-gray-200 rounded-sm flex flex-row items-center justify-center gap-3 hover:border-black transition-all bg-gray-50/50 group min-h-[100px] py-4">
  <Plus className="w-6 h-6 text-gray-300 group-hover:text-black shrink-0" />
@@ -348,38 +380,19 @@ export default function VirtualTryOn() {
  </label>
  )}
 
- <div className="grid grid-cols-2 gap-3">
- {/* SẢN PHẨM TỪ TRANG CHI TIẾT (PRE-SELECTED) */}
- {fromProductItem && (
- <div
- onClick={() => setSelectedProduct(fromProductItem)}
- className={`relative cursor-pointer border-2 transition-all p-1 rounded-sm ${selectedProduct?.id === fromProductItem.id ? 'border-black bg-gray-50' : 'border-transparent bg-white shadow-sm'}`}
- >
- <div className="overflow-hidden bg-white mb-1" style={{ height: '156px' }}>
- {fromProductItem.image
- ? <img src={fromProductItem.image} className="w-full h-full object-contain mix-blend-multiply" alt={fromProductItem.name} />
- : <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-300 font-bold ">No Image</div>
- }
- </div>
- <p className="text-[9px] font-black text-center truncate px-1 text-blue-600 tracking-tighter italic">Đã chọn</p>
- <p className="text-[8px] font-bold text-center truncate px-1 text-gray-500">{fromProductItem.name}</p>
- </div>
- )}
-
- {/* SẢN PHẨM GỢI Ý — CHỈ XEM, KHÔNG CHỌN */}
+ {/* SẢN PHẨM GỢI Ý — hàng dưới, hai cột */}
  {(loadingProducts || randomProducts.length > 0) && (
- <div className="col-span-2">
  <div className="grid grid-cols-2 gap-3">
  {loadingProducts ? (
  <>
-   {[0, 1].map(i => (
-   <div key={i} className="border border-gray-100 rounded-sm animate-pulse bg-gray-50" style={{ height: '180px' }} />
-   ))}
+ {[0, 1].map((i) => (
+ <div key={i} className="border border-gray-100 rounded-sm animate-pulse bg-gray-50" style={{ height: '180px' }} />
+ ))}
  </>
  ) : (
  randomProducts.map((item) => (
  <div
-   key={item.id}
+ key={item.id}
  className="border border-gray-100 rounded-sm p-1 bg-white select-none cursor-default opacity-95"
  title={item.name}
  >
@@ -391,9 +404,7 @@ export default function VirtualTryOn() {
  ))
  )}
  </div>
- </div>
  )}
- </div>
  </div>
 
  </div>

@@ -13,6 +13,13 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+function formatPaymentMethodDisplay(method) {
+ if (!method) return "N/A";
+ if (method === "COD") return "Trực tiếp";
+ if (method === "VNPAY") return "VNPay";
+ return method;
+}
+
 export default function AdminOrders() {
  const [orders, setOrders] = useState([]);
  const [loading, setLoading] = useState(true);
@@ -61,8 +68,6 @@ export default function AdminOrders() {
  };
 
  const handleDeleteOrder = async (orderId) => {
- if (!window.confirm("Bạn có chắc muốn xóa đơn hàng này?")) return;
-
  try {
  await api.delete(`/orders/${orderId}`);
  toast.success("Xóa đơn hàng thành công");
@@ -205,7 +210,7 @@ export default function AdminOrders() {
  </td>
  <td className="py-4 px-4">
  <span className="text-xs font-bold">
- {order.payment?.method || "N/A"}
+ {formatPaymentMethodDisplay(order.payment?.method)}
  </span>
  </td>
  <td className="py-4 px-4">

@@ -1,4 +1,5 @@
 import { recommendOutfitsByStyle, retrieve, summarize } from "../services/chat.service.js";
+import { getFortunateSizeSuggestions } from "../services/size-advice.service.js";
 import OrderService from "../services/order.service.js";
 
 // Helper: check rate limit error and get wait time (seconds)
@@ -22,25 +23,66 @@ function isDailyQuotaExhausted(err) {
 }
 
 function extractOrderLookupInfo(message = "") {
-  const normalized = message.trim().normalize("NFC"); // giữ NFC cho email/phone regex
+  const normalized = message.trim().normalize("NFC");
   const na = noAccent(message);
+
   const hasLookupIntent =
-    /(?:tra\s*cuu|kiem\s*tra|xem)\s*(?:don|don hang)/i.test(na) ||
-    /ma\s*don/i.test(na);
+    /(?:tra\s*cuu|kiem\s*tra|xem|tim)\s*(?:don|don\s*hang)/i.test(na) ||
+    /(?:chi\s*tiet|trang\s*thai)\s*(?:don|don\s*hang)/i.test(na) ||
+    /ma\s*don/i.test(na) ||
+    /\bdon\s*hang\s*(?:so|#)?\s*\d/i.test(na) ||
+    /\bdon\s*hang\s*:\s*\d/i.test(na) ||
+    /(?:order|tracking)\s*#?\s*\d/i.test(normalized);
 
   if (!hasLookupIntent) return null;
 
-  const orderIdMatch = normalized.match(
-    /(?:mã\s*đơn|đơn(?:\s*hàng)?|#)\s*(?:(?:là|la|=|:|#|-)\s*)?(\d{1,12})/i
-  );
+  let orderId = null;
+  const idPatterns = [
+    /(?:mã\s*đơn|đơn(?:\s*hàng)?|#|order\s*#?)\s*(?:(?:là|la|=|:|#|-)\s*)?(\d{1,12})/i,
+    /(?:đơn|don)\s*(?:hàng|hang)?\s*(?:số|so|#)?\s*(\d{1,12})/i,
+    /tra\s*cứu\s*(?:đơn(?:\s*hàng)?\s*)?(\d{1,12})/i,
+    /tra\s*cuu\s*(?:don(?:\s*hang)?\s*)?(\d{1,12})/i,
+    /#(\d{1,12})\b/,
+  ];
+  for (const re of idPatterns) {
+    const m = normalized.match(re);
+    if (m) {
+      const n = Number(m[1]);
+      if (n > 0) {
+        orderId = n;
+        break;
+      }
+    }
+  }
+
+  if (!orderId) {
+    const nums = normalized.match(/\d{1,12}/g);
+    if (nums && nums.length === 1) {
+      const n = Number(nums[0]);
+      if (n > 0) orderId = n;
+    }
+  }
+
   const emailMatch = normalized.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
   const phoneMatch = normalized.match(/(?:\+84|0)[\s.\-]?\d(?:[\s.\-]?\d){7,10}/);
 
   return {
-    orderId: orderIdMatch ? Number(orderIdMatch[1]) : null,
+    orderId,
     email: emailMatch ? emailMatch[0].toLowerCase() : "",
     phone: phoneMatch ? phoneMatch[0].replace(/[^\d+]/g, "") : "",
   };
+}
+
+function formatOrderChatSummary(order, orderLink) {
+  const createdAt = new Date(order.createdAt).toLocaleDateString("vi-VN");
+  return [
+    `Mình đã tìm thấy đơn #${order.id}.`,
+    `- Trạng thái: ${order.status}`,
+    `- Tổng tiền: ${order.total.toLocaleString("vi-VN")} VNĐ`,
+    `- Ngày đặt: ${createdAt}`,
+    `- Phương thức: ${order.payment?.method || "Chưa cập nhật"}`,
+    `[Xem chi tiết đơn hàng](${orderLink})`,
+  ].join("\n");
 }
 
 function extractStyleIntent(message = "") {
@@ -113,30 +155,23 @@ function extractSizeAdviceIntent(message = "") {
   return "both";
 }
 
-const SIZE_ORDER = ["S", "M", "L", "XL"];
-
-/** Tính size cơ bản dựa trên chiều cao + cân nặng */
-function getBaseSize(height, weight) {
-  // Điểm số: chiều cao (trọng số 60%) + cân nặng (trọng số 40%)
-  // Ngưỡng theo bảng size Fortunate (S→M→L→XL)
-  const h = Number(height) || 0;
-  const w = Number(weight) || 0;
-
-  if (h < 163 || w < 55) return "S";
-  if (h < 168 || w < 63) return (h < 165 && w < 58) ? "S" : "M";
-  if (h < 174 || w < 71) return "M";
-  if (h < 180 || w < 80) return "L";
-  return "XL";
-}
-
-/** Tăng 1 size (cho áo khoác vì mặc layering) */
-function upOneSize(size) {
-  const idx = SIZE_ORDER.indexOf(size);
-  return idx < SIZE_ORDER.length - 1 ? SIZE_ORDER[idx + 1] : size;
+function buildSizeIntro(bodyProfile, chartLabel) {
+  const bits = [
+    `chiều cao **${bodyProfile.height} cm**`,
+    `cân nặng **${bodyProfile.weight} kg**`,
+  ];
+  if (bodyProfile.chest) bits.push(`vòng ngực **${bodyProfile.chest} cm**`);
+  if (bodyProfile.waist) bits.push(`vòng eo **${bodyProfile.waist} cm**`);
+  if (bodyProfile.hip) bits.push(`vòng hông **${bodyProfile.hip} cm**`);
+  const tail =
+    bits.length === 1
+      ? bits[0]
+      : `${bits.slice(0, -1).join(", ")} và ${bits[bits.length - 1]}`;
+  return `Dựa trên ${tail} của bạn (bảng size **${chartLabel}**), đây là gợi ý size:`;
 }
 
 /**
- * Tạo phản hồi tư vấn size dựa trên body profile.
+ * Tạo phản hồi tư vấn size dựa trên body profile (cùng logic với Gemini).
  * type: "top" | "bottom" | "both"
  */
 function buildSizeAdviceReply(type, bodyProfile) {
@@ -147,19 +182,14 @@ function buildSizeAdviceReply(type, bodyProfile) {
     );
   }
 
-  const { height, weight } = bodyProfile;
-  const base = getBaseSize(height, weight);
-  const jacket = upOneSize(base);
-
-  const lines = [
-    `Dựa trên chiều cao **${height} cm** và cân nặng **${weight} kg** của bạn, đây là gợi ý size:`,
-    "",
-  ];
+  const sug = getFortunateSizeSuggestions(bodyProfile);
+  const { topBase, bottomBase, jacket, chartLabel } = sug;
+  const lines = [buildSizeIntro(bodyProfile, chartLabel), ""];
 
   if (type === "top" || type === "both") {
     lines.push("**Áo:**");
-    lines.push(`- Áo thun: **Size ${base}**`);
-    lines.push(`- Áo sơ mi: **Size ${base}**`);
+    lines.push(`- Áo thun: **Size ${topBase}**`);
+    lines.push(`- Áo sơ mi: **Size ${topBase}**`);
     lines.push(
       `- Áo khoác: **Size ${jacket}** _(lên 1 size so với chuẩn để mặc thoải mái khi layering)_`
     );
@@ -169,30 +199,67 @@ function buildSizeAdviceReply(type, bodyProfile) {
 
   if (type === "bottom" || type === "both") {
     lines.push("**Quần:**");
-    lines.push(`- Quần dài: **Size ${base}**`);
-    lines.push(`- Quần ngắn: **Size ${base}**`);
+    lines.push(`- Quần dài: **Size ${bottomBase}**`);
+    lines.push(`- Quần ngắn: **Size ${bottomBase}**`);
   }
 
   lines.push("");
   lines.push(
-    "_Lưu ý: Đây là gợi ý dựa trên chiều cao và cân nặng. " +
-    "Nếu bạn có số đo vòng ngực/eo/hông, hãy cập nhật thêm để mình tư vấn chính xác hơn nhé!_"
+    "_Gợi ý theo bảng size Fortunate và các chỉ số đã lưu; thiếu số đo vòng thì có thể lệch form cá nhân._"
   );
 
   return lines.join("\n");
 }
 
+/**
+ * Đọc stream Gemini với deadline tổng — tránh for-await treo vô hạn khi API không trả chunk / không kết thúc.
+ */
+async function drainGeminiStream(stream, onText, overallMs) {
+  const iterator = stream[Symbol.asyncIterator]();
+  const deadline = Date.now() + overallMs;
+
+  while (true) {
+    const remaining = Math.min(45000, Math.max(400, deadline - Date.now()));
+    if (remaining <= 400) {
+      throw new Error("GEMINI_STREAM_TIMEOUT");
+    }
+
+    let nextResult;
+    try {
+      nextResult = await Promise.race([
+        iterator.next(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("GEMINI_STREAM_TIMEOUT")), remaining)
+        ),
+      ]);
+    } catch (e) {
+      if (e?.message === "GEMINI_STREAM_TIMEOUT") throw e;
+      throw e;
+    }
+
+    if (nextResult.done) break;
+    const chunk = nextResult.value;
+    let text = "";
+    try {
+      text = typeof chunk?.text === "function" ? chunk.text() : "";
+    } catch {
+      text = "";
+    }
+    if (text) onText(text);
+  }
+}
+
 function buildLocalFallbackReply(hits = []) {
   if (!Array.isArray(hits) || hits.length === 0) {
     return (
-      "Hiện API AI đang hết quota nên mình chưa thể tư vấn chi tiết ngay. " +
-      "Bạn thử lại sau hoặc vào trang Mua sắm để xem sản phẩm mới nhé."
+      "Phản hồi từ AI đang chậm hoặc tạm không khả dụng. " +
+      "Bạn thử lại sau hoặc vào trang Mua sắm để xem sản phẩm nhé."
     );
   }
 
   const top = hits.slice(0, 4);
   const lines = [
-    "API AI đang tạm hết quota, mình gợi ý nhanh một số sản phẩm phù hợp trong shop:",
+    "Mình gợi ý nhanh một số sản phẩm phù hợp trong shop (AI tạm chậm hoặc hết quota):",
     "",
   ];
 
@@ -237,10 +304,11 @@ export const handleChat = async (req, res) => {
   try {
     const orderLookup = extractOrderLookupInfo(message);
     if (orderLookup) {
-      if (!orderLookup.orderId || !orderLookup.email || !orderLookup.phone) {
+      if (!orderLookup.orderId) {
         sendEvent("chunk", {
           text:
-            "Mình có thể tra cứu đơn hàng cho bạn. Vui lòng gửi đủ theo mẫu: `mã đơn 1234, email abc@gmail.com, sđt 0901234567`.",
+            "Bạn gửi giúp mình **mã đơn** (số đơn), ví dụ: `tra cứu đơn 123` hoặc `mã đơn 123`. " +
+            "Nếu đã **đăng nhập**, chỉ cần mã đơn là được.",
         });
         sendEvent("done", { success: true });
         endRes();
@@ -258,33 +326,47 @@ export const handleChat = async (req, res) => {
         endRes();
         return;
       }
-      const orderEmail = (order.receiverEmail || "").trim().toLowerCase();
-      const orderPhone = (order.receiverPhone || "").replace(/\s/g, "");
 
-      if (orderEmail !== orderLookup.email || orderPhone !== orderLookup.phone) {
-        sendEvent("chunk", {
-          text:
-            "Mình chưa xác thực được đơn hàng này. Bạn kiểm tra lại mã đơn, email và số điện thoại đã dùng khi đặt hàng nhé.",
-        });
+      const userId = req.user ? Number(req.user.id) : NaN;
+      const isAdmin = req.user?.role === "ADMIN";
+      const ownsOrder = Number.isFinite(userId) && order.userId === userId;
+
+      if (ownsOrder || isAdmin) {
+        const orderLink = `${process.env.FRONTEND_URL}/my-orders/${order.id}`;
+        sendEvent("chunk", { text: formatOrderChatSummary(order, orderLink) });
         sendEvent("done", { success: true });
         endRes();
         return;
       }
 
-      const orderLink =
-        `${process.env.FRONTEND_URL}/order-confirmation/${order.id}` +
-        `?email=${encodeURIComponent(orderLookup.email)}&phone=${encodeURIComponent(orderLookup.phone)}`;
-      const createdAt = new Date(order.createdAt).toLocaleDateString("vi-VN");
-      const summary = [
-        `Mình đã tìm thấy đơn #${order.id}.`,
-        `- Trạng thái: ${order.status}`,
-        `- Tổng tiền: ${order.total.toLocaleString("vi-VN")} VNĐ`,
-        `- Ngày đặt: ${createdAt}`,
-        `- Phương thức: ${order.payment?.method || "Chưa cập nhật"}`,
-        `[Xem chi tiết đơn hàng](${orderLink})`,
-      ].join("\n");
+      const orderEmail = (order.receiverEmail || "").trim().toLowerCase();
+      const orderPhone = (order.receiverPhone || "").replace(/\s/g, "");
 
-      sendEvent("chunk", { text: summary });
+      if (orderLookup.email && orderLookup.phone) {
+        if (orderEmail !== orderLookup.email || orderPhone !== orderLookup.phone) {
+          sendEvent("chunk", {
+            text:
+              "Mình chưa xác thực được đơn hàng này. Bạn kiểm tra lại mã đơn, email và số điện thoại đã dùng khi đặt hàng nhé.",
+          });
+          sendEvent("done", { success: true });
+          endRes();
+          return;
+        }
+
+        const orderLink =
+          `${process.env.FRONTEND_URL}/order-confirmation/${order.id}` +
+          `?email=${encodeURIComponent(orderLookup.email)}&phone=${encodeURIComponent(orderLookup.phone)}`;
+        sendEvent("chunk", { text: formatOrderChatSummary(order, orderLink) });
+        sendEvent("done", { success: true });
+        endRes();
+        return;
+      }
+
+      sendEvent("chunk", {
+        text:
+          "Để tra cứu theo **mã đơn**, bạn **đăng nhập** tài khoản đã đặt hàng — mình sẽ hiển thị đơn ngay. " +
+          "Nếu đặt **khách không tài khoản**, gửi thêm **email** và **SĐT** nhận hàng (trùng lúc đặt), ví dụ: `mã đơn 123, email a@b.com, sdt 0901234567`.",
+      });
       sendEvent("done", { success: true });
       endRes();
       return;
@@ -315,28 +397,50 @@ export const handleChat = async (req, res) => {
 
     // 2. Send context to AI via stream with retry mechanism
     const MAX_RETRIES = 2;
+    const streamBudgetMs = Number(process.env.CHAT_STREAM_MS) || 75000;
+    const summarizeBudgetMs = Number(process.env.CHAT_SUMMARIZE_MS) || 45000;
     let lastError = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const streamResult = await summarize(hits, message, bodyProfile);
+        const streamResult = await Promise.race([
+          summarize(hits, message, bodyProfile),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("GEMINI_STREAM_TIMEOUT")), summarizeBudgetMs)
+          ),
+        ]);
+        let streamHadChunk = false;
 
-        for await (const chunk of streamResult.stream) {
-          const text = chunk.text();
-          if (text) {
-            sendEvent("chunk", { text });
+        try {
+          await drainGeminiStream(
+            streamResult.stream,
+            (text) => {
+              streamHadChunk = true;
+              sendEvent("chunk", { text });
+            },
+            streamBudgetMs
+          );
+        } catch (inner) {
+          if (inner?.message === "GEMINI_STREAM_TIMEOUT" && streamHadChunk) {
+            sendEvent("done", { success: true });
+            endRes();
+            return;
           }
+          throw inner;
         }
 
-        // Successfully ended stream
         sendEvent("done", { success: true });
         endRes();
         return;
-
       } catch (err) {
         lastError = err;
         console.error(`[Chat] Gemini API Error:`, err.message || err);
         const waitSecs = getRateLimitWait(err);
+
+        if (err?.message === "GEMINI_STREAM_TIMEOUT") {
+          console.warn("[Chat] Gemini stream timeout, falling back if possible.");
+          break;
+        }
 
         // Hết quota ngày → không retry, break ngay
         if (isDailyQuotaExhausted(err)) {
@@ -347,7 +451,7 @@ export const handleChat = async (req, res) => {
         if (waitSecs && attempt < MAX_RETRIES) {
           const waitMs = Math.ceil(waitSecs * 1000) + 500;
           console.log(`[Chat] Rate limited. Retrying after ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})...`);
-          
+
           sendEvent("waiting", { message: "Đang xử lý, vui lòng chờ..." });
           await new Promise((resolve) => setTimeout(resolve, waitMs));
           continue;
@@ -366,11 +470,12 @@ export const handleChat = async (req, res) => {
         errMsg.includes("RESOURCE_EXHAUSTED") ||
         errMsg.includes("rate") ||
         errMsg.includes("retry");
+      const isStreamTimeout = errMsg.includes("GEMINI_STREAM_TIMEOUT");
 
       if (errMsg.includes("chưa được cấu hình API key")) {
         sendEvent("error", { message: "Chatbot chưa được cấu hình API key." });
       } else {
-        if (isQuota) {
+        if (isQuota || isStreamTimeout) {
           sendEvent("chunk", { text: buildLocalFallbackReply(hits) });
           sendEvent("done", { success: true });
           endRes();
