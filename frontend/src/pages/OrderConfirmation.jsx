@@ -139,7 +139,7 @@ export default function OrderConfirmation() {
 
  const getStatusText = (status) => {
  const texts = {
- PENDING: "Chờ thanh toán",
+ PENDING: "Đang xử lý",
  PAID: "Đã thanh toán",
  SHIPPED: "Đang giao hàng",
  COMPLETED: "Hoàn thành",
@@ -148,12 +148,22 @@ export default function OrderConfirmation() {
  return texts[status] || status;
  };
 
- const isSuccess = order.status === "PAID" || order.status === "COMPLETED";
+ const getDisplayStatus = (currentOrder) => {
+ if (currentOrder.status === "PENDING" && currentOrder.payment?.status === "SUCCESS") {
+ return "Chờ admin duyệt";
+ }
+ return getStatusText(currentOrder.status);
+ };
+
+ const isSuccess =
+ order.payment?.status === "SUCCESS" ||
+ order.status === "PAID" ||
+ order.status === "COMPLETED";
 
  return (
  <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
  {/* BREADCRUMB */}
- <nav className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-gray-400 mb-12">
+ <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
  </Link>
@@ -167,7 +177,7 @@ export default function OrderConfirmation() {
  <>
  <CheckCircle2 className="w-20 h-20 mx-auto mb-6 text-green-600" />
  <h1 className="text-4xl font-black italic tracking-tighter mb-4">
- Đặt hàng thành công!
+ {order.payment?.status === "SUCCESS" ? "Thanh toán thành công!" : "Đặt hàng thành công!"}
  </h1>
  <p className="text-[11px] font-bold tracking-widest text-gray-600">
  Mã đơn hàng: #{order.id}
@@ -199,7 +209,7 @@ export default function OrderConfirmation() {
  order.status
  )}`}
  >
- {getStatusText(order.status)}
+ {getDisplayStatus(order)}
  </span>
  </div>
  {order.payment && (
@@ -231,7 +241,7 @@ export default function OrderConfirmation() {
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {/* Shipping Info */}
  <div className="bg-white p-6 rounded-2xl border border-gray-100">
- <h3 className="text-xs font-black tracking-[0.3em] mb-4 flex items-center gap-2">
+ <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <MapPin className="w-4 h-4" />
  Thông tin giao hàng
  </h3>
@@ -254,7 +264,7 @@ export default function OrderConfirmation() {
 
  {/* Payment Info */}
  <div className="bg-white p-6 rounded-2xl border border-gray-100">
- <h3 className="text-xs font-black tracking-[0.3em] mb-4 flex items-center gap-2">
+ <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <CreditCard className="w-4 h-4" />
  Thông tin thanh toán
  </h3>
@@ -281,7 +291,7 @@ export default function OrderConfirmation() {
 
  {/* Order Items */}
  <div className="bg-white p-6 rounded-2xl border border-gray-100">
- <h3 className="text-xs font-black tracking-[0.3em] mb-6 flex items-center gap-2">
+ <h3 className="text-xs font-black tracking-tight mb-6 flex items-center gap-2">
  <Package className="w-4 h-4" />
  Sản phẩm ({order.items?.length || 0})
  </h3>
@@ -317,7 +327,7 @@ export default function OrderConfirmation() {
  {/* Notes */}
  {order.notes && (
  <div className="bg-yellow-50 p-6 rounded-2xl border border-yellow-100">
- <h3 className="text-xs font-black tracking-[0.3em] mb-2">
+ <h3 className="text-xs font-black tracking-tight mb-2">
  Ghi chú
  </h3>
  <p className="text-sm text-gray-700">{order.notes}</p>

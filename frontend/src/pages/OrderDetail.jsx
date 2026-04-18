@@ -51,13 +51,20 @@ export default function OrderDetail() {
 
  const getStatusText = (status) => {
  const texts = {
- PENDING: "Chờ thanh toán",
+ PENDING: "Đang xử lý",
  PAID: "Đã thanh toán",
  SHIPPED: "Đang giao hàng",
  COMPLETED: "Hoàn thành",
  CANCELLED: "Đã hủy",
  };
  return texts[status] || status;
+ };
+
+ const getDisplayStatus = (order) => {
+ if (order.status === "PENDING" && order.payment?.status === "SUCCESS") {
+ return "Chờ admin duyệt";
+ }
+ return getStatusText(order.status);
  };
 
  const handleRetryPayment = async () => {
@@ -88,7 +95,7 @@ export default function OrderDetail() {
  return (
  <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
  {/* BREADCRUMB */}
- <nav className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-gray-400 mb-12">
+ <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
  </Link>
@@ -103,7 +110,7 @@ export default function OrderDetail() {
  {/* Back Button */}
  <button
  onClick={() => navigate("/my-orders")}
- className="flex items-center gap-2 text-[10px] font-black tracking-widest text-gray-600 hover:text-black transition-colors mb-8 group"
+ className="flex items-center gap-2 text-[10px] font-black text-gray-600 hover:text-black transition-colors mb-8 group"
  >
  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
  Quay lại
@@ -115,7 +122,7 @@ export default function OrderDetail() {
  <h1 className="text-4xl font-black italic tracking-tighter mb-2">
  Đơn hàng #{order.id}
  </h1>
- <p className="text-[11px] font-bold text-gray-500 tracking-widest flex items-center gap-2">
+ <p className="text-[11px] font-bold text-gray-500 flex items-center gap-2">
  <Clock className="w-3 h-3" />
  {new Date(order.createdAt).toLocaleDateString("vi-VN", {
  year: "numeric",
@@ -132,7 +139,7 @@ export default function OrderDetail() {
  order.status
  )}`}
  >
- {getStatusText(order.status)}
+ {getDisplayStatus(order)}
  </span>
  {order.payment && (
  <span
@@ -160,7 +167,7 @@ export default function OrderDetail() {
  <div className="lg:col-span-2 space-y-8">
  {/* Order Items */}
  <div className="bg-white p-6 rounded-3xl border border-gray-100">
- <h2 className="text-xs font-black tracking-[0.3em] mb-6 flex items-center gap-2">
+ <h2 className="text-xs font-black tracking-tight mb-6 flex items-center gap-2">
  <Package className="w-4 h-4" />
  Sản phẩm ({order.items?.length || 0})
  </h2>
@@ -204,7 +211,7 @@ export default function OrderDetail() {
  {/* Notes */}
  {order.notes && (
  <div className="bg-yellow-50 p-6 rounded-3xl border border-yellow-100">
- <h3 className="text-xs font-black tracking-[0.3em] mb-3">
+ <h3 className="text-xs font-black tracking-tight mb-3">
  Ghi chú
  </h3>
  <p className="text-sm text-gray-700">{order.notes}</p>
@@ -216,7 +223,7 @@ export default function OrderDetail() {
  <div className="space-y-6">
  {/* Shipping Info */}
  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 sticky top-32">
- <h3 className="text-xs font-black tracking-[0.3em] mb-4 flex items-center gap-2">
+ <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <MapPin className="w-4 h-4" />
  Thông tin giao hàng
  </h3>
@@ -240,7 +247,7 @@ export default function OrderDetail() {
 
  {/* Payment Summary */}
  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
- <h3 className="text-xs font-black tracking-[0.3em] mb-4 flex items-center gap-2">
+ <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <CreditCard className="w-4 h-4" />
  Thanh toán
  </h3>
@@ -257,7 +264,7 @@ export default function OrderDetail() {
  </div>
  <div className="h-[1px] bg-gray-200"></div>
  <div className="flex justify-between items-end">
- <span className="text-xs font-black tracking-widest">
+ <span className="text-xs font-black">
  Tổng cộng
  </span>
  <span className="text-xl font-black italic text-red-600">

@@ -153,8 +153,12 @@ class OrderService {
 
         // 5. Gửi thông báo đặt hàng thành công cho user
         notificationService.notifyOrderPlaced(userId, order.id).catch(console.error);
+        // 6. Báo cho admin có đơn mới cần duyệt
+        notificationService
+            .notifyOrderPendingApprovalToAdmins(order.id)
+            .catch(console.error);
 
-        // 6. Return order with payment info
+        // 7. Return order with payment info
         // Payment record will be created by payment controller
         let result = {
             order,
@@ -276,6 +280,11 @@ class OrderService {
             });
         });
 
+        // Gửi thông báo cho admin có đơn mới cần duyệt
+        notificationService
+            .notifyOrderPendingApprovalToAdmins(order.id)
+            .catch(console.error);
+
         return {
             order,
             success: true,
@@ -310,15 +319,13 @@ class OrderService {
     static async updatePaymentStatus(orderId, vnpayResponseCode) {
         const order = await this.findById(orderId);
 
-        // Map VNPAY response codes to order status
+        // Thanh toán thành công không đồng nghĩa với đơn đã được admin duyệt.
+        // Đơn vẫn ở trạng thái PENDING để chờ admin xử lý thủ công.
         let orderStatus = order.status;
 
         if (vnpayResponseCode === "00") {
-            // Payment successful
-            orderStatus = "PAID";
+            orderStatus = "PENDING";
         } else {
-            // Payment failed - keep current status or mark as cancelled
-            // You can customize this logic based on your business requirements
             orderStatus = "CANCELLED";
         }
 

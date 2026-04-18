@@ -45,13 +45,20 @@ export default function MyOrders() {
 
  const getStatusText = (status) => {
  const texts = {
- PENDING: "Chờ thanh toán",
+ PENDING: "Đang xử lý",
  PAID: "Đã thanh toán",
  SHIPPED: "Đang giao hàng",
  COMPLETED: "Hoàn thành",
  CANCELLED: "Đã hủy",
  };
  return texts[status] || status;
+ };
+
+ const getDisplayStatus = (order) => {
+ if (order.status === "PENDING" && order.payment?.status === "SUCCESS") {
+ return "Chờ admin duyệt";
+ }
+ return getStatusText(order.status);
  };
 
  if (loading) {
@@ -65,7 +72,7 @@ export default function MyOrders() {
  return (
  <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
  {/* BREADCRUMB */}
- <nav className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-gray-400 mb-12">
+ <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
  </Link>
@@ -80,7 +87,7 @@ export default function MyOrders() {
  {orders.length === 0 ? (
  <div className="text-center py-40 border-2 border-dashed border-gray-100 rounded-3xl">
  <ShoppingBag className="w-12 h-12 mx-auto mb-6 text-gray-200" />
- <p className="text-[11px] font-black tracking-[0.2em] text-gray-400 mb-8">
+ <p className="text-[11px] font-black text-gray-400 mb-8">
  Bạn chưa có đơn hàng nào
  </p>
  <Link
@@ -102,7 +109,7 @@ export default function MyOrders() {
  <div className="flex items-center gap-4">
  <Package className="w-5 h-5 text-gray-400" />
  <div>
- <p className="text-xs font-black tracking-widest">
+ <p className="text-xs font-black">
  Đơn hàng #{order.id}
  </p>
  <p className="text-[10px] text-gray-500 font-bold">
@@ -121,7 +128,7 @@ export default function MyOrders() {
  order.status
  )}`}
  >
- {getStatusText(order.status)}
+ {getDisplayStatus(order)}
  </span>
  </div>
 

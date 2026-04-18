@@ -322,7 +322,7 @@ export default function AdminDashboard() {
   ];
 
   const statusLabels = {
-    PENDING: { label: "Chờ thanh toán", bar: "bg-yellow-400" },
+    PENDING: { label: "Đang xử lý", bar: "bg-yellow-400" },
     PAID: { label: "Đã thanh toán", bar: "bg-blue-500" },
     SHIPPED: { label: "Đang giao hàng", bar: "bg-purple-500" },
     COMPLETED: { label: "Hoàn thành", bar: "bg-emerald-500" },

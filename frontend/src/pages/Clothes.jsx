@@ -1,7 +1,29 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../apis/axiosConfig";
 import { Link, useLocation, useParams } from "react-router-dom"; // Thay useLocation bằng useParams
 import { Search, ChevronDown } from "lucide-react";
+
+// Mapping slug → tên tiếng Việt có dấu
+const SLUG_LABELS = {
+  "ao-thun": "Áo thun",
+  "ao-so-mi": "Áo sơ mi",
+  "ao-khoac": "Áo khoác",
+  "ao-hoodie": "Áo hoodie",
+  "ao-polo": "Áo polo",
+  "quan-jean": "Quần jean",
+  "quan-au": "Quần âu",
+  "quan-short": "Quần short",
+  "quan-ngan": "Quần ngắn",
+  "quan-dai": "Quần dài",
+  "vay": "Váy",
+  "dam": "Đầm",
+  "set-do": "Set đồ",
+};
+
+function slugToLabel(slug) {
+  if (!slug) return "";
+  return SLUG_LABELS[slug] || slug.replace(/-/g, " ");
+}
 
 export default function Clothes() {
  const [products, setProducts] = useState([]);
@@ -49,7 +71,7 @@ export default function Clothes() {
 
  const styleTitle = style ? `Phong cách ${style}` : null;
  const pageTitle = categorySlug
- ? categorySlug.replace("-", " ")
+ ? slugToLabel(categorySlug)
  : styleTitle || "Tất cả sản phẩm";
 
  return (
@@ -70,7 +92,7 @@ export default function Clothes() {
  <>
  <span className="mx-2">/</span>
  <span className="text-black ">
- {categorySlug.replace("-", " ")}
+ {slugToLabel(categorySlug)}
  </span>
  </>
  )}

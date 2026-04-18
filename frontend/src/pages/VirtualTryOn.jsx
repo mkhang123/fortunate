@@ -1,8 +1,7 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Smartphone, Upload, RotateCcw, Download, Info, Plus } from 'lucide-react';
+import { Smartphone, Upload, RotateCcw, Download, Plus } from 'lucide-react';
 import { vtonAPI } from '../apis/vton.api';
-import api from '../apis/axiosConfig';
 
 export default function VirtualTryOn() {
  const location = useLocation();
@@ -31,27 +30,7 @@ export default function VirtualTryOn() {
  const [personImgSize, setPersonImgSize] = useState(null);
  const personImgRef = useRef(null);
 
- // Sản phẩm ngẫu nhiên từ shop
- const [randomProducts, setRandomProducts] = useState([]);
- const [loadingProducts, setLoadingProducts] = useState(true);
-
- useEffect(() => {
-   api.get('/products', { params: { status: 'PUBLISHED' } })
-     .then(res => {
-       const products = (res.data?.data || []).filter(p => p.images?.[0]);
-       const shuffled = [...products].sort(() => Math.random() - 0.5);
-       setRandomProducts(shuffled.slice(0, 2).map(p => ({
-         id: p.id,
-         name: p.name,
-         image: p.images[0],
-         slug: p.slug,
-       })));
-     })
-     .catch(() => {})
-     .finally(() => setLoadingProducts(false));
- }, []);
-
- // Xử lý tải ảnh chân dung người dùng
+ // Xử lý tải ảnh cá nhân người dùng
  const handleUserImageUpload = (e) => {
  const file = e.target.files[0];
  if (file) {
@@ -184,7 +163,7 @@ export default function VirtualTryOn() {
  Virtual Try-On
  </h1>
  <p className="text-gray-500 text-xs sm:text-sm max-w-2xl leading-relaxed">
- Tải ảnh chân dung, chọn trang phục từ máy hoặc từ sản phẩm khi vào từ trang chi tiết. Hai sản phẩm gợi ý bên dưới chỉ để tham khảo, không chọn được.
+ Tải ảnh cá nhân, chọn trang phục từ máy hoặc từ sản phẩm khi vào từ trang chi tiết, rồi nhấn bắt đầu thử đồ.
  </p>
  </div>
 
@@ -192,9 +171,9 @@ export default function VirtualTryOn() {
 
  {/* CỘT 1: TẢI ẢNH NGƯỜI DÙNG */}
  <div className="space-y-6">
- <h2 className="text-xs font-black tracking-[0.2em] flex items-center gap-2">
+ <h2 className="text-xs font-black tracking-[0.2em] flex items-center justify-center gap-2">
  <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-[10px]">1</span>
- Ảnh của bạn
+ Ảnh cá nhân
  </h2>
  <div className="relative border-2 border-dashed border-gray-200 rounded-sm overflow-hidden flex flex-col items-center justify-center group hover:border-black transition-colors bg-gray-50/30">
  {userImage ? (
@@ -220,25 +199,19 @@ export default function VirtualTryOn() {
  ) : (
  <label className="cursor-pointer flex flex-col items-center p-8 text-center w-full justify-center" style={{ minHeight: '280px' }}>
  <Upload className="w-10 h-10 text-gray-300 mb-4 group-hover:text-black transition-colors" />
- <span className="text-[11px] font-black tracking-widest">Tải ảnh chân dung</span>
+ <span className="text-[11px] font-black tracking-widest">Tải ảnh cá nhân</span>
  <input type="file" className="hidden" onChange={handleUserImageUpload} accept="image/*" />
  </label>
  )}
- </div>
- <div className="bg-blue-50 p-4 rounded-sm flex gap-3">
- <Info className="w-5 h-5 text-blue-500 shrink-0" />
- <p className="text-[10px] text-blue-700 leading-relaxed font-bold">
- Lưu ý: Ảnh rõ nét, đứng thẳng sẽ giúp AI ghép đồ đẹp hơn.
- </p>
- </div>
+  </div>
  </div>
 
- {/* CỘT 2: PHÒNG THAY ĐỒ (KẾT QUẢ AI) */}
+ {/* CỘT 2: KẾT QUẢ AI */}
  <div className="space-y-6">
  {/* Cùng hàng tiêu đề với cột 1 & 3 (badge 24px + gap-2) để khung ảnh bắt đầu cùng một đường */}
  <h2 className="text-xs font-black tracking-[0.2em] flex items-center gap-2 min-h-6">
  <span className="w-6 h-6 shrink-0 rounded-full opacity-0 pointer-events-none" aria-hidden />
- <span className="flex-1 text-center">Phòng thay đồ ảo</span>
+ <span className="flex-1 text-center">Kết quả</span>
  </h2>
  <div className="relative bg-[#fdfdfd] rounded-sm overflow-hidden flex items-center justify-center border border-gray-100 shadow-inner">
  {isProcessing ? (
@@ -306,10 +279,10 @@ export default function VirtualTryOn() {
 
  {/* CỘT 3: CHỌN TRANG PHỤC (MẪU HOẶC TẢI LÊN) */}
  <div className="space-y-6">
- <h2 className="text-xs font-black tracking-[0.2em] flex items-center gap-2">
- <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-[10px]">2</span>
- Chọn trang phục
- </h2>
+  <h2 className="text-xs font-black tracking-[0.2em] flex items-center justify-center gap-2">
+  <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-[10px]">2</span>
+  Chọn trang phục
+  </h2>
 
  <div className="flex flex-col gap-3">
  {/* Hai ô vuông cạnh nhau: tải đồ | ảnh — áp dụng cả khi có đồ từ máy hoặc sản phẩm từ trang chi tiết */}
@@ -332,8 +305,8 @@ export default function VirtualTryOn() {
  }}
  className={`flex flex-col aspect-square w-full min-h-0 rounded-sm border-2 overflow-hidden cursor-pointer transition-all ${selectedProduct?.id === customProductImage.id ? 'border-black bg-gray-50' : 'border-gray-200 bg-white'}`}
  >
- <div className="flex-1 min-h-0 overflow-hidden bg-white">
- <img src={customProductImage.image} className="w-full h-full object-cover" alt="Đồ tải từ máy" />
+ <div className="flex-1 min-h-0 overflow-hidden bg-white p-2 flex items-center justify-center">
+ <img src={customProductImage.image} className="w-full h-full object-contain" alt="Đồ tải từ máy" />
  </div>
  <p className="text-[9px] font-black text-center truncate px-1 py-1.5 shrink-0 italic text-red-600 tracking-tighter bg-white border-t border-gray-100">
  Personal Item
@@ -380,31 +353,23 @@ export default function VirtualTryOn() {
  </label>
  )}
 
- {/* SẢN PHẨM GỢI Ý — hàng dưới, hai cột */}
- {(loadingProducts || randomProducts.length > 0) && (
- <div className="grid grid-cols-2 gap-3">
- {loadingProducts ? (
- <>
- {[0, 1].map((i) => (
- <div key={i} className="border border-gray-100 rounded-sm animate-pulse bg-gray-50" style={{ height: '180px' }} />
+ {/* HƯỚNG DẪN SỬ DỤNG — 3 bước */}
+ <div className="mt-2 flex flex-col gap-3">
+ <p className="text-[9px] font-black tracking-[0.15em] text-gray-400 uppercase">Hướng dẫn</p>
+ {[
+   { step: '01', label: 'Tải ảnh cá nhân', desc: 'Chọn ảnh chụp đứng thẳng, rõ nét để AI ghép đồ chính xác hơn.' },
+   { step: '02', label: 'Chọn trang phục', desc: 'Tải ảnh đồ từ máy hoặc chọn sản phẩm từ trang chi tiết.' },
+   { step: '03', label: 'Bắt đầu thử đồ', desc: 'Nhấn nút "Bắt đầu thử đồ" và chờ AI xử lý kết quả.' },
+ ].map(({ step, label, desc }) => (
+   <div key={step} className="flex items-start gap-3 bg-gray-50 rounded-sm px-3 py-3">
+     <span className="w-6 h-6 shrink-0 bg-black text-white rounded-full flex items-center justify-center text-[9px] font-black mt-0.5">{step}</span>
+     <div>
+       <p className="text-[10px] font-black tracking-wide mb-0.5">{label}</p>
+       <p className="text-[9px] text-gray-500 leading-relaxed">{desc}</p>
+     </div>
+   </div>
  ))}
- </>
- ) : (
- randomProducts.map((item) => (
- <div
- key={item.id}
- className="border border-gray-100 rounded-sm p-1 bg-white select-none cursor-default opacity-95"
- title={item.name}
- >
- <div className="overflow-hidden bg-white mb-1" style={{ height: '156px' }}>
- <img src={item.image} className="w-full h-full object-contain mix-blend-multiply" alt={item.name} />
  </div>
- <p className="text-[9px] font-bold text-center truncate px-1 text-gray-500">{item.name}</p>
- </div>
- ))
- )}
- </div>
- )}
  </div>
 
  </div>

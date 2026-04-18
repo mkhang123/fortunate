@@ -4,7 +4,18 @@ class DashboardService {
     /**
      * Lấy tất cả dữ liệu tổng quan cho admin dashboard
      */
-    static async getDashboardStats() {
+    static async getDashboardStats(options = {}) {
+        const { filterType = "month", year = new Date().getFullYear(), month = null } = options;
+
+        const rangeStart =
+            filterType === "day"
+                ? new Date(year, (month || 1) - 1, 1, 0, 0, 0, 0)
+                : new Date(year, 0, 1, 0, 0, 0, 0);
+        const rangeEnd =
+            filterType === "day"
+                ? new Date(year, month || 1, 1, 0, 0, 0, 0)
+                : new Date(year + 1, 0, 1, 0, 0, 0, 0);
+
         const [
             totalOrders,
             totalRevenue,
@@ -13,7 +24,7 @@ class DashboardService {
             topSellingProducts,
             recentVtonSessions,
             ordersByStatus,
-            revenueByDay,
+            revenueOrders,
         ] = await Promise.all([
             // Tổng số đơn hàng
             prisma.order.count(),
@@ -57,20 +68,21 @@ class DashboardService {
                 _count: { id: true },
             }),
 
-            // Doanh thu 12 tháng gần nhất
-            prisma.$queryRaw`
-        SELECT 
-          TO_CHAR(DATE_TRUNC('month', "createdAt"), 'MM/YYYY') as month,
-          DATE_TRUNC('month', "createdAt") as month_date,
-          SUM(total) as revenue,
-          COUNT(id) as orders
-        FROM "Order"
-        WHERE 
-          "createdAt" >= NOW() - INTERVAL '12 months'
-          AND status IN ('PAID', 'SHIPPED', 'COMPLETED')
-        GROUP BY DATE_TRUNC('month', "createdAt")
-        ORDER BY month_date ASC
-      `,
+            // Dữ liệu doanh thu theo bộ lọc biểu đồ
+            prisma.order.findMany({
+                where: {
+                    status: { in: ["PAID", "SHIPPED", "COMPLETED"] },
+                    createdAt: {
+                        gte: rangeStart,
+                        lt: rangeEnd,
+                    },
+                },
+                select: {
+                    createdAt: true,
+                    total: true,
+                },
+                orderBy: { createdAt: "asc" },
+            }),
         ]);
 
         // Enrich top selling products với tên sản phẩm
@@ -105,6 +117,23 @@ class DashboardService {
             statusMap[s.status] = s._count.id;
         });
 
+        const revenueMap = new Map();
+        for (const order of revenueOrders) {
+            const createdAt = new Date(order.createdAt);
+            const key =
+                filterType === "day"
+                    ? createdAt.getDate()
+                    : createdAt.getMonth() + 1;
+            revenueMap.set(key, (revenueMap.get(key) || 0) + Number(order.total || 0));
+        }
+
+        const revenueChart = Array.from(revenueMap.entries())
+            .sort((a, b) => a[0] - b[0])
+            .map(([key, revenue]) => ({
+                label: filterType === "day" ? `${key}/${month}` : `T${key}`,
+                revenue,
+            }));
+
         return {
             summary: {
                 totalOrders,
@@ -121,12 +150,7 @@ class DashboardService {
                 COMPLETED: Number(statusMap.COMPLETED || 0),
                 CANCELLED: Number(statusMap.CANCELLED || 0),
             },
-            // Convert BigInt từ raw SQL sang Number
-            revenueByMonth: revenueByDay.map((row) => ({
-                month: row.month,
-                revenue: Number(row.revenue),
-                orders: Number(row.orders),
-            })),
+            revenueChart,
         };
     }
 

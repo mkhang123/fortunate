@@ -4,6 +4,7 @@ import api from '../apis/axiosConfig';
 
 // Mapping type → màu nền badge
 const TYPE_COLORS = {
+ ORDER_PENDING_APPROVAL: 'bg-orange-50 border-orange-100',
  ORDER_PLACED: 'bg-blue-50 border-blue-100',
  ORDER_PAID: 'bg-green-50 border-green-100',
  ORDER_SHIPPED: 'bg-amber-50 border-amber-100',

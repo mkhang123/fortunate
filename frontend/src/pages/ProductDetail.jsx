@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../apis/axiosConfig";
 import { reviewAPI } from "../apis/review.api";
@@ -408,6 +408,33 @@ export default function ProductDetail() {
  }
  };
 
+  const handleBuyNow = async () => {
+    if (!selectedVariant) {
+      toast.error("Vui lòng chọn size!");
+      return;
+    }
+    if (!user) {
+      navigate("/login", {
+        state: {
+          from: `/product/${slug}`,
+          message: "Vui lòng đăng nhập để thanh toán!",
+        },
+      });
+      return;
+    }
+    try {
+      const res = await api.post("/cart/add", {
+        variantId: selectedVariant.id,
+        quantity: quantity,
+      });
+      if (res.data.success) {
+        navigate("/checkout");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể tiến hành thanh toán");
+    }
+  };
+
  if (loading)
  return (
  <div className="min-h-screen flex items-center justify-center bg-white">
@@ -548,9 +575,13 @@ export default function ProductDetail() {
  key={variant.id}
  disabled={isOutOfStock}
  onClick={() => {
- setSelectedVariant(variant);
- setQuantity(1);
- }}
+          if (isSelected) {
+            setSelectedVariant(null);
+          } else {
+            setSelectedVariant(variant);
+            setQuantity(1);
+          }
+          }}
  className={`relative h-16 flex flex-col items-center justify-center rounded-2xl border-2 transition-all duration-300 ${isSelected ? "border-black bg-black text-white shadow-xl scale-105" : "border-gray-200 bg-white text-black hover:border-black"} ${isOutOfStock ? "opacity-20 cursor-not-allowed grayscale" : "cursor-pointer active:scale-90"}`}
  >
  <span className="text-sm font-black ">
@@ -609,6 +640,18 @@ export default function ProductDetail() {
  ? "Thêm vào giỏ hàng"
  : "Hết hàng"}
  </button>
+
+ <button
+          onClick={handleBuyNow}
+          disabled={!selectedVariant || selectedVariant.stock === 0}
+          className={`w-full py-5 text-xs font-black tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-xl rounded-2xl ${selectedVariant && selectedVariant.stock > 0 ? "bg-gray-800 text-white hover:bg-black" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
+        >
+          {!selectedVariant
+            ? "Chọn Size"
+            : selectedVariant.stock > 0
+            ? "Thanh toán"
+            : "Hết hàng"}
+        </button>
 
  <button
  onClick={() =>

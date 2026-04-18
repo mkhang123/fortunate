@@ -1,5 +1,5 @@
-﻿import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, X, Loader2, Send, Mic, MicOff } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { MessageCircle, X, Loader2, Send, Mic, MicOff, GripHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../apis/axiosConfig";
 
@@ -12,6 +12,7 @@ const API_BASE = "http://localhost:4000/api";
  */
 function renderMarkdown(text = "", navigate) {
  if (!text) return null;
+ const normalizedText = String(text).replace(/\*\*/g, "").replace(/_(.*?)_/g, "$1");
  const parts = [];
  const TOKEN = /\[(!?)\[([^\]]*?)\]\(([^)]+?)\)\]\(([^)]+?)\)|\[([^\]]+?)\]\(([^)]+?)\)/g;
  let last = 0;
@@ -27,9 +28,9 @@ function renderMarkdown(text = "", navigate) {
  }
  };
 
- while ((m = TOKEN.exec(text)) !== null) {
+ while ((m = TOKEN.exec(normalizedText)) !== null) {
  if (m.index > last) {
- parts.push(<span key={key++}>{text.slice(last, m.index)}</span>);
+ parts.push(<span key={key++}>{normalizedText.slice(last, m.index)}</span>);
  }
  if (m[1] === "!") {
  // [![alt](img)](url)
@@ -54,8 +55,8 @@ function renderMarkdown(text = "", navigate) {
  }
  last = m.index + m[0].length;
  }
- if (last < text.length) {
- parts.push(<span key={key++}>{text.slice(last)}</span>);
+ if (last < normalizedText.length) {
+ parts.push(<span key={key++}>{normalizedText.slice(last)}</span>);
  }
  return parts;
 }
@@ -122,6 +123,14 @@ function extractOrderLookupInfo(message = "") {
  };
 }
 
+// Kích thước mặc định và giới hạn resize
+const DEFAULT_W = 352; // 22rem
+const DEFAULT_H = 384; // 24rem (96 * 4)
+const MIN_W = 280;
+const MIN_H = 280;
+const MAX_W = 700;
+const MAX_H = 720;
+
 export default function ChatAssistant() {
  const [open, setOpen] = useState(false);
  const navigate = useNavigate();
@@ -138,6 +147,10 @@ export default function ChatAssistant() {
  const [voiceSupported, setVoiceSupported] = useState(false);
  const recognitionRef = useRef(null);
  const bottomRef = useRef(null);
+
+ // --- Resize state ---
+ const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
+ const resizing = useRef(null); // { startX, startY, startW, startH, edge }
 
  // Tự động cuộn xuống cuối khi có tin nhắn mới
  useEffect(() => {
@@ -207,6 +220,87 @@ export default function ChatAssistant() {
  recognition.abort();
  };
  }, []);
+
+ // --- Resize handlers ---
+ const onResizeMouseDown = useCallback((e, edge) => {
+ e.preventDefault();
+ resizing.current = {
+ startX: e.clientX,
+ startY: e.clientY,
+ startW: size.w,
+ startH: size.h,
+ edge,
+ };
+
+ const onMove = (ev) => {
+ if (!resizing.current) return;
+ const { startX, startY, startW, startH, edge } = resizing.current;
+ const dx = ev.clientX - startX;
+ const dy = ev.clientY - startY;
+
+ let newW = startW;
+ let newH = startH;
+
+ if (edge === "left" || edge === "corner") {
+ newW = Math.min(MAX_W, Math.max(MIN_W, startW - dx));
+ }
+ if (edge === "top" || edge === "corner") {
+ newH = Math.min(MAX_H, Math.max(MIN_H, startH - dy));
+ }
+
+ setSize({ w: newW, h: newH });
+ };
+
+ const onUp = () => {
+ resizing.current = null;
+ window.removeEventListener("mousemove", onMove);
+ window.removeEventListener("mouseup", onUp);
+ };
+
+ window.addEventListener("mousemove", onMove);
+ window.addEventListener("mouseup", onUp);
+ }, [size]);
+
+ // Touch resize
+ const onResizeTouchStart = useCallback((e, edge) => {
+ const touch = e.touches[0];
+ resizing.current = {
+ startX: touch.clientX,
+ startY: touch.clientY,
+ startW: size.w,
+ startH: size.h,
+ edge,
+ };
+
+ const onMove = (ev) => {
+ if (!resizing.current) return;
+ const t = ev.touches[0];
+ const { startX, startY, startW, startH, edge } = resizing.current;
+ const dx = t.clientX - startX;
+ const dy = t.clientY - startY;
+
+ let newW = startW;
+ let newH = startH;
+
+ if (edge === "left" || edge === "corner") {
+ newW = Math.min(MAX_W, Math.max(MIN_W, startW - dx));
+ }
+ if (edge === "top" || edge === "corner") {
+ newH = Math.min(MAX_H, Math.max(MIN_H, startH - dy));
+ }
+
+ setSize({ w: newW, h: newH });
+ };
+
+ const onEnd = () => {
+ resizing.current = null;
+ window.removeEventListener("touchmove", onMove);
+ window.removeEventListener("touchend", onEnd);
+ };
+
+ window.addEventListener("touchmove", onMove, { passive: true });
+ window.addEventListener("touchend", onEnd);
+ }, [size]);
 
  const toggleVoice = useCallback(() => {
  const recognition = recognitionRef.current;
@@ -351,72 +445,72 @@ export default function ChatAssistant() {
  return;
  }
 
-    // Đọc SSE stream (parse cả event: và data:)
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let currentEvent = "chunk"; // event type mặc định
-    let receivedAnyText = false;
+   // Đọc SSE stream (parse cả event: và data:)
+   const reader = response.body.getReader();
+   const decoder = new TextDecoder();
+   let buffer = "";
+   let currentEvent = "chunk"; // event type mặc định
+   let receivedAnyText = false;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+   while (true) {
+     const { done, value } = await reader.read();
+     if (done) break;
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop(); // giữ dòng chưa hoàn chỉnh
+     buffer += decoder.decode(value, { stream: true });
+     const lines = buffer.split("\n");
+     buffer = lines.pop(); // giữ dòng chưa hoàn chỉnh
 
-      for (const line of lines) {
-        if (line.startsWith("event:")) {
-          currentEvent = line.slice(6).trim();
-        } else if (line.startsWith("data:")) {
-          try {
-            const payload = JSON.parse(line.slice(5).trim());
+     for (const line of lines) {
+       if (line.startsWith("event:")) {
+         currentEvent = line.slice(6).trim();
+       } else if (line.startsWith("data:")) {
+         try {
+           const payload = JSON.parse(line.slice(5).trim());
 
-            if (currentEvent === "chunk" && payload.text !== undefined) {
-              // Đặt flag TRƯỚC khi gọi setMessages (setMessages callback chạy async)
-              receivedAnyText = true;
-              setMessages((prev) => {
-                const updated = [...prev];
-                const last = updated[updated.length - 1];
-                updated[updated.length - 1] = {
-                  ...last,
-                  text: last.text + payload.text,
-                };
-                return updated;
-              });
-            } else if (currentEvent === "error" && payload.message) {
-              receivedAnyText = true;
-              setMessages((prev) => {
-                const updated = [...prev];
-                const last = updated[updated.length - 1];
-                updated[updated.length - 1] = {
-                  ...last,
-                  text: payload.message,
-                };
-                return updated;
-              });
-            }
-            // waiting: không thay đổi bubble, bỏ qua
-          } catch {
-            // ignore parse errors
-          }
-        }
-      }
-    }
+           if (currentEvent === "chunk" && payload.text !== undefined) {
+             // Đặt flag TRƯỚC khi gọi setMessages (setMessages callback chạy async)
+             receivedAnyText = true;
+             setMessages((prev) => {
+               const updated = [...prev];
+               const last = updated[updated.length - 1];
+               updated[updated.length - 1] = {
+                 ...last,
+                 text: last.text + payload.text,
+               };
+               return updated;
+             });
+           } else if (currentEvent === "error" && payload.message) {
+             receivedAnyText = true;
+             setMessages((prev) => {
+               const updated = [...prev];
+               const last = updated[updated.length - 1];
+               updated[updated.length - 1] = {
+                 ...last,
+                 text: payload.message,
+               };
+               return updated;
+             });
+           }
+           // waiting: không thay đổi bubble, bỏ qua
+         } catch {
+           // ignore parse errors
+         }
+       }
+     }
+   }
 
-    // Stream đóng mà chưa nhận được dữ liệu nào → kết nối bị gián đoạn
-    if (!receivedAnyText) {
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: "assistant",
-          text: "Kết nối bị gián đoạn. Bạn thử gửi lại câu hỏi nhé!",
-        };
-        return updated;
-      });
-    }
-  } catch (err) {
+   // Stream đóng mà chưa nhận được dữ liệu nào → kết nối bị gián đoạn
+   if (!receivedAnyText) {
+     setMessages((prev) => {
+       const updated = [...prev];
+       updated[updated.length - 1] = {
+         role: "assistant",
+         text: "Kết nối bị gián đoạn. Bạn thử gửi lại câu hỏi nhé!",
+       };
+       return updated;
+     });
+   }
+ } catch (err) {
  const isAbort = err?.name === "AbortError";
  setMessages((prev) => {
  const updated = [...prev];
@@ -451,13 +545,51 @@ export default function ChatAssistant() {
  <MessageCircle className="w-5 h-5" />
  </button>
 
- {/* Hộp chat — full width gần full trên màn nhỏ */}
+ {/* Hộp chat có thể resize */}
  {open && (
- <div className="fixed inset-x-3 bottom-[4.5rem] sm:inset-x-auto sm:left-auto sm:right-6 sm:bottom-24 z-50 flex justify-center sm:justify-end pointer-events-none">
- <div className="pointer-events-auto w-full max-w-[min(100%,24rem)] sm:w-96 h-[min(24rem,calc(100dvh-8rem))] sm:h-96 bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
- <div className="flex items-center justify-between px-4 py-3 border-b bg-black text-white">
+ <div
+ className="fixed z-50"
+ style={{
+ right: '1.5rem',
+ bottom: '6rem',
+ width: `${size.w}px`,
+ height: `${size.h}px`,
+ }}
+ >
+ {/* Handle resize: cạnh trên */}
+ <div
+ onMouseDown={(e) => onResizeMouseDown(e, "top")}
+ onTouchStart={(e) => onResizeTouchStart(e, "top")}
+ className="absolute top-0 left-4 right-4 h-2 cursor-n-resize z-10 flex items-center justify-center group"
+ title="Kéo để thay đổi chiều cao"
+ >
+ <div className="w-10 h-1 rounded-full bg-gray-300 group-hover:bg-gray-500 transition-colors" />
+ </div>
+
+ {/* Handle resize: cạnh trái */}
+ <div
+ onMouseDown={(e) => onResizeMouseDown(e, "left")}
+ onTouchStart={(e) => onResizeTouchStart(e, "left")}
+ className="absolute left-0 top-4 bottom-4 w-2 cursor-w-resize z-10"
+ title="Kéo để thay đổi chiều rộng"
+ />
+
+ {/* Handle resize: góc trên-trái */}
+ <div
+ onMouseDown={(e) => onResizeMouseDown(e, "corner")}
+ onTouchStart={(e) => onResizeTouchStart(e, "corner")}
+ className="absolute top-0 left-0 w-5 h-5 cursor-nw-resize z-20 flex items-center justify-center group"
+ title="Kéo để thay đổi kích thước"
+ >
+ <GripHorizontal className="w-3 h-3 text-gray-400 group-hover:text-gray-600 rotate-45 transition-colors" />
+ </div>
+
+ {/* Nội dung chatbox */}
+ <div className="w-full h-full bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+ {/* Header */}
+ <div className="flex items-center justify-between px-4 py-3 border-b bg-black text-white shrink-0">
  <div>
- <p className="text-xs font-black tracking-[0.3em]">
+ <p className="text-xs font-black tracking-normal">
  Trợ lý FORTUNATE
  </p>
  <p className="text-[10px] text-gray-300">
@@ -472,6 +604,7 @@ export default function ChatAssistant() {
  </button>
  </div>
 
+ {/* Messages */}
  <div className="flex-1 px-3 py-2 overflow-y-auto space-y-2 text-sm bg-gray-50">
  {messages.map((m, idx) => (
  <div
@@ -482,7 +615,7 @@ export default function ChatAssistant() {
  className={`max-w-[80%] px-3 py-2 rounded-2xl whitespace-pre-line ${
  m.role === "user"
  ? "bg-black text-white rounded-br-none"
- : "bg-white text-gray-800 border border-gray-100 rounded-bl-none"
+ : "bg-amber-50 text-gray-900 border border-amber-200 shadow-sm rounded-bl-none"
  }`}
  >
  {m.text
@@ -501,7 +634,8 @@ export default function ChatAssistant() {
  <div ref={bottomRef} />
  </div>
 
- <div className="border-t bg-white px-3 py-2">
+ {/* Input area */}
+ <div className="border-t bg-white px-3 py-2 shrink-0">
  <div className="flex items-stretch gap-2">
  <textarea
  rows={2}

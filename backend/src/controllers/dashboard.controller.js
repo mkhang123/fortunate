@@ -7,7 +7,16 @@ class DashboardController {
      * Lấy toàn bộ dữ liệu thống kê cho admin dashboard
      */
     static async getDashboard(req, res) {
-        const data = await DashboardService.getDashboardStats();
+        const filterType = req.query.filterType === "day" ? "day" : "month";
+        const currentYear = new Date().getFullYear();
+        const year = parseInt(req.query.year, 10) || currentYear;
+        const month = parseInt(req.query.month, 10) || null;
+
+        const data = await DashboardService.getDashboardStats({
+            filterType,
+            year,
+            month,
+        });
         new OKResponse({
             message: "Dashboard data retrieved successfully",
             metadata: data,

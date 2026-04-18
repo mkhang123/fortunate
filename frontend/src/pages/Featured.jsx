@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../apis/axiosConfig";
 import { Link } from "react-router-dom";
 import { Star, Search, ChevronDown, X } from "lucide-react";

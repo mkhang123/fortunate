@@ -81,6 +81,16 @@ class NotificationService {
     });
   }
 
+  // Khi có đơn hàng mới cần admin duyệt
+  async notifyOrderPendingApprovalToAdmins(orderId) {
+    return await this.notifyByRole("ADMIN", () => ({
+      title: "🛎️ Có đơn hàng chờ duyệt",
+      message: `Đơn hàng #${orderId} vừa được tạo và đang ở trạng thái chờ duyệt.`,
+      type: "ORDER_PENDING_APPROVAL",
+      link: "/admin/orders",
+    }));
+  }
+
   // Khi đơn hàng được duyệt / chuyển sang PAID
   async notifyOrderPaid(userId, orderId) {
     return await this.create({
