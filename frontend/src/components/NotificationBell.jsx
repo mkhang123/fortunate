@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import api from '../apis/axiosConfig';
 
@@ -12,7 +12,7 @@ const TYPE_COLORS = {
  ORDER_CANCELLED: 'bg-red-50 border-red-100',
 };
 
-export default function NotificationBell() {
+export default function NotificationBell({ isAuthVerified }) {
  const [open, setOpen] = useState(false);
  const [notifications, setNotifications] = useState([]);
  const [unreadCount, setUnreadCount] = useState(0);
@@ -44,21 +44,21 @@ export default function NotificationBell() {
  }
  };
 
- // Polling mỗi 30 giây
- useEffect(() => {
- const user = localStorage.getItem('user');
- if (!user) return;
+  // Polling mỗi 30 giây
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (!user || !isAuthVerified) return;
 
- fetchNotifications();
- const interval = setInterval(fetchNotifications, 30000);
- return () => clearInterval(interval);
- }, []);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthVerified]);
 
- // Mở dropdown → fetch lại dữ liệu mới nhất
- const handleOpen = () => {
- setOpen((prev) => !prev);
- if (!open) fetchNotifications();
- };
+  // Mở dropdown → fetch lại dữ liệu mới nhất
+  const handleOpen = () => {
+    setOpen((prev) => !prev);
+    if (!open && isAuthVerified) fetchNotifications();
+  };
 
  // Đánh dấu 1 thông báo đã đọc
  const handleMarkRead = async (id, link) => {

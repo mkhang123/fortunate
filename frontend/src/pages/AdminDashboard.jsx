@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Chart as ChartJS,
@@ -340,13 +340,6 @@ export default function AdminDashboard() {
             Tổng quan hệ thống và hiệu suất kinh doanh
           </p>
         </div>
-        <Link
-          to="/profile"
-          className="flex items-center gap-2 px-4 py-2 bg-black text-white text-[10px] font-black tracking-widest rounded-xl hover:bg-gray-800 transition-colors"
-        >
-          <Users className="w-3.5 h-3.5" />
-          Trang cá nhân
-        </Link>
       </div>
 
       <div className="px-8 py-6 space-y-6">

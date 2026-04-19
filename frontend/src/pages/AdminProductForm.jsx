@@ -1,7 +1,8 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import api from "../apis/axiosConfig";
+import { Plus, Trash2, X } from "lucide-react";
 
 export default function AdminProductForm() {
  const navigate = useNavigate();
@@ -28,6 +29,27 @@ export default function AdminProductForm() {
  imageUrl: "",
  variants: [],
  });
+
+  // Helper cho biến thể
+  const addVariant = () => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: [...prev.variants, { size: "", stock: 0 }],
+    }));
+  };
+
+  const removeVariant = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateVariant = (index, field, value) => {
+    const newVariants = [...formData.variants];
+    newVariants[index] = { ...newVariants[index], [field]: value };
+    setFormData((prev) => ({ ...prev, variants: newVariants }));
+  };
 
  const titleText = useMemo(
  () => (isEditing ? "Chỉnh sửa sản phẩm" : "Tạo sản phẩm"),
@@ -59,24 +81,31 @@ export default function AdminProductForm() {
  };
 
  useEffect(() => {
- const fetchCategories = async () => {
- try {
- const catRes = await api.get("/categories");
- const catData = catRes.data?.data || [];
- setCategories(catData);
- if (!isEditing && catData.length > 0) {
- setFormData((prev) => ({
- ...prev,
- categoryId: prev.categoryId || catData[0].id,
- }));
- }
- } catch (err) {
- toast.error("Không thể tải danh mục");
- }
- };
+    const fetchCategories = async () => {
+      try {
+        const catRes = await api.get("/categories");
+        const catData = catRes.data?.data || [];
+        setCategories(catData);
+        if (!isEditing && catData.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            categoryId: prev.categoryId || catData[0].id,
+            // Khởi tạo size mặc định cho sản phẩm mới
+            variants: prev.variants.length > 0 ? prev.variants : [
+              { size: "S", stock: 0 },
+              { size: "M", stock: 0 },
+              { size: "L", stock: 0 },
+              { size: "XL", stock: 0 },
+            ]
+          }));
+        }
+      } catch (err) {
+        toast.error("Không thể tải danh mục");
+      }
+    };
 
- fetchCategories();
- }, [isEditing]);
+    fetchCategories();
+  }, [isEditing]);
 
  useEffect(() => {
  const fetchProductForEdit = async () => {
@@ -134,7 +163,6 @@ export default function AdminProductForm() {
  const handleSubmit = async (e) => {
  e.preventDefault();
  try {
- const defaultSizes = ["S", "M", "L", "XL"];
  const payload = {
  name: formData.name,
  slug: createSlug(formData.name),
@@ -145,21 +173,14 @@ export default function AdminProductForm() {
  images: formData.imageUrl
  ? [formData.imageUrl]
  : ["https://via.placeholder.com/150"],
- variants: isEditing
- ? formData.variants?.map((v) => ({
- id: v.id,
- color: formData.style || "Basic",
- size: v.size,
- price: Number(formData.price),
- stock: Number(formData.stock),
- })) || []
- : defaultSizes.map((s) => ({
- color: formData.style || "Basic",
- size: s,
- price: Number(formData.price),
- stock: Number(formData.stock),
- })),
- };
+      variants: formData.variants.map((v) => ({
+        ...(v.id ? { id: v.id } : {}),
+        color: formData.style || "Basic",
+        size: v.size,
+        price: Number(formData.price),
+        stock: Number(v.stock),
+      })),
+    };
 
  if (isEditing) {
  await api.patch(`/products/${id}`, payload);
@@ -293,29 +314,72 @@ export default function AdminProductForm() {
  </div>
  </div>
 
- <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
- <h2 className="text-xs font-black tracking-wider text-gray-700 mb-4">
- Giá và số lượng
- </h2>
- <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
- <input
- type="number"
- placeholder="Giá (VNĐ)"
- value={formData.price}
- className="border p-2.5 rounded focus:ring-1 focus:ring-black outline-none"
- onChange={(e) => setFormData({ ...formData, price: e.target.value })}
- required
- />
- <input
- type="number"
- placeholder="Số lượng"
- value={formData.stock}
- className="border p-2.5 rounded focus:ring-1 focus:ring-black outline-none"
- onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
- required
- />
- </div>
- </div>
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h2 className="text-xs font-black tracking-wider text-gray-700 mb-4">
+          Giá niêm yết
+        </h2>
+        <input
+          type="number"
+          placeholder="Giá (VNĐ)"
+          value={formData.price}
+          className="w-full border p-2.5 rounded focus:ring-1 focus:ring-black outline-none"
+          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-black tracking-wider text-gray-700">
+            Biến thể (Kích thước & Số lượng)
+          </h2>
+          <button
+            type="button"
+            onClick={addVariant}
+            className="flex items-center gap-1 text-[10px] font-black tracking-widest text-blue-600 hover:text-blue-800 uppercase transition-colors"
+          >
+            <Plus className="w-3 h-3" /> Thêm biến thể
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {formData.variants.length === 0 ? (
+            <p className="text-xs text-gray-400 italic py-2">Chưa có biến thể nào. Nhấn "+ Thêm biến thể" để bắt đầu.</p>
+          ) : (
+            formData.variants.map((v, idx) => (
+              <div key={idx} className="flex items-center gap-3 group animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex-1 relative">
+                  <input
+                    placeholder="Size (S, M, L, XL, 39, 40...)"
+                    value={v.size}
+                    className="w-full border p-2.5 rounded text-sm focus:ring-1 focus:ring-black outline-none"
+                    onChange={(e) => updateVariant(idx, "size", e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="w-32 relative">
+                  <input
+                    type="number"
+                    placeholder="Kho"
+                    value={v.stock}
+                    className="w-full border p-2.5 rounded text-sm focus:ring-1 focus:ring-black outline-none"
+                    onChange={(e) => updateVariant(idx, "stock", e.target.value)}
+                    required
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeVariant(idx)}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                  title="Xóa biến thể"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
 
  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
  <h2 className="text-xs font-black tracking-wider text-gray-700 mb-4">

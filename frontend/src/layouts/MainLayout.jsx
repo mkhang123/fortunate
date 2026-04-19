@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 
-export default function MainLayout() {
+export default function MainLayout({ isAuthVerified }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -200,7 +200,7 @@ export default function MainLayout() {
             </Link>
 
             {/* Thông báo */}
-            <NotificationBell />
+            <NotificationBell isAuthVerified={isAuthVerified} />
 
             {!user ? (
               <Link to="/login" title="Đăng nhập">

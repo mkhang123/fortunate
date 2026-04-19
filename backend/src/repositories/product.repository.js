@@ -234,23 +234,45 @@ class ProductRepository {
         },
       });
 
-      // 2. Xử lý biến thể (Variants)
-      if (data.variants && data.variants.length > 0) {
+      // 2. Xử lý biến thể (Variants) - Đồng bộ hoàn toàn (Sync)
+      if (data.variants && Array.isArray(data.variants)) {
+        const incomingIds = data.variants
+          .filter((v) => v.id)
+          .map((v) => Number(v.id));
+
+        // Xóa các biến thể không còn trong danh sách gửi lên
+        await tx.productVariant.deleteMany({
+          where: {
+            productId,
+            id: { notIn: incomingIds },
+          },
+        });
+
+        // Cập nhật hoặc Thêm mới
         for (const variant of data.variants) {
-          // CHỈ CẬP NHẬT NẾU CÓ ID
+          const variantData = {
+            size: variant.size,
+            color: variant.color || "Basic",
+            price: Number(variant.price || data.price || 0),
+            stock: Number(variant.stock || 0),
+          };
+
           if (variant.id) {
             await tx.productVariant.update({
               where: { id: Number(variant.id) },
+              data: variantData,
+            });
+          } else {
+            await tx.productVariant.create({
               data: {
-                size: variant.size,
-                color: variant.color || "Basic",
-                price: Number(variant.price),
-                stock: Number(variant.stock),
+                ...variantData,
+                productId,
               },
             });
           }
         }
       }
+
 
       return updatedProduct;
     });

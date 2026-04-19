@@ -1,29 +1,31 @@
-﻿import React from 'react';
+import React from 'react';
 import { History, Target, Sparkles, Shirt, MoveRight, Quote, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import aboutBanner from '../assets/streetwear-banner.png';
 
 export default function AboutUs() {
  return (
  <div className="bg-white text-gray-900 font-sans selection:bg-black selection:text-white">
  {/* SECTION 1: HERO - Tối ưu hiển thị ảnh nền */}
- <section className="relative h-[85vh] flex items-center justify-center bg-black overflow-hidden border-b border-gray-100">
+ <section className="relative h-[85vh] flex items-center justify-center bg-[#0a0a0a] overflow-hidden border-b border-gray-900">
  <div className="absolute inset-0 z-0">
  <img 
- src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e12?auto=format&fit=crop&q=80" 
- alt="Hero background" 
- className="w-full h-full object-cover grayscale brightness-50 contrast-125 transition-transform duration-[10s] hover:scale-110"
+ src={aboutBanner} 
+ alt="Fortunate Streetwear Banner" 
+ className="w-full h-full object-cover opacity-90 brightness-90 contrast-125 transition-transform duration-[10s] hover:scale-105"
  />
- {/* Lớp phủ để chữ Fortunate nổi bật hơn */}
- <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-white/10"></div>
+ {/* Gritty urban overlay */}
+ <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/20"></div>
+ <div className="absolute inset-0 bg-black/40 mix-blend-multiply italic"></div>
  </div>
  
  <div className="relative z-10 text-center px-6">
- <h1 className="text-7xl md:text-[10rem] font-black italic tracking-tighter mb-4 animate-in fade-in zoom-in duration-1000 text-white drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] leading-none">
+ <h1 className="text-7xl md:text-[11rem] font-black italic tracking-tighter mb-4 animate-in fade-in zoom-in duration-1000 text-white drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] leading-none select-none">
  Fortunate
  </h1>
  <div className="flex flex-col items-center gap-4">
- <div className="h-[2px] w-20 bg-red-600 animate-pulse"></div>
- <p className="text-[10px] md:text-xs font-black tracking-[0.6em] text-gray-300">
+ <div className="h-[2px] w-24 bg-red-600 animate-pulse"></div>
+ <p className="text-[10px] md:text-xs font-black tracking-[0.6em] text-gray-300 uppercase">
  Kỷ nguyên thời trang số 2026
  </p>
  </div>
