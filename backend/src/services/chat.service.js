@@ -92,14 +92,13 @@ function shuffle(array = []) {
 
 function productCardLine(product) {
   const productUrl = `/product/${product.slug}`;
-  const price = Number(product.price || 0).toLocaleString("vi-VN");
   if (product.images?.[0]) {
     return [
       `[![${product.name}](${product.images[0]})](${productUrl})`,
-      `[${product.name} - ${price} VNĐ](${productUrl})`,
+      `[${product.name}](${productUrl})`,
     ].join("\n");
   }
-  return `[${product.name} - ${price} VNĐ](${productUrl})`;
+  return `[${product.name}](${productUrl})`;
 }
 
 export async function recommendOutfitsByStyle(style) {
@@ -124,7 +123,7 @@ export async function recommendOutfitsByStyle(style) {
   const outfit2 = { top: pickedTops[1], bottom: pickedBottoms[1] };
 
   const text = [
-    `Tuyệt vời! Dưới đây là 2 outfit ngẫu nhiên theo phong cách ${style}:`,
+    `Dưới đây là 2 outfit ngẫu nhiên theo phong cách ${style}:`,
     "",
     "Bộ 1:",
     "- Áo:",
@@ -225,14 +224,15 @@ ${hits.length > 0
   ? "SẢN PHẨM RÚT TRÍCH TỪ HỆ THỐNG:\n" + hits.map(h => {
       const img = Array.isArray(h.images) && h.images.length > 0 ? h.images[0] : null;
       const stylesText = Array.isArray(h.styles) && h.styles.length > 0 ? h.styles.slice(0, 5).join(", ") : "Basic";
-      return `- Tên: ${h.name}\n  Giá: ${h.price}đ\n  Danh mục: ${h.categoryName}\n  Thương hiệu: ${h.brandName}\n  Phong cách: ${stylesText}\n  Link: /product/${h.slug}${img ? `\n  Ảnh: ${img}` : ""}`;
+      const priceText = h.price ? `\n  Giá: ${h.price}đ` : "";
+      return `- Tên: ${h.name}${priceText}\n  Danh mục: ${h.categoryName}\n  Thương hiệu: ${h.brandName}\n  Phong cách: ${stylesText}\n  Link: /product/${h.slug}${img ? `\n  Ảnh: ${img}` : ""}`;
     }).join("\n\n")
   : "Không tìm thấy sản phẩm cụ thể nào trên hệ thống phù hợp với câu hỏi này."}
 
 ĐỊNH DẠNG GỢI Ý SẢN PHẨM (QUAN TRỌNG):
 Khi gợi ý sản phẩm CÓ ảnh, hãy dùng đúng định dạng markdown sau để hiển thị card sản phẩm:
 [![Tên sản phẩm](URL_ẢNH)](/product/slug)
-[Tên sản phẩm - Giá](/product/slug)
+[Tên sản phẩm](/product/slug)
 
 Nếu sản phẩm KHÔNG có ảnh, dùng link thường: [Tên Sản Phẩm](/product/slug)
 `.trim();

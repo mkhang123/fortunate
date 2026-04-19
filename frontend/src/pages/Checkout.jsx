@@ -1,6 +1,6 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../apis/axiosConfig";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
  CreditCard,
  Wallet,
@@ -16,14 +16,16 @@ export default function Checkout() {
  const [loading, setLoading] = useState(true);
  const [submitting, setSubmitting] = useState(false);
  const navigate = useNavigate();
+ const location = useLocation();
+ const buyNowItem = location.state?.buyNowItem;
  const user = JSON.parse(localStorage.getItem("user"));
 
  // Form state
  const [formData, setFormData] = useState({
- receiverName: "",
- receiverPhone: "",
- receiverEmail: "",
- shippingAddress: "",
+ receiverName: user?.name || "",
+ receiverPhone: user?.phone || "",
+ receiverEmail: user?.email || "",
+ shippingAddress: user?.address || "",
  city: "",
  notes: "",
  paymentMethod: "VNPAY",
@@ -42,6 +44,12 @@ export default function Checkout() {
  }, []);
 
  const fetchCart = async () => {
+ if (buyNowItem) {
+   setCart({ items: [buyNowItem] });
+   setLoading(false);
+   return;
+ }
+
  if (!user) {
  setLoading(true);
  try {
@@ -140,15 +148,18 @@ export default function Checkout() {
  setSubmitting(true);
 
  // Create order
- const payload = user
- ? formData
- : {
- ...formData,
- items: (cart?.items || []).map((item) => ({
- variantId: item.variantId || item.variant?.id,
- quantity: item.quantity,
- })),
- };
+ let payload = { ...formData };
+ if (buyNowItem) {
+   payload.items = [{
+     variantId: buyNowItem.variant.id,
+     quantity: buyNowItem.quantity,
+   }];
+ } else if (!user) {
+   payload.items = (cart?.items || []).map((item) => ({
+     variantId: item.variantId || item.variant?.id,
+     quantity: item.quantity,
+   }));
+ }
 
  const orderResponse = await api.post(user ? "/orders" : "/orders/guest", payload);
  const { order, requiresPayment, paymentMethod } =

@@ -422,17 +422,22 @@ export default function ProductDetail() {
       });
       return;
     }
-    try {
-      const res = await api.post("/cart/add", {
-        variantId: selectedVariant.id,
-        quantity: quantity,
-      });
-      if (res.data.success) {
-        navigate("/checkout");
+    
+    // Bypass cart and navigate directly to checkout
+    navigate("/checkout", {
+      state: {
+        buyNowItem: {
+          variant: {
+            ...selectedVariant,
+            product: {
+              name: product.name,
+              images: product.images,
+            }
+          },
+          quantity: quantity
+        }
       }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Không thể tiến hành thanh toán");
-    }
+    });
   };
 
  if (loading)

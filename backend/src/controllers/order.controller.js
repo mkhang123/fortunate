@@ -28,7 +28,12 @@ class OrderController {
                 );
             }
 
-            const result = await OrderService.createOrderFromCart(userId, orderData);
+            let result;
+            if (orderData.items && Array.isArray(orderData.items) && orderData.items.length > 0) {
+                result = await OrderService.createOrderDirect(userId, orderData);
+            } else {
+                result = await OrderService.createOrderFromCart(userId, orderData);
+            }
 
             console.log(`[ORDER] Created order #${result.order.id} for user ${userId}`);
 

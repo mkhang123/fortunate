@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../apis/axiosConfig";
 import toast from "react-hot-toast";
@@ -40,7 +40,7 @@ export default function Profile() {
 
  // Trạng thái modal chỉnh sửa thông tin cơ bản
  const [showInfoModal, setShowInfoModal] = useState(false);
- const [infoForm, setInfoForm] = useState({ name: "", phone: "" });
+ const [infoForm, setInfoForm] = useState({ name: "", phone: "", address: "" });
  const [infoSaving, setInfoSaving] = useState(false);
 
  // Trạng thái modal chỉnh sửa số đo cơ thể
@@ -119,7 +119,7 @@ export default function Profile() {
  revokeAvatarPreview();
  setPendingAvatarFile(null);
  if (avatarModalInputRef.current) avatarModalInputRef.current.value = "";
- setInfoForm({ name: profile?.name || "", phone: profile?.phone || "" });
+ setInfoForm({ name: profile?.name || "", phone: profile?.phone || "", address: profile?.address || "" });
  setShowInfoModal(true);
  };
 
@@ -145,11 +145,16 @@ export default function Profile() {
  nextAvatar = avRes.data.data.avatar;
  }
  const res = await api.put("/users/me", infoForm);
- setProfile((prev) => ({
+ setProfile((prev) => {
+ const nextState = {
  ...prev,
  ...res.data.data,
  avatar: nextAvatar ?? res.data.data?.avatar ?? prev?.avatar,
- }));
+ };
+ const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+ localStorage.setItem("user", JSON.stringify({ ...currentUser, ...nextState }));
+ return nextState;
+ });
  revokeAvatarPreview();
  setPendingAvatarFile(null);
  if (avatarModalInputRef.current) avatarModalInputRef.current.value = "";
@@ -288,6 +293,10 @@ export default function Profile() {
  <div>
  <p className="text-[10px] font-bold text-gray-400">Số điện thoại</p>
  <p className="font-semibold text-gray-800">{profile?.phone || "---"}</p>
+ </div>
+ <div>
+ <p className="text-[10px] font-bold text-gray-400">Địa chỉ</p>
+ <p className="font-semibold text-gray-800">{profile?.address || "---"}</p>
  </div>
  <div>
  <p className="text-[10px] font-bold text-gray-400">Ngày gia nhập</p>
@@ -504,6 +513,18 @@ export default function Profile() {
  placeholder="Nhập số điện thoại"
  />
  </div>
+ <div>
+ <label className="text-[10px] font-bold text-gray-500 tracking-wider block mb-1.5">
+ Địa chỉ
+ </label>
+ <input
+ type="text"
+ value={infoForm.address}
+ onChange={(e) => setInfoForm({ ...infoForm, address: e.target.value })}
+ className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors"
+ placeholder="Nhập địa chỉ"
+ />
+ </div>
 
  <div className="flex items-center justify-between gap-4 pt-2 border-t border-gray-100">
  <button
@@ -516,7 +537,7 @@ export default function Profile() {
  <button
  type="submit"
  disabled={infoSaving}
- className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold shadow-sm hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:pointer-events-none"
+ className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black text-white text-sm font-bold shadow-sm hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:pointer-events-none"
  >
  <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
  <path d="M17 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />

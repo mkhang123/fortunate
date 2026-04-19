@@ -304,6 +304,7 @@ export const handleChat = async (req, res) => {
   try {
     const orderLookup = extractOrderLookupInfo(message);
     if (orderLookup) {
+      await new Promise((r) => setTimeout(r, 3000));
       if (!orderLookup.orderId) {
         sendEvent("chunk", {
           text:
@@ -374,6 +375,7 @@ export const handleChat = async (req, res) => {
 
     const style = extractStyleIntent(message);
     if (style && !prefersStyleProductListing(message)) {
+      await new Promise((r) => setTimeout(r, 3000));
       const result = await recommendOutfitsByStyle(style);
       sendEvent("chunk", { text: result.text });
       sendEvent("done", { success: true });
@@ -384,7 +386,7 @@ export const handleChat = async (req, res) => {
     // --- Tư vấn size áo / quần (không dùng RAG, tính trực tiếp từ body profile) ---
     const sizeIntent = extractSizeAdviceIntent(message);
     if (sizeIntent) {
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 3000));
       const reply = buildSizeAdviceReply(sizeIntent, bodyProfile);
       sendEvent("chunk", { text: reply });
       sendEvent("done", { success: true });

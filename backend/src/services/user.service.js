@@ -50,8 +50,8 @@ class UserService {
     return await userRepository.updateActive(userId, isActive);
   }
 
-  // Cập nhật thông tin cơ bản (name, phone)
-  async updateProfile(userId, { name, phone }) {
+  // Cập nhật thông tin cơ bản (name, phone, address)
+  async updateProfile(userId, { name, phone, address }) {
     // name không được để rỗng
     if (!name || name.trim() === "") {
       const error = new Error("Tên không được để trống");
@@ -63,6 +63,8 @@ class UserService {
       name: name.trim(),
       // Chỉ cập nhật phone nếu có gửi lên
       ...(phone !== undefined && { phone }),
+      // Chỉ cập nhật address nếu có gửi lên
+      ...(address !== undefined && { address }),
     });
     return updatedUser;
   }

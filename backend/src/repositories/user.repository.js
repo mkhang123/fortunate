@@ -46,13 +46,13 @@ class UserRepository {
     });
   }
 
-  // Cập nhật thông tin cơ bản: name, phone
+  // Cập nhật thông tin cơ bản: name, phone, address
   async updateProfile(userId, data) {
     const id = Number(userId);
     return await prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, phone: true, email: true },
+      select: { id: true, name: true, phone: true, address: true, email: true },
     });
   }
 

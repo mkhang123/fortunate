@@ -174,6 +174,127 @@ class OrderService {
     }
 
     /**
+     * Create order directly bypassing the user's cart (Buy Now functionality)
+     */
+    static async createOrderDirect(userId, orderData) {
+        const {
+            receiverName,
+            receiverPhone,
+            receiverEmail,
+            shippingAddress,
+            city,
+            paymentMethod = "VNPAY",
+            notes,
+            items,
+        } = orderData;
+
+        const normalizedItems = (items || []).map((item) => ({
+            variantId: Number(item.variantId),
+            quantity: Number(item.quantity),
+        }));
+
+        if (normalizedItems.some((item) => !item.variantId || !item.quantity || item.quantity < 1)) {
+            throw new BadRequestError("Dữ liệu sản phẩm không hợp lệ");
+        }
+
+        const order = await prisma.$transaction(async (tx) => {
+            const variantIds = [...new Set(normalizedItems.map((item) => item.variantId))];
+            const variants = await tx.productVariant.findMany({
+                where: { id: { in: variantIds } },
+                include: { product: true },
+            });
+
+            const variantMap = new Map(variants.map((variant) => [variant.id, variant]));
+            let total = 0;
+            const orderItems = [];
+
+            for (const item of normalizedItems) {
+                const variant = variantMap.get(item.variantId);
+                if (!variant) {
+                    throw new BadRequestError("Sản phẩm không tồn tại");
+                }
+
+                const updated = await tx.productVariant.updateMany({
+                    where: {
+                        id: item.variantId,
+                        stock: { gte: item.quantity },
+                    },
+                    data: {
+                        stock: { decrement: item.quantity },
+                    },
+                });
+
+                if (updated.count === 0) {
+                    throw new BadRequestError("Sản phẩm không đủ số lượng trong kho");
+                }
+
+                total += variant.price * item.quantity;
+                orderItems.push({
+                    variantId: item.variantId,
+                    quantity: item.quantity,
+                    price: variant.price,
+                });
+            }
+
+            const orderCreateData = {
+                userId,
+                receiverName,
+                receiverPhone,
+                receiverEmail,
+                shippingAddress,
+                city: city || "TP. Hồ Chí Minh",
+                notes,
+                total,
+                status: "PENDING",
+                items: {
+                    create: orderItems,
+                },
+            };
+
+            if (paymentMethod === "COD") {
+                orderCreateData.payment = {
+                    create: {
+                        method: "COD",
+                        status: "PENDING",
+                        amount: total,
+                    },
+                };
+            }
+
+            return tx.order.create({
+                data: orderCreateData,
+                include: {
+                    items: {
+                        include: {
+                            variant: {
+                                include: {
+                                    product: true,
+                                },
+                            },
+                        },
+                    },
+                    payment: true,
+                },
+            });
+        });
+
+        // Gửi thông báo đặt hàng thành công cho user
+        notificationService.notifyOrderPlaced(userId, order.id).catch(console.error);
+        
+        // Gửi thông báo cho admin có đơn mới cần duyệt
+        notificationService
+            .notifyOrderPendingApprovalToAdmins(order.id)
+            .catch(console.error);
+
+        return {
+            order,
+            success: true,
+            requiresPayment: paymentMethod === "VNPAY",
+            paymentMethod,
+        };
+    }
+
+    /**
      * Create order from guest cart items
      */
     static async createOrderForGuest(orderData) {

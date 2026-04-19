@@ -296,14 +296,37 @@ class VTONAIService {
 
     try {
       if (filePathOrUrl.startsWith('http://') || filePathOrUrl.startsWith('https://')) {
-        // Nếu là URL, tải hình ảnh bằng axios
-        const response = await axios({
-          url: filePathOrUrl,
-          method: 'GET',
-          responseType: 'arraybuffer'
-        });
-        fileBuffer = Buffer.from(response.data);
-        mimeType = response.headers['content-type'] || 'image/jpeg';
+        // Nếu là URL, tải hình ảnh bằng axios với retry tự động
+        // Xử lý lỗi mạng tạm thời (ECONNRESET khi đổi mạng WiFi↔4G, v.v.)
+        const MAX_RETRIES = 3;
+        let lastError;
+
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            console.log(`📥 Tải ảnh từ URL (lần ${attempt}/${MAX_RETRIES}): ${filePathOrUrl}`);
+            const response = await axios({
+              url: filePathOrUrl,
+              method: 'GET',
+              responseType: 'arraybuffer',
+              timeout: 30000, // 30s timeout mỗi lần thử
+            });
+            fileBuffer = Buffer.from(response.data);
+            mimeType = response.headers['content-type'] || 'image/jpeg';
+            break; // Thành công → thoát vòng lặp
+          } catch (err) {
+            lastError = err;
+            const retryable = ['ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'ENOTFOUND', 'ERR_NETWORK'].includes(err.code);
+            if (retryable && attempt < MAX_RETRIES) {
+              const delay = attempt * 2000; // 2s, 4s,...
+              console.warn(`⚠️ Lỗi mạng (${err.code}) lần ${attempt}. Thử lại sau ${delay / 1000}s...`);
+              await new Promise(r => setTimeout(r, delay));
+            } else {
+              throw err; // Lỗi không thể retry hoặc đã hết lần thử
+            }
+          }
+        }
+
+        if (!fileBuffer) throw lastError;
       } else {
         // Nếu là file local
         fileBuffer = fs.readFileSync(filePathOrUrl);

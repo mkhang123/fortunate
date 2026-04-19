@@ -37,9 +37,9 @@ function renderMarkdown(text = "", navigate) {
  const alt = m[2], imgSrc = m[3], href = m[4];
  parts.push(
  <a key={key++} href={href} onClick={(e) => handleLinkClick(e, href)}
- className="block my-2 rounded-xl overflow-hidden border border-gray-100 hover:border-gray-300 transition-all cursor-pointer">
+ className="block my-2 bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-300 transition-all cursor-pointer">
  <img src={imgSrc} alt={alt}
- className="w-full object-cover max-h-40"
+ className="w-full h-40 object-contain p-2"
  onError={(e) => { e.currentTarget.style.display = "none"; }} />
  </a>
  );

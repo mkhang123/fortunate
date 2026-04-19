@@ -69,8 +69,8 @@ export const updateUserActive = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, phone } = req.body; // Lấy name và phone từ request body
-    const updated = await userService.updateProfile(userId, { name, phone });
+    const { name, phone, address } = req.body; // Lấy name, phone, address từ request body
+    const updated = await userService.updateProfile(userId, { name, phone, address });
     res.json({ success: true, message: "Cập nhật thông tin thành công", data: updated });
   } catch (error) {
     res.status(error.statusCode || 500).json({ success: false, message: error.message });
