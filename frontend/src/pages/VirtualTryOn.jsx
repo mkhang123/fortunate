@@ -224,8 +224,12 @@ export default function VirtualTryOn() {
  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
  <span className="text-2xl">❌</span>
  </div>
- <p className="text-[10px] text-red-600 font-bold tracking-widest mb-2">Có lỗi xảy ra</p>
- <p className="text-[9px] text-red-500">{error}</p>
+ <p className="text-[10px] text-red-600 font-bold tracking-widest mb-2">
+    {error.includes("không hợp lệ") ? "KIỂM DUYỆT AN TOÀN" : "CÓ LỖI XẢY RA"}
+  </p>
+  <p className="text-[9px] text-red-500 leading-relaxed">
+    {error}
+  </p>
  <button
  onClick={() => setError(null)}
  className="mt-4 text-[9px] underline hover:no-underline"

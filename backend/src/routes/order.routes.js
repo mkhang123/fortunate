@@ -6,12 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 
 const router = express.Router();
 
-// Guest endpoints (no auth required)
-router.post("/guest", asyncHandler(OrderController.createGuestOrder));
-router.get("/guest/:id/invoice", asyncHandler(OrderController.downloadGuestInvoice));
-router.get("/guest/:id", asyncHandler(OrderController.getGuestOrderById));
-
-// All remaining order routes require authentication
+// All order routes require authentication
 router.use(authMiddleware);
 
 // User endpoints - order matters! /me must come before /:id

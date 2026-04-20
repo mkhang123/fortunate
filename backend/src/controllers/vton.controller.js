@@ -1,5 +1,6 @@
 import vtonService from '../services/vton.service.js';
-import { uploadFromUrl } from '../config/cloudinary.config.js';
+import moderationService from '../services/ai/moderation.service.js';
+import { uploadFromUrl, deleteFromCloudinary } from '../config/cloudinary.config.js';
 
 class VTONController {
   /**
@@ -21,6 +22,25 @@ class VTONController {
 
       // personImage đã được upload lên Cloudinary bởi multer middleware
       const personImage = req.files.personImage[0];
+
+      // --- BƯỚC KIỂM DUYỆT ẢNH BẰNG AI (MODERATION) ---
+      console.log('🛡️ [1/2] Starting Person image moderation check...');
+      const personModeration = await moderationService.checkImageSafety(personImage.path, 'PERSON');
+      
+      if (!personModeration.safe) {
+        console.warn('🔞 Person Image rejected:', personModeration.reason);
+        // Xóa ngay ảnh vừa upload lên Cloudinary để bảo mật
+        if (personImage.filename) {
+          await deleteFromCloudinary(personImage.filename);
+        }
+        return res.status(400).json({
+          success: false,
+          message: `Ảnh người không hợp lệ: ${personModeration.reason}`
+        });
+      }
+      console.log('✅ Image passed moderation.');
+      // -----------------------------------------------
+
       let garmentImage;
 
       if (req.files && req.files.garmentImage) {
@@ -48,6 +68,24 @@ class VTONController {
           message: 'Vui lòng cung cấp ảnh quần áo hoặc URL ảnh sản phẩm'
         });
       }
+
+      // --- KIỂM DUYỆT ẢNH ĐỒ (MODERATION 2) ---
+      console.log('🛡️ [2/2] Starting Garment image moderation check...');
+      const garmentModeration = await moderationService.checkImageSafety(garmentImage.path, 'GARMENT');
+
+      if (!garmentModeration.safe) {
+        console.warn('🔞 Garment Image rejected:', garmentModeration.reason);
+        // Xóa ảnh vừa upload nếu có
+        if (personImage.filename) await deleteFromCloudinary(personImage.filename);
+        if (garmentImage.filename) await deleteFromCloudinary(garmentImage.filename);
+
+        return res.status(400).json({
+          success: false,
+          message: `Trang phục không hợp lệ: ${garmentModeration.reason}`
+        });
+      }
+      console.log('✅ Both images passed moderation.');
+      // ----------------------------------------
 
       const productIdInt = productId ? parseInt(productId) : null;
 

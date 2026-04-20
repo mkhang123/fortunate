@@ -29,6 +29,7 @@ import AdminVtonHistory from "./pages/AdminVtonHistory";
 import PrivateRoute from "./components/PrivateRoute";
 import BodyProfileModal from "./components/BodyProfileModal";
 import api from "./apis/axiosConfig";
+import ScrollToTop from "./components/ScrollToTop";
 
 export default function App() {
   const [showBodyModal, setShowBodyModal] = useState(false);
@@ -107,6 +108,7 @@ export default function App() {
         />
       )}
 
+      <ScrollToTop />
       <Routes>
         {/* Admin area — Tách biệt hoàn toàn khỏi MainLayout của người dùng */}
         <Route element={<AdminLayout />}>
