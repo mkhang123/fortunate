@@ -26,7 +26,7 @@ class VTONController {
       // --- BƯỚC KIỂM DUYỆT ẢNH BẰNG AI (MODERATION) ---
       console.log('🛡️ [1/2] Starting Person image moderation check...');
       const personModeration = await moderationService.checkImageSafety(personImage.path, 'PERSON');
-      
+
       if (!personModeration.safe) {
         console.warn('🔞 Person Image rejected:', personModeration.reason);
         // Xóa ngay ảnh vừa upload lên Cloudinary để bảo mật
