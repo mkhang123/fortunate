@@ -1,4 +1,4 @@
-// fortunate/backend/src/controllers/wishlist.controller.js
+
 import wishlistService from "../services/wishlist.service.js";
 
 class WishlistController {

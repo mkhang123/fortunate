@@ -33,7 +33,7 @@ function renderMarkdown(text = "", navigate) {
  parts.push(<span key={key++}>{normalizedText.slice(last, m.index)}</span>);
  }
  if (m[1] === "!") {
- // [![alt](img)](url)
+
  const alt = m[2], imgSrc = m[3], href = m[4];
  parts.push(
  <a key={key++} href={href} onClick={(e) => handleLinkClick(e, href)}
@@ -44,7 +44,7 @@ function renderMarkdown(text = "", navigate) {
  </a>
  );
  } else if (m[5] !== undefined) {
- // [text](url)
+
  const linkText = m[5], href = m[6];
  parts.push(
  <a key={key++} href={href} onClick={(e) => handleLinkClick(e, href)}
@@ -123,7 +123,6 @@ function extractOrderLookupInfo(message = "") {
  };
 }
 
-// Kích thước mặc định và giới hạn resize
 const DEFAULT_W = 352; // 22rem
 const DEFAULT_H = 384; // 24rem (96 * 4)
 const MIN_W = 280;
@@ -148,11 +147,9 @@ export default function ChatAssistant() {
  const recognitionRef = useRef(null);
  const bottomRef = useRef(null);
 
- // --- Resize state ---
  const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
  const resizing = useRef(null); // { startX, startY, startW, startH, edge }
 
- // Tự động cuộn xuống cuối khi có tin nhắn mới
  useEffect(() => {
  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
  }, [messages]);
@@ -169,7 +166,6 @@ export default function ChatAssistant() {
  .catch(() => {});
  }, []);
 
- // Kiểm tra và khởi tạo Web Speech API
  useEffect(() => {
  const SpeechRecognition =
  window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -198,13 +194,13 @@ export default function ChatAssistant() {
  interim = transcript;
  }
  }
- // Hiển thị interim + final để user thấy realtime
+
  setInput(finalTranscript + interim);
  };
 
  recognition.onend = () => {
  setIsListening(false);
- // Giữ lại finalTranscript (không xóa)
+
  };
 
  recognition.onerror = (event) => {
@@ -221,7 +217,6 @@ export default function ChatAssistant() {
  };
  }, []);
 
- // --- Resize handlers ---
  const onResizeMouseDown = useCallback((e, edge) => {
  e.preventDefault();
  resizing.current = {
@@ -261,7 +256,6 @@ export default function ChatAssistant() {
  window.addEventListener("mouseup", onUp);
  }, [size]);
 
- // Touch resize
  const onResizeTouchStart = useCallback((e, edge) => {
  const touch = e.touches[0];
  resizing.current = {
@@ -322,7 +316,6 @@ export default function ChatAssistant() {
  setInput("");
  setLoading(true);
 
- // Thêm bubble trống của assistant để stream vào đó
  const assistantIndex = messages.length + 1; // sau user msg
  setMessages((prev) => [...prev, { role: "assistant", text: "" }]);
 
@@ -445,7 +438,6 @@ export default function ChatAssistant() {
  return;
  }
 
-   // Đọc SSE stream (parse cả event: và data:)
    const reader = response.body.getReader();
    const decoder = new TextDecoder();
    let buffer = "";
@@ -468,7 +460,7 @@ export default function ChatAssistant() {
            const payload = JSON.parse(line.slice(5).trim());
 
            if (currentEvent === "chunk" && payload.text !== undefined) {
-             // Đặt flag TRƯỚC khi gọi setMessages (setMessages callback chạy async)
+
              receivedAnyText = true;
              setMessages((prev) => {
                const updated = [...prev];
@@ -491,15 +483,14 @@ export default function ChatAssistant() {
                return updated;
              });
            }
-           // waiting: không thay đổi bubble, bỏ qua
+
          } catch {
-           // ignore parse errors
+
          }
        }
      }
    }
 
-   // Stream đóng mà chưa nhận được dữ liệu nào → kết nối bị gián đoạn
    if (!receivedAnyText) {
      setMessages((prev) => {
        const updated = [...prev];
@@ -536,7 +527,7 @@ export default function ChatAssistant() {
 
  return (
  <>
- {/* Nút mở chat — tránh che nội dung trên mobile */}
+
  <button
  onClick={() => setOpen(true)}
  className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 rounded-full bg-black text-white p-3.5 sm:p-4 shadow-xl hover:bg-gray-800 transition-all [padding-bottom:max(0.875rem,env(safe-area-inset-bottom,0px))]"
@@ -545,7 +536,6 @@ export default function ChatAssistant() {
  <MessageCircle className="w-5 h-5" />
  </button>
 
- {/* Hộp chat có thể resize */}
  {open && (
  <div
  className="fixed z-50"
@@ -556,7 +546,7 @@ export default function ChatAssistant() {
  height: `${size.h}px`,
  }}
  >
- {/* Handle resize: cạnh trên */}
+
  <div
  onMouseDown={(e) => onResizeMouseDown(e, "top")}
  onTouchStart={(e) => onResizeTouchStart(e, "top")}
@@ -566,7 +556,6 @@ export default function ChatAssistant() {
  <div className="w-10 h-1 rounded-full bg-gray-300 group-hover:bg-gray-500 transition-colors" />
  </div>
 
- {/* Handle resize: cạnh trái */}
  <div
  onMouseDown={(e) => onResizeMouseDown(e, "left")}
  onTouchStart={(e) => onResizeTouchStart(e, "left")}
@@ -574,7 +563,6 @@ export default function ChatAssistant() {
  title="Kéo để thay đổi chiều rộng"
  />
 
- {/* Handle resize: góc trên-trái */}
  <div
  onMouseDown={(e) => onResizeMouseDown(e, "corner")}
  onTouchStart={(e) => onResizeTouchStart(e, "corner")}
@@ -584,9 +572,8 @@ export default function ChatAssistant() {
  <GripHorizontal className="w-3 h-3 text-gray-400 group-hover:text-gray-600 rotate-45 transition-colors" />
  </div>
 
- {/* Nội dung chatbox */}
  <div className="w-full h-full bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
- {/* Header */}
+
  <div className="flex items-center justify-between px-4 py-3 border-b bg-black text-white shrink-0">
  <div>
  <p className="text-xs font-black tracking-normal">
@@ -604,7 +591,6 @@ export default function ChatAssistant() {
  </button>
  </div>
 
- {/* Messages */}
  <div className="flex-1 px-3 py-2 overflow-y-auto space-y-2 text-sm bg-gray-50">
  {messages.map((m, idx) => (
  <div
@@ -621,7 +607,7 @@ export default function ChatAssistant() {
  {m.text
  ? (m.role === "assistant" ? renderMarkdown(m.text, navigate) : m.text)
  : (
- // Hiệu ứng typing khi chưa có text nào
+
  <span className="flex gap-1 items-center h-4">
  <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
  <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
@@ -634,7 +620,6 @@ export default function ChatAssistant() {
  <div ref={bottomRef} />
  </div>
 
- {/* Input area */}
  <div className="border-t bg-white px-3 py-2 shrink-0">
  <div className="flex items-stretch gap-2">
  <textarea
@@ -650,7 +635,7 @@ export default function ChatAssistant() {
  }`}
  />
  <div className="flex flex-col gap-1.5 shrink-0">
- {/* Nút gửi */}
+
  <button
  onClick={handleSend}
  disabled={loading || !input.trim()}
@@ -663,7 +648,6 @@ export default function ChatAssistant() {
  )}
  </button>
 
- {/* Nút mic (chỉ hiện khi trình duyệt hỗ trợ) */}
  {voiceSupported && (
  <button
  onClick={toggleVoice}
@@ -685,7 +669,6 @@ export default function ChatAssistant() {
  </div>
  </div>
 
- {/* Chú thích trạng thái voice */}
  {isListening && (
  <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping inline-block" />

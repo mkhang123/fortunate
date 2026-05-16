@@ -1,7 +1,6 @@
 import prisma from '../config/prisma.js';
 
-class ReviewRepository {
-    // Lấy tất cả đánh giá của một sản phẩm
+class ReviewRepository {
     async getByProductId(productId) {
         return await prisma.review.findMany({
             where: { productId: Number(productId) },
@@ -12,9 +11,7 @@ class ReviewRepository {
             },
             orderBy: { createdAt: 'desc' },
         });
-    }
-
-    // Kiểm tra user đã mua sản phẩm này chưa (verifiedPurchase)
+    }
     async hasPurchased(userId, productId) {
         const order = await prisma.order.findFirst({
             where: {
@@ -28,9 +25,7 @@ class ReviewRepository {
             },
         });
         return !!order;
-    }
-
-    // Kiểm tra user đã review sản phẩm này chưa
+    }
     async findExisting(userId, productId) {
         return await prisma.review.findUnique({
             where: {
@@ -40,9 +35,7 @@ class ReviewRepository {
                 },
             },
         });
-    }
-
-    // Tạo đánh giá mới
+    }
     async create({ userId, productId, rating, comment, images = [], verifiedPurchase }) {
         return await prisma.review.create({
             data: {

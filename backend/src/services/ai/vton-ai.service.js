@@ -7,12 +7,8 @@ import sharp from "sharp";
 
 class VTONAIService {
   constructor() {
-    this.mode = process.env.VTON_MODE || "mock";
-
-    // Replicate initialization với Custom Fetch để chống lỗi Timeout (fetch failed) khi cold-boot
-    // Mặc định Node.js sẽ ngắt mạng sau khoản 5p, IDM-VTON lúc warmup có thể tốn hơn 5p
-    const customFetch = (url, options) => {
-      // 10 minutes timeout
+    this.mode = process.env.VTON_MODE || "mock";
+    const customFetch = (url, options) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000); 
       
@@ -26,18 +22,14 @@ class VTONAIService {
     });
     this.replicateModelVersion =
       process.env.VTON_MODEL_REPLICATE ||
-      "cuuupid/idm-vton:c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2361b3d021d3ff4";
-
-    // Danh sách HF Space — tự động rotate khi một cái bị rate-limited
+      "cuuupid/idm-vton:c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2361b3d021d3ff4";
     this.hfSpaces = [
       "yisol/IDM-VTON",
       "Nymbo/Virtual-Try-On",
       "yisol/IDM-VTON-DC",
     ];
     this.hfSpaceIndex = 0; // Đang dùng Space nào
-    this.hfSpace = this.hfSpaces[0];
-
-    // Google Colab server URL (có thể cập nhật runtime, không cần restart)
+    this.hfSpace = this.hfSpaces[0];
     this.colabUrl = process.env.VTON_COLAB_URL || null;
 
     console.log(`VTON Service initialized in ${this.mode.toUpperCase()} mode`);
@@ -90,8 +82,7 @@ class VTONAIService {
         case "huggingface":
           try {
             return await this._generateHuggingFace(personImagePath, garmentImagePath);
-          } catch (error) {
-            // Tự động rotate sang Space khác
+          } catch (error) {
             console.warn(`⚠️ HF Space [${this.hfSpace}] lỗi: ${error.message}`);
             this._rotateHFSpace();
             try {
@@ -148,23 +139,18 @@ class VTONAIService {
       const garmentBuffer = fs.readFileSync(garmentImagePath);
 
       const personMime = this.getMimeType(personImagePath);
-      const garmentMime = this.getMimeType(garmentImagePath);
-
-      // Colab proxy nhận ảnh dưới dạng Blob (file)
+      const garmentMime = this.getMimeType(garmentImagePath);
       const personBlob = new Blob([personBuffer], { type: personMime });
       const garmentBlob = new Blob([garmentBuffer], { type: garmentMime });
 
-      console.log("⏳ Colab Proxy đang gọi HF Space từ IP Google...");
-
-      // Colab proxy expose endpoint /predict (Gradio Interface mặc định)
+      console.log("⏳ Colab Proxy đang gọi HF Space từ IP Google...");
       const result = await app.predict("/predict", [
         personBlob,
         garmentBlob,
       ]);
 
       if (result.data && result.data[0]) {
-        const resultImg = result.data[0];
-        // Gradio trả về object { url } hoặc string URL
+        const resultImg = result.data[0];
         const imageUrl = typeof resultImg === 'string' ? resultImg : resultImg.url;
         console.log("✅ Colab Proxy: processing completed");
         return imageUrl;
@@ -214,12 +200,9 @@ class VTONAIService {
    * === REPLICATE MODE ===
    */
   async _generateReplicate(personImagePath, garmentImagePath) {
-    try {
-      // Bật chế độ resize (true) để chuẩn hóa ảnh về 768x1024 trước khi gọi Replicate
+    try {
       const personImageData = await this.fileToDataURL(personImagePath, true);
-      const garmentImageData = await this.fileToDataURL(garmentImagePath, true);
-
-      // Lấy loại áo hoặc mô tả (tạm thời hardcode là short sleeve t-shirt, nhưng nên dynmaic sau này)
+      const garmentImageData = await this.fileToDataURL(garmentImagePath, true);
       const garmentDescription = "Short sleeve shirt, t-shirt, top";
 
       const output = await this.replicate.run(this.replicateModelVersion, {
@@ -234,26 +217,20 @@ class VTONAIService {
         },
       });
 
-      console.log("📦 Replicate raw output type:", typeof output);
-
-      // Helper: lấy URL string từ nhiều kiểu output khác nhau
+      console.log("📦 Replicate raw output type:", typeof output);
       const extractUrl = (val) => {
         if (!val) return null;
-        if (typeof val === 'string') return val;
-        // FileOutput.url() là method → trả về URL object hoặc string
+        if (typeof val === 'string') return val;
         if (typeof val.url === 'function') {
           const urlResult = val.url();
           if (typeof urlResult === 'string') return urlResult;
           if (urlResult?.href) return urlResult.href; // URL object
           return null;
         }
-        if (typeof val.url === 'string') return val.url;
-        // val chính là URL object (có .href)
+        if (typeof val.url === 'string') return val.url;
         if (val.href && typeof val.href === 'string') return val.href;
         return null;
-      };
-
-      // ReadableStream/AsyncIterable (Replicate SDK mới)
+      };
       if (output && typeof output[Symbol.asyncIterator] === 'function') {
         let lastValue = null;
         for await (const chunk of output) {
@@ -265,18 +242,14 @@ class VTONAIService {
           console.log("✅ Replicate URL (stream):", url);
           return url;
         }
-      }
-
-      // Array of outputs (SDK cũ)
+      }
       if (Array.isArray(output) && output.length > 0) {
         const url = extractUrl(output[0]);
         if (url) {
           console.log("✅ Replicate URL (array):", url);
           return url;
         }
-      }
-
-      // Output trực tiếp
+      }
       const directUrl = extractUrl(output);
       if (directUrl) {
         console.log("✅ Replicate URL (direct):", directUrl);
@@ -287,17 +260,13 @@ class VTONAIService {
     } catch (error) {
       throw error;
     }
-  }
-
-  // Cập nhật để hỗ trợ cả đường dẫn local và URL (thường là Cloudinary)
+  }
   async fileToDataURL(filePathOrUrl, resize = false) {
     let fileBuffer;
     let mimeType;
 
     try {
-      if (filePathOrUrl.startsWith('http://') || filePathOrUrl.startsWith('https://')) {
-        // Nếu là URL, tải hình ảnh bằng axios với retry tự động
-        // Xử lý lỗi mạng tạm thời (ECONNRESET khi đổi mạng WiFi↔4G, v.v.)
+      if (filePathOrUrl.startsWith('http://') || filePathOrUrl.startsWith('https://')) {
         const MAX_RETRIES = 3;
         let lastError;
 
@@ -327,20 +296,14 @@ class VTONAIService {
         }
 
         if (!fileBuffer) throw lastError;
-      } else {
-        // Nếu là file local
+      } else {
         fileBuffer = fs.readFileSync(filePathOrUrl);
         mimeType = this.getMimeType(filePathOrUrl);
       }
     } catch (err) {
       console.error(`Lỗi khi đọc file/url ${filePathOrUrl}:`, err);
       throw new Error(`Không thể đọc ảnh đầu vào: ${err.message}`);
-    }
-
-    // Tạm thời loại bỏ việc tự động resize bằng sharp theo yêu cầu
-    // vì nó bóp méo ảnh và không giữ đúng bố cục gốc.
-    // Nếu sau này API Replicate báo lỗi kích thước, ta có thể
-    // quay lại resize nhưng với sharp format giữ đúng tỉ lệ.
+    }
     /*
     if (resize) {
       try {

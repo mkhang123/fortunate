@@ -22,9 +22,7 @@ const GoogleCallback = () => {
  try {
  const user = JSON.parse(decodeURIComponent(userRaw));
  localStorage.setItem("user", JSON.stringify(user));
- toast.success(`Chào mừng ${user.name || "bạn"}!`);
-
- // Kiểm tra body profile sau Google login
+ toast.success(`Chào mừng ${user.name || "bạn"}!`);
  try {
  const meRes = await api.get("/users/me");
  if (!meRes.data.data?.bodyProfile) {
@@ -32,8 +30,7 @@ const GoogleCallback = () => {
  } else {
  localStorage.removeItem("needsBodyProfile");
  }
- } catch {
- // Bỏ qua lỗi mạng
+ } catch {
  }
 
  window.location.href = "/";

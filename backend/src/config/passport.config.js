@@ -18,17 +18,14 @@ passport.use(
 
                 if (!email) {
                     return done(new Error('Tài khoản Google không có email'), null);
-                }
-
-                // Tìm user theo googleId hoặc email
+                }
                 let user = await prisma.user.findFirst({
                     where: {
                         OR: [{ googleId }, { email }],
                     },
                 });
 
-                if (!user) {
-                    // Tạo user mới
+                if (!user) {
                     user = await prisma.user.create({
                         data: {
                             email,
@@ -38,8 +35,7 @@ passport.use(
                             password: null,
                         },
                     });
-                } else if (!user.googleId) {
-                    // User đã có tài khoản email → liên kết Google vào
+                } else if (!user.googleId) {
                     user = await prisma.user.update({
                         where: { id: user.id },
                         data: { googleId, avatar: user.avatar || avatar },

@@ -26,8 +26,6 @@ function upOneSize(size) {
   return SIZE_ORDER[Math.min(idx + 1, SIZE_ORDER.length - 1)];
 }
 
-// ─── Nam ───────────────────────────────────────────────────────────────────
-
 function maleIndexFromHeight(h) {
   if (h < 163) return 0;
   if (h <= 168) return 1;
@@ -74,8 +72,6 @@ function maleBottomIndex(h, w, waist) {
   if (waist != null && Number(waist) > 0) return maleIndexFromWaist(Number(waist));
   return Math.max(maleIndexFromHeight(h), maleIndexFromWeight(w));
 }
-
-// ─── Nữ ───────────────────────────────────────────────────────────────────
 
 function femaleIndexFromHeight(h) {
   if (h < 155) return 0;

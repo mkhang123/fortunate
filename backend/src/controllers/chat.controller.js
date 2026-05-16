@@ -2,14 +2,12 @@ import { recommendOutfitsByStyle, retrieve, summarize } from "../services/chat.s
 import { getFortunateSizeSuggestions } from "../services/size-advice.service.js";
 import OrderService from "../services/order.service.js";
 
-// Helper: check rate limit error and get wait time (seconds)
 function getRateLimitWait(err) {
   const msg = err?.message || "";
   const match = msg.match(/Please retry in ([\d.]+)s/i);
   return match ? parseFloat(match[1]) : null;
 }
 
-// Helper: check if daily/project quota is exhausted (retrying won't help)
 function isDailyQuotaExhausted(err) {
   const msg = err?.message || "";
   return (
@@ -121,8 +119,6 @@ function prefersStyleProductListing(message = "") {
   return /\bsan\s*pham\b/.test(n);
 }
 
-// ─── SIZE ADVICE INTENT ──────────────────────────────────────────────────────
-
 /** Bỏ dấu tiếng Việt để so regex không bị lệch encoding */
 function noAccent(s = "") {
   return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -134,7 +130,7 @@ function noAccent(s = "") {
  * Trả về "top" | "bottom" | "both" | null
  */
 function extractSizeAdviceIntent(message = "") {
-  // Bỏ dấu hoàn toàn → loại bỏ mọi nguy cơ encoding mismatch
+
   const n = noAccent(message);
 
   const isSizeQuery =
@@ -151,7 +147,6 @@ function extractSizeAdviceIntent(message = "") {
   if (wantsTop) return "top";
   if (wantsBottom) return "bottom";
 
-  // Hỏi size chung (không rõ áo/quần) → tư vấn cả hai
   return "both";
 }
 
@@ -287,7 +282,6 @@ export const handleChat = async (req, res) => {
     return;
   }
 
-  // --- Setup SSE headers ---
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -383,7 +377,6 @@ export const handleChat = async (req, res) => {
       return;
     }
 
-    // --- Tư vấn size áo / quần (không dùng RAG, tính trực tiếp từ body profile) ---
     const sizeIntent = extractSizeAdviceIntent(message);
     if (sizeIntent) {
       await new Promise((r) => setTimeout(r, 3000));
@@ -394,10 +387,8 @@ export const handleChat = async (req, res) => {
       return;
     }
 
-    // 1. Retrieve products mapped to user intent (RAG)
     const hits = await retrieve(message, 6);
 
-    // 2. Send context to AI via stream with retry mechanism
     const MAX_RETRIES = 2;
     const streamBudgetMs = Number(process.env.CHAT_STREAM_MS) || 75000;
     const summarizeBudgetMs = Number(process.env.CHAT_SUMMARIZE_MS) || 45000;
@@ -444,7 +435,6 @@ export const handleChat = async (req, res) => {
           break;
         }
 
-        // Hết quota ngày → không retry, break ngay
         if (isDailyQuotaExhausted(err)) {
           console.warn("[Chat] Daily quota exhausted. Skipping retries.");
           break;
@@ -463,7 +453,6 @@ export const handleChat = async (req, res) => {
       }
     }
 
-    // Handle end error
     if (lastError) {
       const errMsg = lastError.message || "";
       const isQuota =

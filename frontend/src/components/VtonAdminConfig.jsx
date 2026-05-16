@@ -7,9 +7,7 @@ export default function VtonAdminConfig() {
  const [currentConfig, setCurrentConfig] = useState(null);
  const [isLoading, setIsLoading] = useState(false);
  const [isFetching, setIsFetching] = useState(true);
- const [status, setStatus] = useState(null); // { type: 'success'|'error', message }
-
- // Lấy config hiện tại khi component mount
+ const [status, setStatus] = useState(null); // { type: 'success'|'error', message }
  useEffect(() => {
  fetchConfig();
  }, []);
@@ -69,14 +67,11 @@ export default function VtonAdminConfig() {
 
  return (
  <div className="border border-gray-200 rounded-sm bg-white p-4 space-y-4">
- {/* Header */}
  <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
  <Settings className="w-4 h-4 text-gray-500" />
  <h3 className="text-xs font-black tracking-wider">Cấu hình AI Server</h3>
  <span className="ml-auto text-[9px] text-gray-400 font-bold">Admin Only</span>
  </div>
-
- {/* Current Mode */}
  {!isFetching && currentConfig && (
  <div className="flex items-center gap-2">
  <span className="text-[10px] text-gray-500 font-bold ">Mode hiện tại:</span>
@@ -90,8 +85,6 @@ export default function VtonAdminConfig() {
  )}
  </div>
  )}
-
- {/* Input URL */}
  <div className="space-y-2">
  <label className="text-[10px] font-black tracking-wider text-gray-600 block">
  Link Google Colab (gradio.live)
@@ -113,8 +106,6 @@ export default function VtonAdminConfig() {
  {isLoading ? 'Đang kết nối...' : 'Kết nối'}
  </button>
  </div>
-
- {/* Status message */}
  {status && (
  <div className={`flex items-start gap-2 p-2 rounded-sm text-[10px] ${status.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
  {status.type === 'success'
@@ -125,8 +116,6 @@ export default function VtonAdminConfig() {
  </div>
  )}
  </div>
-
- {/* Hướng dẫn nhanh */}
  <div className="bg-gray-50 p-3 rounded-sm space-y-1">
  <p className="text-[9px] font-black tracking-wider text-gray-500 mb-2">Cách lấy link Colab:</p>
  <ol className="space-y-0.5 text-[9px] text-gray-500 leading-relaxed">

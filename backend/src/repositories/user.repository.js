@@ -34,9 +34,7 @@ class UserRepository {
       data: { role },
       select: { id: true, name: true, role: true },
     });
-  }
-
-  // Admin: cập nhật trạng thái hoạt động của user (chặn/mở chặn)
+  }
   async updateActive(userId, isActive) {
     const id = Number(userId);
     return await prisma.user.update({
@@ -44,9 +42,7 @@ class UserRepository {
       data: { isActive },
       select: { id: true, name: true, email: true, role: true, isActive: true },
     });
-  }
-
-  // Cập nhật thông tin cơ bản: name, phone, address
+  }
   async updateProfile(userId, data) {
     const id = Number(userId);
     return await prisma.user.update({
@@ -54,21 +50,15 @@ class UserRepository {
       data,
       select: { id: true, name: true, phone: true, address: true, email: true },
     });
-  }
-
-  // Tạo mới hoặc cập nhật số đo cơ thể (upsert)
+  }
   async upsertBodyProfile(userId, data) {
     const id = Number(userId);
     return await prisma.userBodyProfile.upsert({
-      where: { userId: id },
-      // Nếu chưa có record -> tạo mới
-      create: { userId: id, ...data },
-      // Nếu đã có -> cập nhật
+      where: { userId: id },
+      create: { userId: id, ...data },
       update: { ...data },
     });
-  }
-
-  // Cập nhật avatar của user
+  }
   async updateAvatar(userId, avatarUrl) {
     const id = Number(userId);
     return await prisma.user.update({

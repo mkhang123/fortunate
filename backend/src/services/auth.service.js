@@ -19,16 +19,10 @@ const generateTokens = (userId, role) => {
 };
 
 export const register = async (userData) => {
-  const { email, password, name } = userData;
-
-  // 1. Kiểm tra email tồn tại
+  const { email, password, name } = userData;
   const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) throw new Error('Email đã được sử dụng');
-
-  // 2. Mã hóa mật khẩu
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // 3. Lưu user mới
+  if (existingUser) throw new Error('Email đã được sử dụng');
+  const hashedPassword = await bcrypt.hash(password, 10);
   return await prisma.user.create({
     data: { email, password: hashedPassword, name }
   });
@@ -36,20 +30,14 @@ export const register = async (userData) => {
 
 export const login = async (email, password) => {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error('Tài khoản không tồn tại');
-
-  // Admin chặn user (isActive=false) => không cho đăng nhập
+  if (!user) throw new Error('Tài khoản không tồn tại');
   if (user.isActive === false) {
     throw Object.assign(new Error('Tài khoản của bạn đã bị chặn'), { statusCode: 403 });
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw new Error('Mật khẩu không chính xác');
-
-  // Tạo cặp token mới
-  const { accessToken, refreshToken } = generateTokens(user.id, user.role);
-
-  // Lưu refreshToken vào DB (ghi đè session cũ nếu có)
+  if (!isMatch) throw new Error('Mật khẩu không chính xác');
+  const { accessToken, refreshToken } = generateTokens(user.id, user.role);
   await prisma.user.update({
     where: { id: user.id },
     data: { refreshToken }
@@ -59,23 +47,17 @@ export const login = async (email, password) => {
 };
 
 export const refresh = async (token) => {
-  if (!token) throw Object.assign(new Error('Không có refresh token'), { statusCode: 401 });
-
-  // 1. Verify chữ ký và hạn của refreshToken
+  if (!token) throw Object.assign(new Error('Không có refresh token'), { statusCode: 401 });
   let payload;
   try {
     payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
   } catch {
     throw Object.assign(new Error('Refresh token không hợp lệ hoặc đã hết hạn'), { statusCode: 403 });
-  }
-
-  // 2. Kiểm tra token có khớp với DB không (tránh dùng token cũ sau logout)
+  }
   const user = await prisma.user.findUnique({ where: { id: payload.id } });
   if (!user || user.refreshToken !== token) {
     throw Object.assign(new Error('Refresh token đã bị vô hiệu hóa'), { statusCode: 403 });
-  }
-
-  // 3. Tạo accessToken mới
+  }
   const accessToken = jwt.sign(
     { id: user.id, role: user.role },
     process.env.JWT_SECRET,
@@ -86,24 +68,19 @@ export const refresh = async (token) => {
 };
 
 export const logout = async (token) => {
-  if (!token) throw Object.assign(new Error('Không có refresh token'), { statusCode: 400 });
-
-  // Tìm user có refreshToken này và xóa đi
+  if (!token) throw Object.assign(new Error('Không có refresh token'), { statusCode: 400 });
   await prisma.user.updateMany({
     where: { refreshToken: token },
     data: { refreshToken: null }
   });
 };
 
-export const googleLogin = async (googleUser) => {
-  // googleUser là user object từ Prisma (passport đã tìm/tạo sẵn)
+export const googleLogin = async (googleUser) => {
   if (googleUser?.isActive === false) {
     throw Object.assign(new Error('Tài khoản của bạn đã bị chặn'), { statusCode: 403 });
   }
 
-  const { accessToken, refreshToken } = generateTokens(googleUser.id, googleUser.role);
-
-  // Lưu refreshToken vào DB
+  const { accessToken, refreshToken } = generateTokens(googleUser.id, googleUser.role);
   await prisma.user.update({
     where: { id: googleUser.id },
     data: { refreshToken },

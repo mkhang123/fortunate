@@ -17,7 +17,7 @@ function normalize(rows = []) {
       price: r.price,
       brandName: r.brand_name || "",
       categoryName: r.category_name || "",
-      // `ProductVariant.color` được dùng để lưu "phong cách" (theo UI quản lý sản phẩm)
+
       styles: Array.isArray(r.styles)
         ? r.styles.filter(Boolean)
         : (r.styles ? [r.styles] : []),
@@ -31,7 +31,7 @@ function normalize(rows = []) {
  * 1) Full-Text Search on Product Name, Category Name, and Brand Name
  */
 export async function searchProductsFT(query, limit = 6) {
-  // Using unaccent and simple dictionary for Vietnamese search
+
   const rows = await prisma.$queryRawUnsafe(
     `
     SELECT 

@@ -96,10 +96,9 @@ export default function AdminOrders() {
           Quản lý đơn hàng
         </h1>
 
-        {/* Filters */}
         <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -113,7 +112,6 @@ export default function AdminOrders() {
               />
             </div>
 
-            {/* Status Filter */}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <select
@@ -130,7 +128,6 @@ export default function AdminOrders() {
               </select>
             </div>
 
-            {/* Items per page */}
             <div>
               <select
                 value={filters.limit}
@@ -147,7 +144,6 @@ export default function AdminOrders() {
           </div>
         </div>
 
-        {/* Orders Table */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-black" />
@@ -253,7 +249,6 @@ export default function AdminOrders() {
               </table>
             </div>
 
-            {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-between mt-8">
                 <p className="text-sm text-gray-600">

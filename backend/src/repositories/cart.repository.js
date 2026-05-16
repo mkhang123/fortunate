@@ -1,8 +1,7 @@
-// fortunate/backend/src/repositories/cart.repository.js
+
 import prisma from "../config/prisma.js";
 
-class CartRepository {
-  // Tìm giỏ hàng của User hoặc tạo mới nếu chưa có
+class CartRepository {
   async getOrCreateCart(userId) {
     let cart = await prisma.cart.findUnique({
       where: { userId },
@@ -26,11 +25,8 @@ class CartRepository {
       });
     }
     return cart;
-  }
-
-  // Thêm sản phẩm vào giỏ
-  async addItem(cartId, variantId, quantity) {
-    // Kiểm tra xem sản phẩm này đã có trong giỏ chưa
+  }
+  async addItem(cartId, variantId, quantity) {
     const existingItem = await prisma.cartItem.findFirst({
       where: { cartId, variantId },
     });
@@ -45,24 +41,18 @@ class CartRepository {
     return await prisma.cartItem.create({
       data: { cartId, variantId, quantity },
     });
-  }
-
-  // Xóa sản phẩm khỏi giỏ
+  }
   async removeItem(itemId) {
     return await prisma.cartItem.delete({
       where: { id: itemId },
     });
-  }
-
-  // Cập nhật số lượng (tăng/giảm trực tiếp)
+  }
   async updateQuantity(itemId, quantity) {
     return await prisma.cartItem.update({
       where: { id: itemId },
       data: { quantity },
     });
-  }
-
-  // Xóa tất cả items trong giỏ hàng (sau khi tạo order)
+  }
   async clearCart(cartId) {
     return await prisma.cartItem.deleteMany({
       where: { cartId },

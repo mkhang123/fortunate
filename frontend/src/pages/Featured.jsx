@@ -12,8 +12,7 @@ export default function Featured() {
     useEffect(() => {
         const fetchFeatured = async () => {
             try {
-                setLoading(true);
-                // Gọi API Featured với các tham số lọc
+                setLoading(true);
                 const res = await api.get(
                     `/products/featured?search=${searchTerm}&sort=${sortOption}`
                 );
@@ -34,7 +33,6 @@ export default function Featured() {
 
     return (
         <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
-            {/* HEADER & THANH CÔNG CỤ (ĐỒNG BỘ VỚI CLOTHES) */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
                 <div>
                     <div className="flex items-center gap-3 mb-3">
@@ -55,7 +53,6 @@ export default function Featured() {
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-8 items-center w-full md:w-auto">
-                    {/* SORT DROPDOWN */}
                     <div className="relative group w-full md:w-56">
                         <select
                             className="w-full border-b-2 border-gray-100 py-3 outline-none focus:border-black transition-all bg-transparent text-[11px] font-black tracking-[0.2em] appearance-none cursor-pointer"
@@ -69,8 +66,6 @@ export default function Featured() {
                         </select>
                         <ChevronDown className="w-4 h-4 absolute right-0 top-3 text-gray-400 pointer-events-none group-hover:text-black transition-colors" />
                     </div>
-
-                    {/* SEARCH INPUT */}
                     <div className="relative w-full md:w-72 group">
                         <input
                             type="text"
@@ -91,8 +86,6 @@ export default function Featured() {
                     </div>
                 </div>
             </div>
-
-            {/* GRID SẢN PHẨM (ĐỒNG BỘ VỚI CLOTHES) */}
             {loading ? (
                 <div className="py-40 text-center text-[10px] font-black tracking-[0.5em] animate-pulse">
                     Đang tải dữ liệu nổi bật...
@@ -114,18 +107,14 @@ export default function Featured() {
                                     to={`/product/${product.slug}`} // Chuyển hướng tới trang chi tiết dựa vào slug
                                     className="group flex flex-col"
                                 >
-                                    {/* KHUNG ẢNH */}
                                     <div
                                         className={`relative aspect-[3/4] w-full overflow-hidden bg-[#fcfcfc] mb-6 flex items-center justify-center border border-gray-50 shadow-sm transition-all duration-500 group-hover:shadow-xl ${isSoldOut ? "opacity-40 grayscale" : ""
                                             }`}
                                     >
-                                        {/* Tag HOT theo lượt wishlists */}
                                         <div className="absolute top-4 left-4 z-10 bg-black text-white px-2 py-1 text-[8px] font-black tracking-widest italic shadow-lg flex items-center gap-1">
                                             <Star className="w-2 h-2 fill-yellow-400 text-yellow-400" />
                                             Hot Trend
                                         </div>
-
-                                        {/* Lượt yêu thích */}
                                         <div className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-black shadow-sm border border-gray-100">
                                             <Star className="w-2.5 h-2.5 fill-black text-black" />
                                             {product._count?.wishlists || 0}
@@ -150,8 +139,6 @@ export default function Featured() {
                                             className="w-full h-full object-contain mix-blend-multiply transition-transform duration-1000 ease-in-out group-hover:scale-110"
                                         />
                                     </div>
-
-                                    {/* THÔNG TIN */}
                                     <div className="space-y-2">
                                         <h3 className="text-[11px] font-black tracking-[0.15em] text-black group-hover:text-red-600 transition-colors line-clamp-2 leading-relaxed">
                                             {product.name}

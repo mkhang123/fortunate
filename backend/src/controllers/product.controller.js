@@ -1,4 +1,4 @@
-// fortunate/backend/src/controllers/product.controller.js
+
 import productService from "../services/product.service.js";
 import {
   createProductSchema,
@@ -51,11 +51,8 @@ class ProductController {
   }
 
   async getAll(req, res) {
-    try {
-      // CẬP NHẬT: Thêm categorySlug để nhận từ URL (?categorySlug=...)
-      const { search, categoryId, categorySlug, status, sort, brand, style } = req.query;
-
-      // Truyền tất cả filter vào service
+    try {
+      const { search, categoryId, categorySlug, status, sort, brand, style } = req.query;
       const products = await productService.getAllProducts({
         search,
         categoryId,

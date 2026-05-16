@@ -3,9 +3,7 @@ import prisma from "../src/config/prisma.js";
 
 async function main() {
   const email = "fortunate@admin.com";
-  const plainPassword = "fortunate@admin123";
-
-  // Kiểm tra nếu admin đã tồn tại thì bỏ qua
+  const plainPassword = "fortunate@admin123";
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     console.log(`Admin đã tồn tại: ${email}`);

@@ -6,17 +6,13 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-});
-
-// ─── REQUEST: FormData thì để browser tự set boundary ────────────────────────
+});
 api.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {
     delete config.headers["Content-Type"];
   }
   return config;
-});
-
-// ─── RESPONSE: Tự động làm mới accessToken khi hết hạn ───────────────────────
+});
 let isRefreshing = false;           // Tránh gọi /refresh nhiều lần cùng lúc
 let failedQueue = [];               // Hàng đợi các request bị 401 chờ refresh cookie
 
@@ -34,13 +30,7 @@ const processQueue = (error) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-
-    // Trigger refresh khi:
-    // 1. Token còn trong cookie nhưng hết hạn (code: TOKEN_EXPIRED)
-    // 2. Cookie đã bị browser xóa sau 15p → request đến không kèm token (401 không có code)
-    // Điều kiện chung: phải có user trong localStorage (đang đăng nhập),
-    // chưa retry, và không phải request refresh (tránh vòng lặp vô hạn)
+    const originalRequest = error.config;
     const is401 = error.response?.status === 401;
     const isTokenExpiredCode = error.response?.data?.code === "TOKEN_EXPIRED";
     const isMissingToken = !error.response?.data?.code; // 401 không có code = cookie bị mất
@@ -57,8 +47,7 @@ api.interceptors.response.use(
     if (shouldRefresh) {
       originalRequest._retry = true;
 
-      if (isRefreshing) {
-        // Nếu đang refresh, đưa request vào hàng đợi, chờ token mới
+      if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -76,8 +65,7 @@ api.interceptors.response.use(
         );
         processQueue(null);
         return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh token cũng hết hạn (7 ngày) → logout hoàn toàn
+      } catch (refreshError) {
         processQueue(refreshError);
         localStorage.removeItem("user");
         window.location.href = "/login";

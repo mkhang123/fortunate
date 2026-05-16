@@ -2,12 +2,11 @@ import notificationRepository from '../repositories/notification.repository.js';
 import prisma from "../config/prisma.js";
 
 class NotificationService {
-  // Tạo thông báo (dùng nội bộ bởi các service khác)
+
   async create({ userId, title, message, type, link }) {
     return await notificationRepository.create({ userId, title, message, type, link });
   }
 
-  // Lấy thông báo + số chưa đọc
   async getNotifications(userId) {
     const [notifications, unreadCount] = await Promise.all([
       notificationRepository.findByUserId(userId, 20),
@@ -16,17 +15,14 @@ class NotificationService {
     return { notifications, unreadCount };
   }
 
-  // Đánh dấu 1 thông báo đã đọc
   async markAsRead(notificationId, userId) {
     return await notificationRepository.markAsRead(Number(notificationId), userId);
   }
 
-  // Đánh dấu tất cả đã đọc
   async markAllAsRead(userId) {
     return await notificationRepository.markAllAsRead(userId);
   }
 
-  // ── Các helper tạo thông báo theo event ─────────────────────────────────────
   async notifyByRole(role, payloadBuilder) {
     const users = await prisma.user.findMany({
       where: { role, isActive: true },
@@ -40,7 +36,6 @@ class NotificationService {
     );
   }
 
-  // Khi creator gửi sản phẩm chờ duyệt -> báo cho admin
   async notifyProductPendingApproval({ productId, productName }) {
     return await this.notifyByRole("ADMIN", () => ({
       title: "📝 Có sản phẩm chờ duyệt",
@@ -50,7 +45,6 @@ class NotificationService {
     }));
   }
 
-  // Khi admin duyệt sản phẩm -> báo cho creator
   async notifyProductApprovedToCreators({ productId, productName }) {
     return await this.notifyByRole("CREATOR", () => ({
       title: "✅ Sản phẩm đã được duyệt",
@@ -60,7 +54,6 @@ class NotificationService {
     }));
   }
 
-  // Khi admin từ chối sản phẩm -> báo cho creator
   async notifyProductRejectedToCreators({ productId, productName }) {
     return await this.notifyByRole("CREATOR", () => ({
       title: "❌ Sản phẩm bị từ chối",
@@ -70,7 +63,6 @@ class NotificationService {
     }));
   }
 
-  // Khi user đặt hàng thành công
   async notifyOrderPlaced(userId, orderId) {
     return await this.create({
       userId,
@@ -81,7 +73,6 @@ class NotificationService {
     });
   }
 
-  // Khi có đơn hàng mới cần admin duyệt
   async notifyOrderPendingApprovalToAdmins(orderId) {
     return await this.notifyByRole("ADMIN", () => ({
       title: "🛎️ Có đơn hàng chờ duyệt",
@@ -91,7 +82,6 @@ class NotificationService {
     }));
   }
 
-  // Khi đơn hàng được duyệt / chuyển sang PAID
   async notifyOrderPaid(userId, orderId) {
     return await this.create({
       userId,
@@ -102,7 +92,6 @@ class NotificationService {
     });
   }
 
-  // Khi đơn hàng đang giao
   async notifyOrderShipped(userId, orderId) {
     return await this.create({
       userId,
@@ -113,7 +102,6 @@ class NotificationService {
     });
   }
 
-  // Khi đơn hàng hoàn thành
   async notifyOrderCompleted(userId, orderId) {
     return await this.create({
       userId,
@@ -124,7 +112,6 @@ class NotificationService {
     });
   }
 
-  // Khi đơn hàng bị huỷ
   async notifyOrderCancelled(userId, orderId) {
     return await this.create({
       userId,

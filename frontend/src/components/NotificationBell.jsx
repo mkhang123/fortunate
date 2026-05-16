@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import api from '../apis/axiosConfig';
 
-// Mapping type → màu nền badge
 const TYPE_COLORS = {
  ORDER_PENDING_APPROVAL: 'bg-orange-50 border-orange-100',
  ORDER_PLACED: 'bg-blue-50 border-blue-100',
@@ -19,7 +18,6 @@ export default function NotificationBell({ isAuthVerified }) {
  const [loading, setLoading] = useState(false);
  const dropdownRef = useRef(null);
 
- // Đóng dropdown khi click ra ngoài
  useEffect(() => {
  const handleClickOutside = (e) => {
  if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -30,7 +28,6 @@ export default function NotificationBell({ isAuthVerified }) {
  return () => document.removeEventListener('mousedown', handleClickOutside);
  }, []);
 
- // Fetch thông báo
  const fetchNotifications = async () => {
  try {
  setLoading(true);
@@ -38,13 +35,12 @@ export default function NotificationBell({ isAuthVerified }) {
  setNotifications(res.data.data.notifications);
  setUnreadCount(res.data.data.unreadCount);
  } catch {
- // Không hiện lỗi nếu chưa login
+
  } finally {
  setLoading(false);
  }
  };
 
-  // Polling mỗi 30 giây
   useEffect(() => {
     const user = localStorage.getItem('user');
     if (!user || !isAuthVerified) return;
@@ -54,13 +50,11 @@ export default function NotificationBell({ isAuthVerified }) {
     return () => clearInterval(interval);
   }, [isAuthVerified]);
 
-  // Mở dropdown → fetch lại dữ liệu mới nhất
   const handleOpen = () => {
     setOpen((prev) => !prev);
     if (!open && isAuthVerified) fetchNotifications();
   };
 
- // Đánh dấu 1 thông báo đã đọc
  const handleMarkRead = async (id, link) => {
  try {
  await api.patch(`/notifications/${id}/read`);
@@ -72,7 +66,6 @@ export default function NotificationBell({ isAuthVerified }) {
  if (link) window.location.href = link;
  };
 
- // Đánh dấu tất cả đã đọc
  const handleMarkAllRead = async () => {
  try {
  await api.patch('/notifications/read-all');
@@ -81,7 +74,6 @@ export default function NotificationBell({ isAuthVerified }) {
  } catch {}
  };
 
- // Format thời gian tương đối
  const timeAgo = (dateStr) => {
  const diff = Date.now() - new Date(dateStr).getTime();
  const mins = Math.floor(diff / 60000);
@@ -92,13 +84,12 @@ export default function NotificationBell({ isAuthVerified }) {
  return `${Math.floor(hrs / 24)} ngày trước`;
  };
 
- // Không render nếu chưa login
  const user = localStorage.getItem('user');
  if (!user) return null;
 
  return (
  <div className="relative" ref={dropdownRef}>
- {/* Bell Button */}
+
  <button
  onClick={handleOpen}
  className="relative p-1 hover:text-gray-400 transition-colors"
@@ -112,10 +103,9 @@ export default function NotificationBell({ isAuthVerified }) {
  )}
  </button>
 
- {/* Dropdown */}
  {open && (
  <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-100 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
- {/* Header */}
+
  <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
  <span className="text-xs font-black tracking-widest text-gray-700">
  Thông báo {unreadCount > 0 && <span className="text-red-500">({unreadCount})</span>}
@@ -130,7 +120,6 @@ export default function NotificationBell({ isAuthVerified }) {
  )}
  </div>
 
- {/* List */}
  <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
  {loading ? (
  <div className="flex justify-center items-center py-8">

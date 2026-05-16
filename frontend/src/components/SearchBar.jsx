@@ -1,4 +1,4 @@
-﻿// src/components/SearchBar.jsx
+
 import React from 'react';
 
 const SearchBar = ({ searchTerm, setSearchTerm }) => {

@@ -40,32 +40,27 @@ export default function App() {
       try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
     })();
 
-    // Nếu không có user, coi như đã xác thực xong (chưa đăng nhập)
     if (!user) {
       setIsAuthVerified(true);
       return;
     }
 
-    // Role ADMIN không cần check BodyProfile, coi như xong
     if (user.role === "ADMIN") {
       setIsAuthVerified(true);
       return;
     }
 
-    // Ưu tiên 1: flag được set ngay tại thời điểm login (không cần chờ API)
     if (localStorage.getItem("needsBodyProfile") === "1") {
       setShowBodyModal(true);
       setIsAuthVerified(true);
       return;
     }
 
-    // Ưu tiên 2: fallback cho session cũ chưa có flag — chỉ check 1 lần/session
     if (sessionStorage.getItem("bodyProfileChecked")) {
       setIsAuthVerified(true);
       return;
     }
 
-    // Thực hiện xác thực session chính thức
     api.get("/users/me")
       .then((res) => {
         sessionStorage.setItem("bodyProfileChecked", "1");
@@ -75,7 +70,7 @@ export default function App() {
         }
       })
       .catch(() => {
-        // Token hết hạn hoặc lỗi mạng — logic refresh trong axiosConfig sẽ tự xử lý
+
       })
       .finally(() => {
         setIsAuthVerified(true);
@@ -110,7 +105,7 @@ export default function App() {
 
       <ScrollToTop />
       <Routes>
-        {/* Admin area — Tách biệt hoàn toàn khỏi MainLayout của người dùng */}
+
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
@@ -121,7 +116,6 @@ export default function App() {
           <Route path="/admin/vton-history" element={<AdminVtonHistory />} />
         </Route>
 
-        {/* User routes — Sử dụng MainLayout (Header, Footer cửa hàng) */}
         <Route element={<MainLayout isAuthVerified={isAuthVerified} />}>
           <Route path="/" element={<MainDisplay />} />
           <Route path="/featured" element={<Featured />} />

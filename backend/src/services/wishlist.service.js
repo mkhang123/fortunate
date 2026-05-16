@@ -1,10 +1,9 @@
-// fortunate/backend/src/services/wishlist.service.js
+
 import wishlistRepository from "../repositories/wishlist.repository.js";
 import productRepository from "../repositories/product.repository.js";
 
 class WishlistService {
-  async toggleWishlist(userId, productId) {
-    // Kiểm tra sản phẩm có tồn tại không
+  async toggleWishlist(userId, productId) {
     const product = await productRepository.findById(productId);
     if (!product) {
       const error = new Error("Sản phẩm không tồn tại");

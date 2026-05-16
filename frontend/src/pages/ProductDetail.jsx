@@ -18,9 +18,7 @@ import {
  X,
  Ruler,
 } from "lucide-react";
-import toast from "react-hot-toast";
-
-// ─── SIZE CHART DATA ──────────────────────────────────────────────────────────
+import toast from "react-hot-toast";
 const SIZE_CHARTS = {
  "ao-thun": {
  label: "Áo Thun",
@@ -72,9 +70,7 @@ const SIZE_CHARTS = {
  ["XL", "82", "104","50"],
  ],
  },
-};
-
-// Matches a category name/slug to a SIZE_CHARTS key
+};
 function detectChartKey(category) {
  if (!category) return null;
  const haystack = `${category.name || ""} ${category.slug || ""}`.toLowerCase();
@@ -84,16 +80,12 @@ function detectChartKey(category) {
  if (/ngắn|ngan|short/.test(haystack)) return "quan-ngan";
  if (/dài|dai|pant|trouser|jeans/.test(haystack)) return "quan-dai";
  return null;
-}
-
-// ─── SIZE CHART MODAL ─────────────────────────────────────────────────────────
+}
 function SizeChartModal({ category, onClose }) {
  const chartKey = detectChartKey(category);
  const allKeys = Object.keys(SIZE_CHARTS);
  const [activeKey, setActiveKey] = useState(chartKey || allKeys[0]);
- const chart = SIZE_CHARTS[activeKey];
-
- // Close on Escape
+ const chart = SIZE_CHARTS[activeKey];
  useEffect(() => {
  const handler = (e) => { if (e.key === "Escape") onClose(); };
  window.addEventListener("keydown", handler);
@@ -106,7 +98,6 @@ function SizeChartModal({ category, onClose }) {
  onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
  >
  <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
- {/* HEADER */}
  <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 gap-3">
  <div className="flex items-center gap-3">
  <div className="w-9 h-9 rounded-2xl bg-black flex items-center justify-center">
@@ -126,8 +117,6 @@ function SizeChartModal({ category, onClose }) {
  <X className="w-4 h-4" />
  </button>
  </div>
-
- {/* TABS */}
  <div className="px-4 sm:px-8 pt-4 sm:pt-5 flex gap-2 flex-wrap">
  {allKeys.map((key) => (
  <button
@@ -143,8 +132,6 @@ function SizeChartModal({ category, onClose }) {
  </button>
  ))}
  </div>
-
- {/* TABLE */}
  <div className="overflow-auto flex-1 px-3 sm:px-8 py-4 sm:py-6">
  <table className="w-full text-sm border-collapse">
  <thead>
@@ -186,8 +173,6 @@ function SizeChartModal({ category, onClose }) {
  </tbody>
  </table>
  </div>
-
- {/* FOOTER NOTE */}
  <div className="px-4 sm:px-8 py-4 sm:py-5 border-t border-gray-100 bg-gray-50/50">
  <p className="text-[10px] font-bold tracking-widest text-gray-400 text-center">
  Số đo là số đo cơ thể — vui lòng chọn size lớn hơn nếu bạn thích mặc rộng
@@ -207,17 +192,13 @@ export default function ProductDetail() {
  const [quantity, setQuantity] = useState(1);
  const [loading, setLoading] = useState(true);
  const [isWishlisted, setIsWishlisted] = useState(false);
- const [showSizeChart, setShowSizeChart] = useState(false);
-
- // Review states
+ const [showSizeChart, setShowSizeChart] = useState(false);
  const [reviews, setReviews] = useState([]);
  const [reviewStats, setReviewStats] = useState({ avgRating: 0, totalReviews: 0, ratingBreakdown: {} });
  const [eligibility, setEligibility] = useState({ canReview: false, hasPurchased: false, hasReviewed: false });
  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', images: [] });
  const [submittingReview, setSubmittingReview] = useState(false);
- const reviewImageInputRef = useRef(null);
-
- // Lấy thông tin user từ localStorage để kiểm tra đăng nhập
+ const reviewImageInputRef = useRef(null);
  const user = JSON.parse(localStorage.getItem("user"));
 
  useEffect(() => {
@@ -225,9 +206,7 @@ export default function ProductDetail() {
  try {
  setLoading(true);
  const res = await api.get(`/products/${slug}`);
- const productData = res.data.data;
-
- // Lọc variant trùng size và sắp xếp theo thứ tự S → M → L → XL
+ const productData = res.data.data;
  if (productData && productData.variants) {
  const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
  const uniqueVariants = [];
@@ -255,9 +234,7 @@ export default function ProductDetail() {
  setMainImage(
  productData.images?.[0] || "https://via.placeholder.com/800x1000",
  );
- setSelectedVariant(null);
-
- // KIỂM TRA TRẠNG THÁI YÊU THÍCH BAN ĐẦU
+ setSelectedVariant(null);
  if (user && Array.isArray(productData.wishlists)) {
  const liked = productData.wishlists.some((w) => w.userId === user.id);
  setIsWishlisted(liked);
@@ -272,9 +249,7 @@ export default function ProductDetail() {
  }
  };
  fetchProduct();
- }, [slug, user?.id]);
-
- // Fetch reviews khi có product
+ }, [slug, user?.id]);
  useEffect(() => {
  if (!product) return;
  const fetchReviews = async () => {
@@ -289,9 +264,7 @@ export default function ProductDetail() {
  console.error('Lỗi lấy reviews:', err);
  }
  };
- fetchReviews();
-
- // Kiểm tra quyền đánh giá nếu đã đăng nhập
+ fetchReviews();
  if (user) {
  reviewAPI.checkEligibility(product.id)
  .then(res => { if (res.data.success) setEligibility(res.data.data); })
@@ -346,9 +319,7 @@ export default function ProductDetail() {
  ...prev,
  images: prev.images.filter((_, i) => i !== idx),
  }));
- };
-
- // HÀM XỬ LÝ TOGGLE WISHLIST (YÊU THÍCH)
+ };
  const handleToggleWishlist = async () => {
  if (!user) {
  toast.error("Vui lòng đăng nhập để sử dụng tính năng yêu thích");
@@ -421,9 +392,7 @@ export default function ProductDetail() {
         },
       });
       return;
-    }
-    
-    // Bypass cart and navigate directly to checkout
+    }
     navigate("/checkout", {
       state: {
         buyNowItem: {
@@ -471,7 +440,6 @@ export default function ProductDetail() {
 
  return (
  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-8 lg:py-12 bg-white">
- {/* BREADCRUMB */}
  <nav className="flex flex-wrap items-center gap-2 text-[10px] font-bold tracking-widest text-gray-400 mb-8 lg:mb-12 min-w-0">
  <span
  className="cursor-pointer hover:text-black transition-colors"
@@ -486,7 +454,6 @@ export default function ProductDetail() {
  </nav>
 
  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20">
- {/* LEFT: GALLERY */}
  <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-5">
  <div className="flex flex-wrap md:flex-col gap-3 md:w-24">
  {product.images?.map((img, idx) => (
@@ -519,15 +486,12 @@ export default function ProductDetail() {
  />
  </div>
  </div>
-
- {/* RIGHT: INFO */}
  <div className="lg:col-span-5 space-y-10 lg:sticky lg:top-32 h-fit">
  <div className="space-y-4">
  <div className="flex justify-between items-start">
  <h1 className="text-3xl lg:text-4xl font-black italic tracking-tighter leading-none pr-4">
  {product.name}
  </h1>
- {/* NÚT YÊU THÍCH (WISH LIST) */}
  <button
  onClick={handleToggleWishlist}
  className={`p-3 rounded-2xl transition-all duration-300 shadow-sm border ${isWishlisted ? "bg-red-50 border-red-100" : "bg-gray-50 border-gray-100 hover:bg-red-50"}`}
@@ -546,8 +510,6 @@ export default function ProductDetail() {
  VNĐ
  </p>
  </div>
-
- {/* DYNAMIC SIZE SELECTION */}
  <div className="space-y-6 bg-gray-50 p-6 rounded-3xl border border-gray-100">
  <div className="flex justify-between items-center">
  <div className="space-y-1">
@@ -602,8 +564,6 @@ export default function ProductDetail() {
  })}
  </div>
  </div>
-
- {/* QUANTITY & ACTION */}
  <div className="space-y-6">
  <div className="flex items-center gap-4">
  <span className="text-xs font-black tracking-widest text-gray-500">
@@ -676,8 +636,6 @@ export default function ProductDetail() {
  </button>
  </div>
  </div>
-
- {/* POLICIES */}
  <div className="grid grid-cols-1 gap-4 pt-8 border-t border-gray-100">
  {[
  { icon: Truck, text: "Miễn phí giao hàng toàn quốc" },
@@ -699,12 +657,8 @@ export default function ProductDetail() {
  </div>
  </div>
  </div>
-
- {/* SECTION ĐÁNH GIÁ */}
  <div className="mt-20 lg:mt-32 pt-12 border-t-2 border-gray-50">
  <div className="max-w-4xl mx-auto space-y-10">
-
- {/* TIÊU ĐỀ + THỐNG KÊ */}
  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
  <h2 className="text-xs font-black tracking-[0.4em]">Đánh giá sản phẩm</h2>
  <div className="flex items-center gap-4">
@@ -717,12 +671,9 @@ export default function ProductDetail() {
  <span className="text-xs text-gray-400 font-bold tracking-widest">({reviewStats.totalReviews} đánh giá)</span>
  </div>
  </div>
-
- {/* FORM ĐÁNH GIÁ — chỉ hiện với người đã mua và chưa review */}
  {user && eligibility.canReview && (
  <form onSubmit={handleSubmitReview} className="bg-gray-50 rounded-3xl p-8 border border-gray-100 space-y-6">
  <h3 className="text-xs font-black tracking-[0.3em]">Viết đánh giá của bạn</h3>
- {/* CHỌN SAO */}
  <div>
  <p className="text-[10px] font-bold tracking-widest text-gray-500 mb-3">Đánh giá</p>
  <div className="flex gap-2">
@@ -734,7 +685,6 @@ export default function ProductDetail() {
  ))}
  </div>
  </div>
- {/* NHẬN XÉT */}
  <div>
  <p className="text-[10px] font-bold tracking-widest text-gray-500 mb-3">Nhận xét (tùy chọn)</p>
  <textarea
@@ -802,8 +752,6 @@ export default function ProductDetail() {
  </div>
  </form>
  )}
-
- {/* THÔNG BÁO trạng thái */}
  {user && !eligibility.canReview && (
  <div className="bg-gray-50 rounded-2xl px-6 py-4 border border-gray-100">
  <p className="text-[11px] font-bold tracking-widest text-gray-400">
@@ -820,8 +768,6 @@ export default function ProductDetail() {
  </p>
  </div>
  )}
-
- {/* DANH SÁCH ĐÁNH GIÁ */}
  <div className="space-y-6">
  {reviews.length === 0 ? (
  <div className="py-16 text-center border-2 border-dashed border-gray-100 rounded-3xl">
@@ -830,14 +776,12 @@ export default function ProductDetail() {
  ) : (
  reviews.map(review => (
  <div key={review.id} className="flex gap-5 pb-6 border-b border-gray-50 last:border-0">
- {/* AVATAR */}
  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
  {review.user.avatar
  ? <img src={review.user.avatar} alt={review.user.name} className="w-full h-full object-cover" />
  : <div className="w-full h-full flex items-center justify-center text-sm font-black text-gray-400">{review.user.name?.[0]?.toUpperCase()}</div>
  }
  </div>
- {/* NỘI DUNG */}
  <div className="flex-1 space-y-2">
  <div className="flex items-center justify-between gap-4">
  <div className="flex items-center gap-3">
@@ -884,8 +828,6 @@ export default function ProductDetail() {
  </div>
  </div>
  </div>
-
- {/* SIZE CHART MODAL */}
  {showSizeChart && (
  <SizeChartModal
  category={product.category}

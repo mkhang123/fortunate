@@ -4,13 +4,9 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleMiddleware } from "../middlewares/role.middleware.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-const router = express.Router();
-
-// Tất cả route dashboard chỉ dành cho ADMIN
+const router = express.Router();
 router.use(authMiddleware);
-router.use(roleMiddleware(["ADMIN"]));
-
-// GET /api/admin/dashboard
+router.use(roleMiddleware(["ADMIN"]));
 router.get("/", asyncHandler(DashboardController.getDashboard));
 router.get("/vton-sessions", asyncHandler(DashboardController.getVtonSessions));
 

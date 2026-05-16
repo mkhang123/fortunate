@@ -11,9 +11,7 @@ class OrderController {
     static async createOrder(req, res) {
         try {
             const userId = req.user.id;
-            const orderData = req.body;
-
-            // Validate required fields
+            const orderData = req.body;
             const {
                 receiverName,
                 receiverPhone,
@@ -46,7 +44,6 @@ class OrderController {
         }
     }
 
-
     /**
      * Get user's orders
      * GET /api/orders/me
@@ -74,9 +71,7 @@ class OrderController {
             const { id } = req.params;
             const userId = req.user.id;
 
-            const order = await OrderService.findById(+id);
-
-            // Check if user owns this order or is admin
+            const order = await OrderService.findById(+id);
             if (order.userId !== userId && req.user.role !== "ADMIN") {
                 throw new BadRequestError("Unauthorized to view this order");
             }
@@ -88,7 +83,6 @@ class OrderController {
             throw error;
         }
     }
-
 
     /**
      * Get all orders (Admin)
@@ -161,7 +155,6 @@ class OrderController {
             throw error;
         }
     }
-
 
     /**
      * Delete order (Admin)

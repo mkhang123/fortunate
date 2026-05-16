@@ -60,13 +60,10 @@ const MONTH_NAMES = [
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
-
-// ─── Filter Bar ────────────────────────────────────────────────────────────────
+const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
 function FilterBar({ filterType, setFilterType, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* Toggle Theo tháng / Theo ngày */}
       <div className="flex bg-gray-100 rounded-xl p-1">
         <button
           onClick={() => setFilterType("month")}
@@ -85,8 +82,6 @@ function FilterBar({ filterType, setFilterType, selectedYear, setSelectedYear, s
           Theo ngày
         </button>
       </div>
-
-      {/* Year selector */}
       <select
         value={selectedYear}
         onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -96,8 +91,6 @@ function FilterBar({ filterType, setFilterType, selectedYear, setSelectedYear, s
           <option key={y} value={y}>{y}</option>
         ))}
       </select>
-
-      {/* Month selector — chỉ hiện khi Theo ngày */}
       {filterType === "day" && (
         <select
           value={selectedMonth}
@@ -111,32 +104,26 @@ function FilterBar({ filterType, setFilterType, selectedYear, setSelectedYear, s
       )}
     </div>
   );
-}
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
+}
 function StatCard({ label, value, icon: Icon, accent }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col gap-2 hover:shadow-md transition-shadow min-w-0">
+    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col gap-1.5 hover:shadow-md transition-shadow min-w-0">
       <div className="flex items-center justify-between">
-        <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${accent}`}>
+        <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${accent}`}>
           <Icon className="w-4 h-4" />
         </span>
       </div>
-      <p className="text-lg sm:text-xl font-black leading-none mt-1 whitespace-nowrap overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <p className="text-sm sm:text-base xl:text-[13px] 2xl:text-base font-black leading-tight mt-1 whitespace-nowrap overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {value}
       </p>
-      <p className="text-[10px] font-bold tracking-widest text-gray-400">{label}</p>
+      <p className="text-[9px] font-bold tracking-widest text-gray-400 uppercase">{label}</p>
     </div>
   );
-}
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
+}
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Filter state
+  const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState("month");
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -163,9 +150,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
-
-  // ── Line chart ──
+  }, [fetchDashboard]);
   const chartRef = useRef(null);
 
   const getGradient = (ctx, chartArea) => {
@@ -242,15 +227,11 @@ export default function AdminDashboard() {
         },
       },
     },
-  };
-
-  // ── Tiêu đề phụ theo filter ──
+  };
   const filterLabel =
     filterType === "day"
       ? `Tháng ${selectedMonth}/${selectedYear}`
-      : `Năm ${selectedYear}`;
-
-  // ── Loading / Error ──
+      : `Năm ${selectedYear}`;
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -332,7 +313,6 @@ export default function AdminDashboard() {
 
   return (
     <main className="flex-1 overflow-auto">
-      {/* Top bar */}
       <div className="bg-white border-b px-8 py-5 flex items-center justify-between sticky top-0 z-10">
         <div>
           <h1 className="text-2xl font-black italic tracking-tighter">Admin Dashboard</h1>
@@ -343,14 +323,11 @@ export default function AdminDashboard() {
       </div>
 
       <div className="px-8 py-6 space-y-6">
-        {/* ── 6 Stat Cards ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
           {statCards.map((c) => (
             <StatCard key={c.label} {...c} />
           ))}
         </div>
-
-        {/* ── Bộ lọc chung ── */}
         <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 shadow-sm flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-gray-400">
             <Calendar className="w-3.5 h-3.5" />
@@ -368,10 +345,7 @@ export default function AdminDashboard() {
             Đang xem: <span className="text-black">{filterLabel}</span>
           </span>
         </div>
-
-        {/* ── Line Chart + Top 10 ── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Line Chart doanh thu - 2/3 */}
           <div className="xl:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <div>
@@ -395,8 +369,6 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-
-          {/* Top 10 Ranking - 1/3 */}
           <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
             <div className="flex items-center gap-2 mb-1">
               <Trophy className="w-4 h-4 text-amber-500" />
@@ -444,10 +416,7 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
-
-        {/* ── Order Status + VTON Table ── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Order Status breakdown */}
           <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
             <h2 className="text-base font-black tracking-tight mb-5">Trạng Thái Đơn Hàng</h2>
             <div className="space-y-4">
@@ -478,8 +447,6 @@ export default function AdminDashboard() {
               <span className="font-black text-xl">{totalOrders}</span>
             </div>
           </div>
-
-          {/* VTON Sessions table - 2/3 */}
           <div className="xl:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <div>

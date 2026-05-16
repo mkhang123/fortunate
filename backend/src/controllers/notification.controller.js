@@ -1,6 +1,5 @@
 import notificationService from '../services/notification.service.js';
 
-// GET /api/notifications — lấy danh sách thông báo + số chưa đọc
 export const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -11,7 +10,6 @@ export const getNotifications = async (req, res) => {
   }
 };
 
-// PATCH /api/notifications/:id/read — đánh dấu 1 thông báo đã đọc
 export const markAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -23,7 +21,6 @@ export const markAsRead = async (req, res) => {
   }
 };
 
-// PATCH /api/notifications/read-all — đánh dấu tất cả đã đọc
 export const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;

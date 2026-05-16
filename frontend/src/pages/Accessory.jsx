@@ -9,11 +9,8 @@ export default function Accessory() {
 
  useEffect(() => {
  const fetchAccessories = async () => {
- try {
- // 2. Gọi API lấy sản phẩm kèm tham số tìm kiếm
- const res = await api.get(`/products?search=${searchTerm}`);
-
- // 3. Lọc sản phẩm thuộc danh mục "Phụ kiện" hoặc slug "accessory"
+ try {
+ const res = await api.get(`/products?search=${searchTerm}`);
  const accessoryList = res.data.data.filter(
  (p) => p.category?.name === "Phụ kiện" || p.category?.slug === "accessory"
  );
@@ -24,9 +21,7 @@ export default function Accessory() {
  } finally {
  setLoading(false);
  }
- };
-
- // 4. Kỹ thuật Debounce: Đợi người dùng dừng gõ 500ms mới gọi API
+ };
  const delayDebounceFn = setTimeout(() => {
  fetchAccessories();
  }, 500);
@@ -36,11 +31,8 @@ export default function Accessory() {
 
  return (
  <div className="max-w-7xl mx-auto px-6 py-10 animate-in fade-in duration-500">
- {/* HEADER & THANH TÌM KIẾM */}
  <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
  <h1 className="text-2xl font-bold tracking-widest italic text-black">Phụ kiện</h1>
-
- {/* THANH TÌM KIẾM MINIMALIST */}
  <div className="relative w-full md:w-80 group">
  <input
  type="text"
@@ -60,8 +52,6 @@ export default function Accessory() {
  </div>
  </div>
  </div>
-
- {/* HIỂN THỊ DANH SÁCH */}
  {loading && products.length === 0 ? (
  <div className="text-center p-20 text-gray-400 animate-pulse italic">Đang tải phụ kiện...</div>
  ) : products.length > 0 ? (

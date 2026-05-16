@@ -2,11 +2,8 @@ import express from 'express';
 import { uploadProductImage } from '../config/cloudinary.config.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
-const router = express.Router();
-
-// POST /api/upload/image - Upload 1 ảnh sản phẩm lên Cloudinary
-router.post('/image', authMiddleware, (req, res) => {
-    // Gọi multer thủ công để bắt được lỗi Cloudinary
+const router = express.Router();
+router.post('/image', authMiddleware, (req, res) => {
     uploadProductImage.single('image')(req, res, (err) => {
         if (err) {
             console.error('❌ Multer/Cloudinary error:', err);

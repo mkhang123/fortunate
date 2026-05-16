@@ -4,7 +4,6 @@ import { optionalAuthMiddleware } from "../middlewares/optionalAuth.middleware.j
 
 const router = Router();
 
-// ─── POST /api/chat ─── Streaming via SSE (RAG Architecture) ─────────────────
 router.post("/", optionalAuthMiddleware, handleChat);
 
 export default router;

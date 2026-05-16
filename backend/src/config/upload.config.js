@@ -2,19 +2,16 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Đảm bảo thư mục tồn tại
 const ensureDir = (dirPath) => {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
 };
 
-// Cấu hình nơi lưu file
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let uploadPath;
-    
-    // Phân loại theo loại ảnh
+
     if (file.fieldname === 'personImage') {
       uploadPath = 'uploads/vton/person';
     } else if (file.fieldname === 'garmentImage') {
@@ -26,8 +23,7 @@ const storage = multer.diskStorage({
     ensureDir(uploadPath);
     cb(null, uploadPath);
   },
-  
-  // Đặt tên file unique
+
   filename: (req, file, cb) => {
     const userId = req.user?.id || 'guest';
     const timestamp = Date.now();
@@ -37,7 +33,6 @@ const storage = multer.diskStorage({
   }
 });
 
-// Chỉ cho phép upload ảnh
 const fileFilter = (req, file, cb) => {
   const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   
@@ -48,7 +43,6 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Export cấu hình
 export const upload = multer({
   storage,
   fileFilter,

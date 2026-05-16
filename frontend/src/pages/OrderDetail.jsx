@@ -94,7 +94,6 @@ export default function OrderDetail() {
 
  return (
  <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
- {/* BREADCRUMB */}
  <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
@@ -106,8 +105,6 @@ export default function OrderDetail() {
  <ChevronRight className="w-3 h-3" />
  <span className="text-black">Chi tiết đơn hàng</span>
  </nav>
-
- {/* Back Button */}
  <button
  onClick={() => navigate("/my-orders")}
  className="flex items-center gap-2 text-[10px] font-black text-gray-600 hover:text-black transition-colors mb-8 group"
@@ -115,8 +112,6 @@ export default function OrderDetail() {
  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
  Quay lại
  </button>
-
- {/* Header */}
  <div className="flex flex-wrap items-start justify-between gap-4 mb-12">
  <div>
  <h1 className="text-4xl font-black italic tracking-tighter mb-2">
@@ -160,12 +155,8 @@ export default function OrderDetail() {
  )}
  </div>
  </div>
-
- {/* Content Grid */}
  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
- {/* Main Content (Left 2 columns) */}
  <div className="lg:col-span-2 space-y-8">
- {/* Order Items */}
  <div className="bg-white p-6 rounded-3xl border border-gray-100">
  <h2 className="text-xs font-black tracking-tight mb-6 flex items-center gap-2">
  <Package className="w-4 h-4" />
@@ -207,8 +198,6 @@ export default function OrderDetail() {
  ))}
  </div>
  </div>
-
- {/* Notes */}
  {order.notes && (
  <div className="bg-yellow-50 p-6 rounded-3xl border border-yellow-100">
  <h3 className="text-xs font-black tracking-tight mb-3">
@@ -218,10 +207,7 @@ export default function OrderDetail() {
  </div>
  )}
  </div>
-
- {/* Sidebar (Right 1 column) */}
  <div className="space-y-6">
- {/* Shipping Info */}
  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 sticky top-32">
  <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <MapPin className="w-4 h-4" />
@@ -244,8 +230,6 @@ export default function OrderDetail() {
  </p>
  </div>
  </div>
-
- {/* Payment Summary */}
  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
  <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <CreditCard className="w-4 h-4" />
@@ -272,8 +256,6 @@ export default function OrderDetail() {
  </span>
  </div>
  </div>
-
- {/* Retry Payment Button */}
  {order.status === "PENDING" &&
  order.payment?.method === "VNPAY" &&
  order.payment?.status === "PENDING" && (

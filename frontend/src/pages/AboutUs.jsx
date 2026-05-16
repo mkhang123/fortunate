@@ -6,7 +6,6 @@ import aboutBanner from '../assets/streetwear-banner.png';
 export default function AboutUs() {
  return (
  <div className="bg-white text-gray-900 font-sans selection:bg-black selection:text-white">
- {/* SECTION 1: HERO - Tối ưu hiển thị ảnh nền */}
  <section className="relative h-[85vh] flex items-center justify-center bg-[#0a0a0a] overflow-hidden border-b border-gray-900">
  <div className="absolute inset-0 z-0">
  <img 
@@ -14,7 +13,6 @@ export default function AboutUs() {
  alt="Fortunate Streetwear Banner" 
  className="w-full h-full object-cover opacity-90 brightness-90 contrast-125 transition-transform duration-[10s] hover:scale-105"
  />
- {/* Gritty urban overlay */}
  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/20"></div>
  <div className="absolute inset-0 bg-black/40 mix-blend-multiply italic"></div>
  </div>
@@ -33,7 +31,6 @@ export default function AboutUs() {
  </section>
 
  <div className="max-w-7xl mx-auto px-6 py-32">
- {/* SECTION 2: CÂU CHUYỆN THƯƠNG HIỆU */}
  <section className="mb-48 grid lg:grid-cols-2 gap-24 items-start">
  <div className="lg:sticky lg:top-40">
  <div className="flex items-center gap-3 mb-10 text-red-600">
@@ -78,8 +75,6 @@ export default function AboutUs() {
  </div>
  </div>
  </section>
-
- {/* SECTION 3: GIÁ TRỊ CỐT LÕI */}
  <section className="mb-48">
  <div className="text-center mb-32">
  <div className="inline-block p-4 rounded-full bg-red-50 mb-6">
@@ -109,8 +104,6 @@ export default function AboutUs() {
  ))}
  </div>
  </section>
-
- {/* SECTION 4: QUOTE & STATEMENT */}
  <section className="relative py-40 px-12 rounded-[3rem] text-center flex flex-col items-center bg-black overflow-hidden group">
  <img 
  src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&q=80" 

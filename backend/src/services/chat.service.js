@@ -10,12 +10,10 @@ import {
 import { tokenize } from "../utils/tokenize.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Strips Vietnamese diacritics for comparison
 function noAccent(s = "") {
   return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-// Detect if the user is asking specifically for tops or bottoms
 function detectClothingType(query) {
   const n = noAccent(query);
   const wantsTop =
@@ -42,11 +40,8 @@ export async function retrieve(query, k = 6) {
   const limit = Math.min(20, Math.max(1, k));
   const tokens = tokenize(q);
 
-  // 1. Full-Text Search
   let products = await searchProductsFT(q, limit);
 
-  // 2. Fallback ILIKE: tiếng Việt 1 từ (vd: "quần", "áo") thường không khớp FTS tốt → cần ILIKE theo token
-  //    Trước đây chỉ fallback khi có >=2 token nên câu 1 từ hay ra 0 hit → model tưởng shop không bán.
   const needIlikeFallback =
     tokens.length >= 1 &&
     (products.length === 0 || products.length < 3);
@@ -60,8 +55,6 @@ export async function retrieve(query, k = 6) {
     products = [...products, ...newProducts];
   }
 
-  // 3. Post-filter by detected clothing type so the chatbot never recommends a shirt
-  //    when the user asked for pants (or vice versa).
   const clothingType = detectClothingType(q);
   if (clothingType) {
     const regex = CLOTHING_TYPE_REGEX[clothingType];
@@ -70,13 +63,12 @@ export async function retrieve(query, k = 6) {
       const cat = noAccent(p.categoryName);
       return regex.test(name) || regex.test(cat);
     });
-    // Chỉ thu hẹp khi còn kết quả — tránh RAG rỗng khiến AI chậm/không trả lời
+
     if (filtered.length > 0) {
       products = filtered;
     }
   }
 
-  // Cap at limit
   products.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   return products.slice(0, limit);
 }

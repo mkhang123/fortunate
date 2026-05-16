@@ -25,7 +25,7 @@ function AdminSidebar({ user, onLogout, onNavigate, onCloseMobile }) {
 
   return (
     <aside className="w-56 flex-shrink-0 bg-black text-white flex flex-col min-h-screen md:sticky md:top-0 md:h-screen transition-all duration-300">
-      {/* Logo */}
+
       <div className="px-6 py-6 border-b border-white/10 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <Link to="/" className="text-xl font-black tracking-widest italic" onClick={onNavigate}>
@@ -47,7 +47,6 @@ function AdminSidebar({ user, onLogout, onNavigate, onCloseMobile }) {
         )}
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 py-4 flex flex-col gap-1 px-3">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -74,7 +73,6 @@ function AdminSidebar({ user, onLogout, onNavigate, onCloseMobile }) {
         })}
       </nav>
 
-      {/* User + Logout */}
       <div className="border-t border-white/10 px-4 py-4 space-y-3">
         <Link 
           to="/profile" 

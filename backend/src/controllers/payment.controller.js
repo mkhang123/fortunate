@@ -32,14 +32,10 @@ class PaymentController {
      */
     static async createPaymentUrlToVNPay(req, res) {
         try {
-            const { orderId, amount } = req.body;
-
-            // Validate input
+            const { orderId, amount } = req.body;
             if (!orderId || !amount) {
                 throw new BadRequestError("Missing orderId or amount");
-            }
-
-            // Validate order exists and amount matches
+            }
             const order = await OrderService.validateOrderForPayment(
                 +orderId,
                 +amount
@@ -47,9 +43,7 @@ class PaymentController {
 
             const createDate = moment(new Date()).format("YYYYMMDDHHmmss");
             const txnRef = orderId + "-" + moment(new Date()).format("HHmmss");
-            const orderInfo = "Thanh toan qua VNPay cho don hang voi ma " + orderId;
-
-            // Create payment record in database
+            const orderInfo = "Thanh toan qua VNPay cho don hang voi ma " + orderId;
             await PaymentService.createPaymentTransaction({
                 orderId: +orderId,
                 amount: +amount,
@@ -58,13 +52,7 @@ class PaymentController {
                 orderInfo,
             });
 
-            console.log(`[VNPAY MOCK] Created payment for order ${orderId}, amount: ${amount}`);
-
-            // MOCK: Simulate successful payment immediately
-            // In real implementation, this would redirect to VNPAY
-            // For demo, we auto-approve the payment
-
-            // Update payment to SUCCESS
+            console.log(`[VNPAY MOCK] Created payment for order ${orderId}, amount: ${amount}`);
             await PaymentService.updatePaymentTransaction({
                 txnRef,
                 responseCode: "00", // 00 = Success in VNPAY
@@ -74,14 +62,10 @@ class PaymentController {
                     mock: true,
                     note: "Simulated payment for demo purposes"
                 }
-            });
-
-            // Update order status to PAID
+            });
             await OrderService.updatePaymentStatus(+orderId, "00");
 
-            console.log(`[VNPAY MOCK] Auto-approved payment for order ${orderId}`);
-
-            // Return mock redirect URL (frontend will handle this)
+            console.log(`[VNPAY MOCK] Auto-approved payment for order ${orderId}`);
             const mockRedirectUrl = `${process.env.FRONTEND_URL}/order-confirmation/${orderId}?payment=success&mock=true`;
 
             new OKResponse({
@@ -117,8 +101,7 @@ class PaymentController {
             const hmac = crypto.createHmac("sha512", secretKey);
             const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
 
-            if (secureHash === signed) {
-                // Valid signature - update payment and order status
+            if (secureHash === signed) {
                 await OrderService.updatePaymentStatus(
                     +orderId,
                     vnp_Params["vnp_ResponseCode"]
@@ -133,9 +116,7 @@ class PaymentController {
 
                 console.log(
                     `[VNPAY] Return callback - Order ${orderId}, Code: ${vnp_Params["vnp_ResponseCode"]}`
-                );
-
-                // Redirect to frontend with result
+                );
                 res.redirect(
                     `${process.env.FRONTEND_URL}/tai-khoan/quan-ly-don-hang/${orderId}?code=${vnp_Params["vnp_ResponseCode"]}`
                 );
@@ -174,8 +155,7 @@ class PaymentController {
             const hmac = crypto.createHmac("sha512", secretKey);
             const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
 
-            if (secureHash === signed) {
-                // Valid signature - update payment and order
+            if (secureHash === signed) {
                 await OrderService.updatePaymentStatus(+orderId, responseCode);
 
                 await PaymentService.updatePaymentTransaction({
@@ -191,9 +171,7 @@ class PaymentController {
 
                 console.log(
                     `[VNPAY] IPN received - Order ${orderId}, Code: ${responseCode}`
-                );
-
-                // Return success to VNPAY
+                );
                 return res.json({ RspCode: "00", Message: "Success" });
             } else {
                 console.error(`[VNPAY] IPN invalid signature for order ${orderId}`);

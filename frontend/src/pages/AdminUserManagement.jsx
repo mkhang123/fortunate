@@ -4,9 +4,7 @@ import toast from "react-hot-toast";
 
 export default function AdminUserManagement() {
  const [users, setUsers] = useState([]);
- const [loading, setLoading] = useState(true);
-
- // 1. Lấy danh sách toàn bộ người dùng
+ const [loading, setLoading] = useState(true);
  const fetchUsers = async () => {
  try {
  setLoading(true);
@@ -22,9 +20,7 @@ export default function AdminUserManagement() {
 
  useEffect(() => {
  fetchUsers();
- }, []);
-
- // 2. Hàm xử lý cập nhật Role
+ }, []);
  const handleUpdateRole = async (userId, newRole) => {
 
  try {
@@ -34,9 +30,7 @@ export default function AdminUserManagement() {
  } catch (err) {
  toast.error(err.response?.data?.message || "Lỗi khi cập nhật quyền");
  }
- };
-
- // 3. Hàm xử lý chặn/mở chặn user
+ };
  const handleToggleActive = async (userId, isActive) => {
  try {
  await api.put(`/users/active/${userId}`, { isActive });

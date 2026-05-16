@@ -39,10 +39,7 @@ const VN_STOP = new Set([
   "ơi",
   "ạ",
   "nhỉ",
-  // Note: "quần", "áo", "váy", "đầm" được giữ lại vì là từ khóa sản phẩm quan trọng của fashion shop
 
-  // Unaccented forms - needed because tokenizer strips accents before checking stop words
-  // so accented entries above (e.g. "tôi", "muốn") never match the stripped tokens
   "toi",    // tôi
   "muon",   // muốn
   "tim",    // tìm

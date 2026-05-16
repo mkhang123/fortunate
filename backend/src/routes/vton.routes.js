@@ -5,46 +5,34 @@ import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { roleMiddleware } from '../middlewares/role.middleware.js';
 import { uploadVtonImages } from '../config/cloudinary.config.js';
 
-const router = express.Router();
-
-// POST /api/vton/try-on - Thử đồ
+const router = express.Router();
 router.post(
   '/try-on',
   authMiddleware,
   uploadVtonImages,
   vtonController.tryOn
-);
-
-// GET /api/vton/history - Lấy lịch sử
+);
 router.get(
   '/history',
   authMiddleware,
   vtonController.getHistory
-);
-
-// GET /api/vton/session/:id - Chi tiết session
+);
 router.get(
   '/session/:id',
   authMiddleware,
   vtonController.getSessionById
-);
-
-// DELETE /api/vton/session/:id - Xóa session
+);
 router.delete(
   '/session/:id',
   authMiddleware,
   vtonController.deleteSession
-);
-
-// GET /api/vton/config - Lấy config VTON (admin)
+);
 router.get(
   '/config',
   authMiddleware,
   roleMiddleware(['ADMIN']),
   vtonConfigController.getConfig
-);
-
-// PUT /api/vton/config - Cập nhật Colab URL (admin)
+);
 router.put(
   '/config',
   authMiddleware,

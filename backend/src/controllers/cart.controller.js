@@ -1,4 +1,4 @@
-// fortunate/backend/src/controllers/cart.controller.js
+
 import cartService from "../services/cart.service.js";
 
 class CartController {
@@ -42,9 +42,7 @@ class CartController {
   async updateQuantity(req, res) {
     try {
       const { itemId } = req.params; // Lấy từ URL
-      const { quantity } = req.body; // Lấy từ dữ liệu gửi kèm
-
-      // Gọi đến service để cập nhật database
+      const { quantity } = req.body; // Lấy từ dữ liệu gửi kèm
       const result = await cartService.updateQuantity(
         Number(itemId),
         Number(quantity),

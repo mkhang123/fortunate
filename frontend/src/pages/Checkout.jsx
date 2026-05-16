@@ -18,9 +18,7 @@ export default function Checkout() {
  const navigate = useNavigate();
  const location = useLocation();
  const buyNowItem = location.state?.buyNowItem;
- const user = JSON.parse(localStorage.getItem("user"));
-
- // Form state
+ const user = JSON.parse(localStorage.getItem("user"));
  const [formData, setFormData] = useState({
  receiverName: user?.name || "",
  receiverPhone: user?.phone || "",
@@ -36,9 +34,7 @@ export default function Checkout() {
  receiverPhone: "",
  receiverEmail: "",
  shippingAddress: "",
- });
-
- // Fetch cart on mount
+ });
  useEffect(() => {
  fetchCart();
  }, []);
@@ -73,9 +69,7 @@ export default function Checkout() {
  try {
  setLoading(true);
  const res = await api.get("/cart");
- setCart(res.data.data);
-
- // If cart is empty, redirect to cart page
+ setCart(res.data.data);
  if (!res.data.data.items || res.data.data.items.length === 0) {
  toast.error("Giỏ hàng trống");
  navigate("/cart");
@@ -145,9 +139,7 @@ export default function Checkout() {
  if (!validateForm()) return;
 
  try {
- setSubmitting(true);
-
- // Create order
+ setSubmitting(true);
  let payload = { ...formData };
  if (buyNowItem) {
    payload.items = [{
@@ -178,21 +170,16 @@ export default function Checkout() {
  })
  );
  localStorage.removeItem("guestCart");
- }
-
- // If VNPAY payment, get payment URL and redirect
+ }
  if (requiresPayment && paymentMethod === "VNPAY") {
  const paymentResponse = await api.post("/payments/vnpay/create", {
  orderId: order.id,
  amount: order.total,
  });
 
- const { redirectUrl } = paymentResponse.data.metadata;
-
- // Redirect to VNPAY
+ const { redirectUrl } = paymentResponse.data.metadata;
  window.location.href = redirectUrl;
- } else {
- // COD order - navigate to order confirmation
+ } else {
  navigate(`/order-confirmation/${order.id}`);
  }
  } catch (err) {
@@ -212,7 +199,6 @@ export default function Checkout() {
 
  return (
  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-8 sm:py-12 bg-white min-h-screen">
- {/* BREADCRUMB */}
  <nav className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-400 mb-8 sm:mb-12">
  <button onClick={() => navigate("/")} className="hover:text-black">
  Trang chủ
@@ -231,9 +217,7 @@ export default function Checkout() {
 
  <form onSubmit={handleSubmit} noValidate>
  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
- {/* FORM (LEFT) */}
  <div className="lg:col-span-7 space-y-8">
- {/* Thông tin người nhận */}
  <div className="space-y-6">
  <h2 className="text-sm font-black border-b pb-4 tracking-tight">
  Thông tin người nhận
@@ -351,15 +335,12 @@ export default function Checkout() {
  </div>
  </div>
  </div>
-
- {/* Phương thức thanh toán */}
  <div className="space-y-6">
  <h2 className="text-sm font-black border-b pb-4 tracking-tight">
  Phương thức thanh toán
  </h2>
 
  <div className="space-y-3">
- {/* VNPAY */}
  <label
  className={`flex items-center gap-4 p-4 border-2 rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === "VNPAY"
  ? "border-black bg-gray-50"
@@ -387,8 +368,6 @@ export default function Checkout() {
  <Check className="w-5 h-5 text-black" />
  )}
  </label>
-
- {/* COD */}
  <label
  className={`flex items-center gap-4 p-4 border-2 rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === "COD"
  ? "border-black bg-gray-50"
@@ -419,15 +398,11 @@ export default function Checkout() {
  </div>
  </div>
  </div>
-
- {/* ORDER SUMMARY (RIGHT) */}
  <div className="lg:col-span-5">
  <div className="bg-gray-50 p-6 sm:p-8 rounded-3xl border border-gray-100 space-y-6 lg:sticky lg:top-24 xl:top-32">
  <h2 className="text-sm font-black tracking-tight">
  Đơn hàng ({cart?.items?.length || 0} sản phẩm)
  </h2>
-
- {/* Items */}
  <div className="space-y-4 max-h-64 overflow-y-auto">
  {cart?.items?.map((item) => (
  <div key={item.id} className="flex gap-3">
@@ -460,8 +435,6 @@ export default function Checkout() {
  </div>
 
  <div className="h-[1px] bg-gray-200"></div>
-
- {/* Total */}
  <div className="space-y-3">
  <div className="flex justify-between text-sm font-semibold text-gray-500">
  <span>Tạm tính</span>
@@ -483,8 +456,6 @@ export default function Checkout() {
  </span>
  </div>
  </div>
-
- {/* Submit Button */}
  <button
  type="submit"
  disabled={submitting}

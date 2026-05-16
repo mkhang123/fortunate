@@ -8,8 +8,7 @@ export const authMiddleware = async (req, res, next) => {
     if (!token) return res.status(401).json({ message: "Không tìm thấy Token" });
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // Kiểm tra tài khoản còn hoạt động hay không
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userId = Number(decoded.id);
         if (userId && !Number.isNaN(userId)) {
             const user = await prisma.user.findUnique({
@@ -23,8 +22,7 @@ export const authMiddleware = async (req, res, next) => {
 
         req.user = decoded; // Gán user thật từ Token (id lúc này là số nguyên)
         next();
-    } catch (error) {
-        // Phân biệt token hết hạn vs token không hợp lệ để frontend xử lý đúng
+    } catch (error) {
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({ message: "Token đã hết hạn", code: "TOKEN_EXPIRED" });
         }

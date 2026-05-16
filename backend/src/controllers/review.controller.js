@@ -1,7 +1,6 @@
 import reviewService from '../services/review.service.js';
 
-class ReviewController {
-    // GET /products/:productId/reviews — Lấy danh sách đánh giá (public)
+class ReviewController {
     async getReviews(req, res) {
         try {
             const { productId } = req.params;
@@ -10,9 +9,7 @@ class ReviewController {
         } catch (error) {
             return res.status(error.statusCode || 500).json({ success: false, message: error.message });
         }
-    }
-
-    // GET /products/:productId/reviews/eligibility — Kiểm tra quyền đánh giá (cần auth)
+    }
     async checkEligibility(req, res) {
         try {
             const { productId } = req.params;
@@ -22,9 +19,7 @@ class ReviewController {
         } catch (error) {
             return res.status(error.statusCode || 500).json({ success: false, message: error.message });
         }
-    }
-
-    // POST /products/:productId/reviews — Tạo đánh giá (cần auth)
+    }
     async createReview(req, res) {
         try {
             const { productId } = req.params;

@@ -30,7 +30,6 @@ export default function AdminProductForm() {
     variants: [],
   });
 
-  // Helper cho biến thể
   const addVariant = () => {
     setFormData((prev) => ({
       ...prev,
@@ -90,7 +89,7 @@ export default function AdminProductForm() {
           setFormData((prev) => ({
             ...prev,
             categoryId: prev.categoryId || catData[0].id,
-            // Khởi tạo size mặc định cho sản phẩm mới
+
             variants: prev.variants.length > 0 ? prev.variants : [
               { size: "S", stock: 0 },
               { size: "M", stock: 0 },
@@ -118,7 +117,7 @@ export default function AdminProductForm() {
 
       setIsLoadingProduct(true);
       try {
-        // Backend chưa có API lấy sản phẩm theo ID, nên tải danh sách rồi tìm theo id.
+
         const res = await api.get("/products");
         const products = res.data?.data || [];
         const matched = products.find((item) => String(item.id) === String(id));

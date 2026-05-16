@@ -25,33 +25,22 @@ class DashboardService {
             recentVtonSessions,
             ordersByStatus,
             revenueOrders,
-        ] = await Promise.all([
-            // Tổng số đơn hàng
-            prisma.order.count(),
-
-            // Tổng doanh thu (chỉ tính đơn PAID, SHIPPED, COMPLETED)
+        ] = await Promise.all([
+            prisma.order.count(),
             prisma.order.aggregate({
                 _sum: { total: true },
                 where: { status: { in: ["PAID", "SHIPPED", "COMPLETED"] } },
-            }),
-
-            // Tổng số phiên thử đồ ảo
-            prisma.virtualTryOnSession.count(),
-
-            // Tổng số người dùng (trừ admin)
+            }),
+            prisma.virtualTryOnSession.count(),
             prisma.user.count({
                 where: { role: "USER" },
-            }),
-
-            // Top 10 sản phẩm bán chạy theo số lượng
+            }),
             prisma.orderItem.groupBy({
                 by: ["variantId"],
                 _sum: { quantity: true },
                 orderBy: { _sum: { quantity: "desc" } },
                 take: 10,
-            }),
-
-            // 10 phiên thử đồ ảo gần nhất
+            }),
             prisma.virtualTryOnSession.findMany({
                 take: 10,
                 orderBy: { createdAt: "desc" },
@@ -60,15 +49,11 @@ class DashboardService {
                     product: { select: { name: true, images: true } },
                     aiModel: { select: { name: true } },
                 },
-            }),
-
-            // Đơn hàng theo trạng thái
+            }),
             prisma.order.groupBy({
                 by: ["status"],
                 _count: { id: true },
-            }),
-
-            // Dữ liệu doanh thu theo bộ lọc biểu đồ
+            }),
             prisma.order.findMany({
                 where: {
                     status: { in: ["PAID", "SHIPPED", "COMPLETED"] },
@@ -83,9 +68,7 @@ class DashboardService {
                 },
                 orderBy: { createdAt: "asc" },
             }),
-        ]);
-
-        // Enrich top selling products với tên sản phẩm
+        ]);
         const productIds = topSellingProducts.map((item) => item.variantId);
         const variants = await prisma.productVariant.findMany({
             where: { id: { in: productIds } },
@@ -109,9 +92,7 @@ class DashboardService {
                 size: variant?.size || "",
                 image: variant?.product?.images?.[0] || null,
             };
-        });
-
-        // Format order status counts
+        });
         const statusMap = {};
         ordersByStatus.forEach((s) => {
             statusMap[s.status] = s._count.id;

@@ -1,14 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../apis/axiosConfig";
-import toast from "react-hot-toast";
-
-// ─── Modal khung chung ──────────────────────────────────────────────────────
+import toast from "react-hot-toast";
 function Modal({ title, onClose, children, titleClassName }) {
  return (
  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
- {/* Header */}
  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
  <h3
  className={
@@ -30,20 +27,14 @@ function Modal({ title, onClose, children, titleClassName }) {
  </div>
  </div>
  );
-}
-
-// ─── Component chính ─────────────────────────────────────────────────────────
+}
 export default function Profile() {
  const [profile, setProfile] = useState(null);
  const [loading, setLoading] = useState(true);
- const [error, setError] = useState(null);
-
- // Trạng thái modal chỉnh sửa thông tin cơ bản
+ const [error, setError] = useState(null);
  const [showInfoModal, setShowInfoModal] = useState(false);
  const [infoForm, setInfoForm] = useState({ name: "", phone: "", address: "" });
- const [infoSaving, setInfoSaving] = useState(false);
-
- // Trạng thái modal chỉnh sửa số đo cơ thể
+ const [infoSaving, setInfoSaving] = useState(false);
  const [showBodyModal, setShowBodyModal] = useState(false);
  const [bodyForm, setBodyForm] = useState({
  height: "",
@@ -52,17 +43,13 @@ export default function Profile() {
  waist: "",
  hip: "",
  });
- const [bodySaving, setBodySaving] = useState(false);
-
- // Ảnh đại diện tạm trong modal (chỉ upload khi Lưu)
+ const [bodySaving, setBodySaving] = useState(false);
  const [pendingAvatarFile, setPendingAvatarFile] = useState(null);
  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
  const avatarPreviewUrlRef = useRef(null);
  const avatarModalInputRef = useRef(null);
  const [wishlistItems, setWishlistItems] = useState([]);
- const [wishlistLoading, setWishlistLoading] = useState(true);
-
- // ── Lấy thông tin profile ──────────────────────────────────────────────────
+ const [wishlistLoading, setWishlistLoading] = useState(true);
  useEffect(() => {
  const fetchProfile = async () => {
  try {
@@ -76,9 +63,7 @@ export default function Profile() {
  }
  };
  fetchProfile();
- }, []);
-
- // ── Lấy danh sách yêu thích ────────────────────────────────────────────────
+ }, []);
  useEffect(() => {
  const fetchWishlist = async () => {
  try {
@@ -112,9 +97,7 @@ export default function Profile() {
  avatarPreviewUrlRef.current = null;
  }
  setAvatarPreviewUrl(null);
- };
-
- // ── Mở modal chỉnh sửa thông tin ─────────────────────────────────────────
+ };
  const openInfoModal = () => {
  revokeAvatarPreview();
  setPendingAvatarFile(null);
@@ -128,9 +111,7 @@ export default function Profile() {
  setPendingAvatarFile(null);
  if (avatarModalInputRef.current) avatarModalInputRef.current.value = "";
  setShowInfoModal(false);
- };
-
- // ── Lưu thông tin cơ bản + ảnh đại diện (nếu có) ──────────────────────────
+ };
  const handleSaveInfo = async (e) => {
  e.preventDefault();
  setInfoSaving(true);
@@ -180,9 +161,7 @@ export default function Profile() {
  const url = URL.createObjectURL(file);
  avatarPreviewUrlRef.current = url;
  setAvatarPreviewUrl(url);
- };
-
- // ── Mở modal số đo cơ thể ─────────────────────────────────────────────────
+ };
  const openBodyModal = () => {
  const bp = profile?.bodyProfile;
  setBodyForm({
@@ -193,15 +172,12 @@ export default function Profile() {
  hip: bp?.hip ?? "",
  });
  setShowBodyModal(true);
- };
-
- // ── Lưu số đo cơ thể ──────────────────────────────────────────────────────
+ };
  const handleSaveBody = async (e) => {
  e.preventDefault();
  setBodySaving(true);
  try {
- const res = await api.put("/users/me/body-profile", bodyForm);
- // Cập nhật bodyProfile trong state
+ const res = await api.put("/users/me/body-profile", bodyForm);
  setProfile((prev) => ({ ...prev, bodyProfile: res.data.data }));
  setShowBodyModal(false);
  toast.success("Cập nhật số đo thành công!");
@@ -219,9 +195,7 @@ export default function Profile() {
  avatarPreviewUrlRef.current = null;
  }
  };
- }, []);
-
- // ── Loading / Error States ─────────────────────────────────────────────────
+ }, []);
  if (loading)
  return (
  <div className="flex justify-center items-center h-screen">
@@ -230,12 +204,9 @@ export default function Profile() {
  );
 
  if (error)
- return <div className="text-center p-10 text-red-500 font-semibold">{error}</div>;
-
- // ── Giao diện chính ────────────────────────────────────────────────────────
+ return <div className="text-center p-10 text-red-500 font-semibold">{error}</div>;
  return (
  <div className="max-w-4xl mx-auto p-8 animate-in fade-in duration-500">
- {/* ── Header ── */}
  <div className="flex items-center justify-between gap-6 mb-10 border-b pb-8">
  <div className="flex items-center gap-6">
  <div className="shrink-0">
@@ -264,8 +235,6 @@ export default function Profile() {
  </span>
  </div>
  </div>
-
- {/* Nút chỉnh sửa thông tin */}
  <button
  onClick={openInfoModal}
  className="px-5 py-2.5 border-2 border-black text-black text-xs font-black tracking-widest rounded-lg hover:bg-black hover:text-white transition-all"
@@ -273,10 +242,7 @@ export default function Profile() {
  Chỉnh sửa thông tin
  </button>
  </div>
-
- {/* ── Cards ── */}
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
- {/* Thông tin tài khoản */}
  <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
  <h2 className="text-xs font-black mb-6 tracking-[0.2em] text-gray-400">
  Thông tin tài khoản
@@ -308,8 +274,6 @@ export default function Profile() {
  </div>
  </div>
  </div>
-
- {/* Chỉ số cơ thể */}
  <div className="bg-black text-white p-8 rounded-2xl shadow-xl hover:-translate-y-1 transition-transform">
  <h2 className="text-xs font-black mb-6 tracking-[0.2em] text-gray-500">
  Chỉ số cơ thể
@@ -348,8 +312,6 @@ export default function Profile() {
  </button>
  </div>
  </div>
-
- {/* ── Sản phẩm yêu thích ── */}
  <div className="mt-10 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
  <div className="flex items-center justify-between mb-6">
  <h2 className="text-xs font-black tracking-[0.2em] text-gray-400">
@@ -429,8 +391,6 @@ export default function Profile() {
  </div>
  )}
  </div>
-
- {/* ── Modal: Chỉnh sửa thông tin cơ bản ── */}
  {showInfoModal && (
  <Modal
  title="Chỉnh sửa hồ sơ"
@@ -548,8 +508,6 @@ export default function Profile() {
  </form>
  </Modal>
  )}
-
- {/* ── Modal: Cập nhật số đo ── */}
  {showBodyModal && (
  <Modal title="Cập nhật chỉ số cơ thể" onClose={() => setShowBodyModal(false)}>
  <form onSubmit={handleSaveBody} className="space-y-4">

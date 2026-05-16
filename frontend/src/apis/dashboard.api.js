@@ -1,6 +1,4 @@
-import api from './axiosConfig';
-
-// Lấy dữ liệu thống kê dashboard cho admin
+import api from './axiosConfig';
 export const getDashboardStats = async (params = {}) => {
     return await api.get('/admin/dashboard', { params });
 };

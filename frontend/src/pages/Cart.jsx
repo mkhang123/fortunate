@@ -15,9 +15,7 @@ export default function Cart() {
  const [cart, setCart] = useState(null);
  const [loading, setLoading] = useState(true);
  const navigate = useNavigate();
- const user = JSON.parse(localStorage.getItem("user"));
-
- // 1. Lấy dữ liệu giỏ hàng từ Backend
+ const user = JSON.parse(localStorage.getItem("user"));
  const fetchCart = async () => {
  if (!user) {
  setLoading(true);
@@ -46,9 +44,7 @@ export default function Cart() {
 
  useEffect(() => {
  fetchCart();
- }, []);
-
- // 2. Xóa sản phẩm khỏi giỏ
+ }, []);
  const removeItem = async (itemId) => {
  if (!user) {
  const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
@@ -62,13 +58,9 @@ export default function Cart() {
  await api.delete(`/cart/item/${itemId}`);
  toast.success("Đã xóa sản phẩm");
  fetchCart(); // Tải lại giỏ hàng
- };
-
- // 3. Cập nhật số lượng sản phẩm (Tăng/Giảm)
+ };
  const updateQuantity = async (itemId, currentQty, adjustment) => {
- const newQty = currentQty + adjustment;
-
- // Chặn không cho giảm xuống dưới 1
+ const newQty = currentQty + adjustment;
  if (newQty < 1) return;
 
  if (!user) {
@@ -81,8 +73,7 @@ export default function Cart() {
  return;
  }
 
- try {
- // Gọi API patch để cập nhật số lượng trong DB
+ try {
  await api.patch(`/cart/item/${itemId}`, { quantity: newQty });
 
  fetchCart();
@@ -90,9 +81,7 @@ export default function Cart() {
  console.error("Lỗi cập nhật số lượng:", err);
  toast.error("Kho hàng không đủ số lượng");
  }
- };
-
- // 4. Tính tổng tiền
+ };
  const calculateTotal = () => {
  if (!cart || !cart.items) return 0;
  return cart.items.reduce((total, item) => {
@@ -109,7 +98,6 @@ export default function Cart() {
 
  return (
  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16 py-8 sm:py-12 bg-white min-h-screen">
- {/* BREADCRUMB */}
  <nav className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-400 mb-8 sm:mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
@@ -137,14 +125,12 @@ export default function Cart() {
  </div>
  ) : (
  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
- {/* DANH SÁCH SẢN PHẨM (LEFT) */}
  <div className="lg:col-span-8 space-y-6 sm:space-y-8">
  {cart.items.map((item) => (
  <div
  key={item.id}
  className="flex flex-col sm:flex-row gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-gray-50 group"
  >
- {/* Ảnh sản phẩm */}
  <div className="w-full max-w-[8rem] sm:w-32 mx-auto sm:mx-0 aspect-[3/4] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative shrink-0">
  <img
  src={
@@ -158,8 +144,6 @@ export default function Cart() {
  alt={item.variant.product.name}
  />
  </div>
-
- {/* Thông tin sản phẩm */}
  <div className="flex-1 flex flex-col justify-between py-2">
  <div className="flex justify-between items-start">
  <div>
@@ -184,7 +168,6 @@ export default function Cart() {
  </div>
 
  <div className="flex justify-between items-end">
- {/* BỘ ĐIỀU KHIỂN SỐ LƯỢNG */}
  <div className="flex items-center border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
  <button
  onClick={() =>
@@ -218,8 +201,6 @@ export default function Cart() {
  </div>
  ))}
  </div>
-
- {/* TỔNG KẾT & THANH TOÁN (RIGHT) */}
  <div className="lg:col-span-4">
  <div className="bg-gray-50 p-6 sm:p-8 rounded-3xl border border-gray-100 space-y-6 sm:space-y-8 lg:sticky lg:top-24 xl:top-32">
  <h2 className="text-sm font-black tracking-tight">

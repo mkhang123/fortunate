@@ -10,26 +10,19 @@ class VTONController {
   async tryOn(req, res) {
     try {
       const userId = req.user.id;
-      const { productId, garmentImageUrl } = req.body;
-
-      // Kiểm tra ảnh người
+      const { productId, garmentImageUrl } = req.body;
       if (!req.files || !req.files.personImage) {
         return res.status(400).json({
           success: false,
           message: 'Vui lòng upload ảnh người'
         });
-      }
-
-      // personImage đã được upload lên Cloudinary bởi multer middleware
-      const personImage = req.files.personImage[0];
-
-      // --- BƯỚC KIỂM DUYỆT ẢNH BẰNG AI (MODERATION) ---
+      }
+      const personImage = req.files.personImage[0];
       console.log('🛡️ [1/2] Starting Person image moderation check...');
       const personModeration = await moderationService.checkImageSafety(personImage.path, 'PERSON');
 
       if (!personModeration.safe) {
-        console.warn('🔞 Person Image rejected:', personModeration.reason);
-        // Xóa ngay ảnh vừa upload lên Cloudinary để bảo mật
+        console.warn('🔞 Person Image rejected:', personModeration.reason);
         if (personImage.filename) {
           await deleteFromCloudinary(personImage.filename);
         }
@@ -38,16 +31,13 @@ class VTONController {
           message: `Ảnh người không hợp lệ: ${personModeration.reason}`
         });
       }
-      console.log('✅ Image passed moderation.');
-      // -----------------------------------------------
+      console.log('✅ Image passed moderation.');
 
       let garmentImage;
 
-      if (req.files && req.files.garmentImage) {
-        // Trường hợp 1: Upload file trực tiếp → đã lên Cloudinary
+      if (req.files && req.files.garmentImage) {
         garmentImage = req.files.garmentImage[0];
-      } else if (garmentImageUrl) {
-        // Trường hợp 2: URL ảnh từ sản phẩm → upload lên Cloudinary
+      } else if (garmentImageUrl) {
         try {
           const cloudResult = await uploadFromUrl(garmentImageUrl, 'fortunate/vton');
           garmentImage = {
@@ -67,15 +57,12 @@ class VTONController {
           success: false,
           message: 'Vui lòng cung cấp ảnh quần áo hoặc URL ảnh sản phẩm'
         });
-      }
-
-      // --- KIỂM DUYỆT ẢNH ĐỒ (MODERATION 2) ---
+      }
       console.log('🛡️ [2/2] Starting Garment image moderation check...');
       const garmentModeration = await moderationService.checkImageSafety(garmentImage.path, 'GARMENT');
 
       if (!garmentModeration.safe) {
-        console.warn('🔞 Garment Image rejected:', garmentModeration.reason);
-        // Xóa ảnh vừa upload nếu có
+        console.warn('🔞 Garment Image rejected:', garmentModeration.reason);
         if (personImage.filename) await deleteFromCloudinary(personImage.filename);
         if (garmentImage.filename) await deleteFromCloudinary(garmentImage.filename);
 
@@ -84,8 +71,7 @@ class VTONController {
           message: `Trang phục không hợp lệ: ${garmentModeration.reason}`
         });
       }
-      console.log('✅ Both images passed moderation.');
-      // ----------------------------------------
+      console.log('✅ Both images passed moderation.');
 
       const productIdInt = productId ? parseInt(productId) : null;
 

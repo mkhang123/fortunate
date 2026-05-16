@@ -154,8 +154,7 @@ class OrderRepository {
     /**
      * Delete order
      */
-    static async deleteOrder(orderId) {
-        // Delete will cascade to orderItems and payment via onDelete: Cascade
+    static async deleteOrder(orderId) {
         return await prisma.order.delete({
             where: { id: orderId },
         });

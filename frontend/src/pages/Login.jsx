@@ -71,8 +71,7 @@ const Login = () => {
 
                 if (user.role === "ADMIN") {
                     window.location.href = "/admin/dashboard";
-                } else {
-                    // Kiểm tra body profile trước khi chuyển trang
+                } else {
                     try {
                         const meRes = await api.get("/users/me");
                         if (!meRes.data.data?.bodyProfile) {
@@ -80,8 +79,7 @@ const Login = () => {
                         } else {
                             localStorage.removeItem("needsBodyProfile");
                         }
-                    } catch {
-                        // Bỏ qua lỗi mạng, App.jsx sẽ fallback check sau
+                    } catch {
                     }
                     const redirectTo = location.state?.from || "/";
                     window.location.href = redirectTo;
@@ -99,7 +97,6 @@ const Login = () => {
     return (
         <div className="min-h-screen bg-white flex items-center justify-center px-6 py-12">
             <div className="w-full max-w-md">
-                {/* Logo/Brand */}
                 <div className="text-center mb-12">
                     <Link
                         to="/"
@@ -111,11 +108,8 @@ const Login = () => {
                         Đăng nhập vào tài khoản
                     </p>
                 </div>
-
-                {/* Login Form */}
                 <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
                     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                        {/* Email Input */}
                         <div>
                             <label className="block text-[10px] font-black tracking-[0.2em] mb-2 text-gray-700">
                                 Email
@@ -140,8 +134,6 @@ const Login = () => {
                                 </p>
                             )}
                         </div>
-
-                        {/* Password Input */}
                         <div>
                             <label className="block text-[10px] font-black tracking-[0.2em] mb-2 text-gray-700">
                                 Mật khẩu
@@ -166,8 +158,6 @@ const Login = () => {
                                 </p>
                             )}
                         </div>
-
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={loading}
@@ -186,8 +176,6 @@ const Login = () => {
                             )}
                         </button>
                     </form>
-
-                    {/* Divider */}
                     <div className="relative my-8">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-gray-100"></div>
@@ -196,8 +184,6 @@ const Login = () => {
                             <span className="bg-white px-4 text-gray-400 font-bold">Hoặc</span>
                         </div>
                     </div>
-
-                    {/* Google Login Button */}
                     <button
                         type="button"
                         onClick={() => { window.location.href = "http://localhost:4000/api/auth/google"; }}
@@ -211,8 +197,6 @@ const Login = () => {
                         </svg>
                         Tiếp tục với Google
                     </button>
-
-                    {/* Register Link */}
                     <div className="text-center mt-6">
                         <p className="text-xs text-gray-600">
                             Chưa có tài khoản?{" "}
@@ -225,8 +209,6 @@ const Login = () => {
                         </p>
                     </div>
                 </div>
-
-                {/* Back to Home */}
                 <div className="text-center mt-8">
                     <Link
                         to="/"

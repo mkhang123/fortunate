@@ -6,11 +6,9 @@ import { vtonAPI } from '../apis/vton.api';
 export default function VirtualTryOn() {
   const location = useLocation();
 
-  // Lấy thông tin user để kiểm tra quyền admin
   const currentUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
   const isAdmin = currentUser?.role === 'ADMIN';
 
-  // Nếu navigate từ trang chi tiết sản phẩm → pre-select sản phẩm đó
   const fromProduct = location.state?.fromProduct;
   const initialSelected = fromProduct
     ? { id: fromProduct.id, name: fromProduct.name, image: fromProduct.image, isFromProduct: true }
@@ -19,18 +17,17 @@ export default function VirtualTryOn() {
   const [userImage, setUserImage] = useState(null);
   const [userImageFile, setUserImageFile] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(initialSelected);
-  // Sản phẩm được navigate từ ProductDetail (hiển thị trong grid)
+
   const [fromProductItem] = useState(initialSelected?.isFromProduct ? initialSelected : null);
   const [customProductImage, setCustomProductImage] = useState(null);
   const [customProductFile, setCustomProductFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState(null);
   const [error, setError] = useState(null);
-  // Kích thước thực tế của ảnh người (để đồng bộ ảnh kết quả)
+
   const [personImgSize, setPersonImgSize] = useState(null);
   const personImgRef = useRef(null);
 
-  // Xử lý tải ảnh cá nhân người dùng
   const handleUserImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -41,7 +38,6 @@ export default function VirtualTryOn() {
     }
   };
 
-  // Xử lý tải ảnh quần áo cá nhân từ máy
   const handleCustomProductUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -77,10 +73,10 @@ export default function VirtualTryOn() {
       let garmentImageUrl = null;
 
       if (selectedProduct.isCustom) {
-        // Ảnh custom từ máy → gửi file trực tiếp
+
         garmentFile = customProductFile;
       } else {
-        // Ảnh từ sản phẩm → gửi URL để backend tự download (tránh CORS)
+
         garmentImageUrl = selectedProduct.image;
       }
 
@@ -89,11 +85,10 @@ export default function VirtualTryOn() {
 
       console.log('VTON Result:', result);
 
-      // Hiển thị kết quả
       if (result.success && result.data.outputImage) {
-        // Construct URL to result image
+
         let resultImageUrl = result.data.outputImage;
-        // Chỉ nối localhost nếu trả về đường dẫn tương đối (file lưu trên ổ cứng local)
+
         if (!resultImageUrl.startsWith('http')) {
           resultImageUrl = `http://localhost:4000/${resultImageUrl.replace(/\\/g, '/')}`;
         }
@@ -122,7 +117,7 @@ export default function VirtualTryOn() {
   const handleDownloadResult = async (format = 'png') => {
     if (!resultImage) return;
     try {
-      // Fetch ảnh về dưới dạng blob để tránh CORS khi vẽ canvas
+
       const response = await fetch(resultImage);
       const blob = await response.blob();
       const imgBitmap = await createImageBitmap(blob);
@@ -133,7 +128,7 @@ export default function VirtualTryOn() {
       const ctx = canvas.getContext('2d');
 
       if (format === 'jpg') {
-        // JPG không hỗ trợ trong suốt → fill nền trắng trước
+
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
@@ -150,14 +145,14 @@ export default function VirtualTryOn() {
       link.click();
       document.body.removeChild(link);
     } catch (e) {
-      // Fallback: mở tab mới nếu canvas bị chặn
+
       window.open(resultImage, '_blank');
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 min-h-screen bg-white">
-      {/* HEADER SECTION */}
+
       <div className="mb-8 sm:mb-12 border-b border-gray-100 pb-6 sm:pb-8">
         <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter mb-3 sm:mb-4 flex flex-wrap items-center gap-2 sm:gap-4">
           Virtual Try-On
@@ -169,7 +164,6 @@ export default function VirtualTryOn() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
 
-        {/* CỘT 1: TẢI ẢNH NGƯỜI DÙNG */}
         <div className="space-y-6">
           <h2 className="text-xs font-black tracking-[0.2em] flex items-center justify-center gap-2">
             <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-[10px]">1</span>
@@ -206,9 +200,8 @@ export default function VirtualTryOn() {
           </div>
         </div>
 
-        {/* CỘT 2: KẾT QUẢ AI */}
         <div className="space-y-6">
-          {/* Cùng hàng tiêu đề với cột 1 & 3 (badge 24px + gap-2) để khung ảnh bắt đầu cùng một đường */}
+
           <h2 className="text-xs font-black tracking-[0.2em] flex items-center gap-2 min-h-6">
             <span className="w-6 h-6 shrink-0 rounded-full opacity-0 pointer-events-none" aria-hidden />
             <span className="flex-1 text-center">Kết quả</span>
@@ -281,7 +274,6 @@ export default function VirtualTryOn() {
           </div>
         </div>
 
-        {/* CỘT 3: CHỌN TRANG PHỤC (MẪU HOẶC TẢI LÊN) */}
         <div className="space-y-6">
           <h2 className="text-xs font-black tracking-[0.2em] flex items-center justify-center gap-2">
             <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-[10px]">2</span>
@@ -289,7 +281,7 @@ export default function VirtualTryOn() {
           </h2>
 
           <div className="flex flex-col gap-3">
-            {/* Hai ô vuông cạnh nhau: tải đồ | ảnh — áp dụng cả khi có đồ từ máy hoặc sản phẩm từ trang chi tiết */}
+
             {customProductImage ? (
               <div className="grid grid-cols-2 gap-3 w-full">
                 <label className="cursor-pointer aspect-square w-full border-2 border-dashed border-gray-200 rounded-sm flex flex-col items-center justify-center gap-2 hover:border-black transition-all bg-gray-50/50 group min-h-0">
@@ -357,7 +349,6 @@ export default function VirtualTryOn() {
               </label>
             )}
 
-            {/* HƯỚNG DẪN SỬ DỤNG — 3 bước */}
             <div className="mt-2 flex flex-col gap-3">
               <p className="text-[9px] font-black tracking-[0.15em] text-gray-400 uppercase">Hướng dẫn</p>
               {[

@@ -25,7 +25,7 @@ export const optionalAuthMiddleware = async (req, res, next) => {
     }
     req.user = decoded;
   } catch {
-    // Token hết hạn / sai → coi như chưa đăng nhập
+
   }
   next();
 };

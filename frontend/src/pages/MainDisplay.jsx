@@ -26,14 +26,12 @@ export default function MainDisplay() {
 
    return (
       <div className="bg-white">
-         {/* 1. HERO SECTION - ĐÃ FIX CỨNG ẢNH TĨNH */}
          <section className="relative min-h-[70svh] h-[85vh] md:h-[90vh] w-full overflow-hidden group">
             <img
                src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80"
                alt="Fortunate Seasonal Banner"
                className="w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
             />
-            {/* Overlay phủ đen nhẹ để nổi bật chữ */}
             <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-white px-4 sm:px-6 text-center">
                <h2 className="text-[9px] sm:text-[10px] md:text-xs font-bold tracking-[0.35em] sm:tracking-[0.6em] mb-3 sm:mb-4 animate-in fade-in slide-in-from-bottom duration-700">
                   Fortunate New Generation 2026
@@ -49,8 +47,6 @@ export default function MainDisplay() {
                </Link>
             </div>
          </section>
-
-         {/* 2. COLLECTION GRID - BỘ SƯU TẬP THEO PHONG CÁCH */}
          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 sm:mb-12 gap-4 border-b border-gray-100 pb-8">
                <div>
@@ -102,10 +98,7 @@ export default function MainDisplay() {
                ))}
             </div>
          </section>
-
-         {/* 3. VIRTUAL TRY-ON CALLOUT - TRỌNG TÂM LUẬN VĂN */}
          <section className="bg-black py-16 sm:py-24 md:py-32 overflow-hidden relative">
-            {/* Đồ họa trang trí trừu tượng cho cảm giác AI */}
             <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-red-600/10 rounded-full blur-[120px]" />
 
             <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
@@ -128,8 +121,6 @@ export default function MainDisplay() {
                </Link>
             </div>
          </section>
-
-         {/* 4. FOOTER BRANDING */}
          <section className="py-24 text-center bg-white">
             <h2 className="text-[10px] font-black tracking-[1em] text-gray-200 mb-6">
                Fortunate Clothing Co.

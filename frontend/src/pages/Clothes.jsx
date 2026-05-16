@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../apis/axiosConfig";
 import { Link, useLocation, useParams } from "react-router-dom"; // Thay useLocation bằng useParams
-import { Search, ChevronDown } from "lucide-react";
-
-// Mapping slug → tên tiếng Việt có dấu
+import { Search, ChevronDown } from "lucide-react";
 const SLUG_LABELS = {
   "ao-thun": "Áo thun",
   "ao-so-mi": "Áo sơ mi",
@@ -29,9 +27,7 @@ export default function Clothes() {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("latest");
-  const [loading, setLoading] = useState(false);
-
-  // Đọc categorySlug từ URL dạng /clothes/:categorySlug
+  const [loading, setLoading] = useState(false);
   const { categorySlug } = useParams();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -41,9 +37,7 @@ export default function Clothes() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setLoading(true);
-
-        // Gửi categorySlug trực tiếp lấy từ useParams()
+        setLoading(true);
         const params = {
           search: searchTerm,
           sort: sortOption,
@@ -79,7 +73,6 @@ export default function Clothes() {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 gap-6 sm:gap-8">
         <div>
           <h1 className="text-3xl sm:text-4xl font-black italic tracking-tighter mb-3 break-words">
-            {/* Hiển thị tiêu đề dựa trên slug hiện tại */}
             {pageTitle}
           </h1>
           <nav className="text-[10px] text-gray-400 tracking-[0.3em] font-bold">
@@ -104,8 +97,6 @@ export default function Clothes() {
             )}
           </nav>
         </div>
-
-        {/* Phần Search và Sort giữ nguyên như cũ */}
         <div className="flex flex-col md:flex-row gap-8 items-center w-full md:w-auto">
           <div className="relative group w-full md:w-56">
             <select
@@ -133,8 +124,6 @@ export default function Clothes() {
           </div>
         </div>
       </div>
-
-      {/* Grid sản phẩm giữ nguyên logic render */}
       {loading ? (
         <div className="py-40 text-center text-[10px] font-black tracking-[0.5em] animate-pulse">
           Đang tải dữ liệu...

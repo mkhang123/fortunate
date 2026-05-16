@@ -31,9 +31,7 @@ class VtonConfigController {
                     success: false,
                     message: 'colabUrl không hợp lệ. Vui lòng nhập link gradio.live từ Google Colab.',
                 });
-            }
-
-            // Validate URL format
+            }
             if (!colabUrl.startsWith('http')) {
                 return res.status(400).json({
                     success: false,

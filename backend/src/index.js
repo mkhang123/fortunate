@@ -45,10 +45,7 @@ app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/products/:productId/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/brands", brandRoutes);
-
-
-// Global error handling middleware
+app.use("/api/brands", brandRoutes);
 app.use((err, req, res, next) => {
   console.error("Error:", err);
 

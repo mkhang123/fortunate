@@ -1,7 +1,6 @@
 import PDFDocument from "pdfkit";
 import path from "path";
 
-// Dùng font Arial có sẵn trên Windows — hỗ trợ đầy đủ Unicode / tiếng Việt
 const WIN_FONTS = "C:/Windows/Fonts";
 const FONT_REGULAR = path.join(WIN_FONTS, "arial.ttf");
 const FONT_BOLD    = path.join(WIN_FONTS, "arialbd.ttf");
@@ -20,8 +19,7 @@ const formatVND = (n) => (n || 0).toLocaleString("vi-VN");
  * @param {object} res   - Express response object
  */
 export function generateInvoicePDF(order, res) {
-    // A4: 595.28 × 841.89 pt
-    // margin: 50  →  vùng sử dụng: y = 50 đến y = 791.89
+
     const doc = new PDFDocument({ margin: 50, size: "A4" });
 
     res.setHeader("Content-Type", "application/pdf");
@@ -33,11 +31,9 @@ export function generateInvoicePDF(order, res) {
 
     const PAGE_W = doc.page.width - 100; // 495pt
 
-    // Helpers gọn
     const regular = (size) => doc.font(FONT_REGULAR).fontSize(size);
     const bold    = (size) => doc.font(FONT_BOLD).fontSize(size);
 
-    // ─── HEADER ──────────────────────────────────────────────────────────────
     bold(26).fillColor(BLACK).text("FORTUNATE", 50, 50);
     regular(8).fillColor(GRAY).text("Thời trang tối giản — Tích hợp công nghệ AI", 50, 82);
 
@@ -48,7 +44,6 @@ export function generateInvoicePDF(order, res) {
 
     doc.moveTo(50, 108).lineTo(545, 108).strokeColor("#E5E7EB").lineWidth(1).stroke();
 
-    // ─── THÔNG TIN NHẬN HÀNG ─────────────────────────────────────────────────
     const iY = 122;
 
     bold(7.5).fillColor(GRAY).text("THÔNG TIN NHẬN HÀNG", 50, iY);
@@ -80,12 +75,10 @@ export function generateInvoicePDF(order, res) {
         regular(9).fillColor(BLACK).text(order.notes, 310, iY + 96, { width: 230 });
     }
 
-    // ─── BẢNG SẢN PHẨM ───────────────────────────────────────────────────────
     const TABLE_TOP = 255;
     const ROW_H     = 26;
     const COL = { no: 50, name: 75, size: 308, qty: 360, price: 410, total: 475 };
 
-    // Header row
     doc.rect(50, TABLE_TOP, PAGE_W, 22).fill(BLACK);
     bold(8).fillColor(WHITE);
     doc.text("STT",        COL.no,    TABLE_TOP + 7);
@@ -118,10 +111,8 @@ export function generateInvoicePDF(order, res) {
         rowY += ROW_H;
     });
 
-    // Đường kẻ cuối bảng
     doc.moveTo(50, rowY).lineTo(545, rowY).strokeColor("#E5E7EB").lineWidth(1).stroke();
 
-    // ─── TỔNG TIỀN ───────────────────────────────────────────────────────────
     const LX = 350; // label x
     const VX = 450; // value x
     const VW = 95;  // value width
@@ -140,15 +131,11 @@ export function generateInvoicePDF(order, res) {
     doc.moveTo(LX, rowY).lineTo(545, rowY).strokeColor("#E5E7EB").lineWidth(0.5).stroke();
     rowY += 7;
 
-    // Hộp Tổng cộng
     doc.rect(LX, rowY, 195, 26).fill(BLACK);
     bold(10.5).fillColor(WHITE).text("TỔNG CỘNG:", LX + 6, rowY + 8);
     bold(10.5).fillColor(WHITE)
         .text(`${formatVND(order.total)} VNĐ`, VX, rowY + 8, { width: VW, align: "right" });
 
-    // ─── FOOTER ──────────────────────────────────────────────────────────────
-    // footerY phải đảm bảo: footerY + 38 < 791 (giới hạn trang A4 với margin 50)
-    // → footerY = 732  →  732 + 38 = 770 < 791 ✓  (không tràn sang trang mới)
     const FOOTER_Y = 732;
     doc.moveTo(50, FOOTER_Y).lineTo(545, FOOTER_Y)
         .strokeColor("#E5E7EB").lineWidth(1).stroke();

@@ -92,7 +92,6 @@ const Register = () => {
  return (
  <div className="min-h-screen bg-white flex items-center justify-center px-6 py-12">
  <div className="w-full max-w-md">
- {/* Logo/Brand */}
  <div className="text-center mb-12">
  <Link
  to="/"
@@ -104,11 +103,8 @@ const Register = () => {
  Tạo tài khoản mới
  </p>
  </div>
-
- {/* Register Form */}
  <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
  <form onSubmit={handleSubmit} className="space-y-5" noValidate>
- {/* Name Input */}
  <div>
  <label className="block text-[10px] font-black tracking-[0.2em] mb-2 text-gray-700">
  Họ và tên
@@ -134,8 +130,6 @@ const Register = () => {
  </p>
  )}
  </div>
-
- {/* Email Input */}
  <div>
  <label className="block text-[10px] font-black tracking-[0.2em] mb-2 text-gray-700">
  Email
@@ -161,8 +155,6 @@ const Register = () => {
  </p>
  )}
  </div>
-
- {/* Password Input */}
  <div>
  <label className="block text-[10px] font-black tracking-[0.2em] mb-2 text-gray-700">
  Mật khẩu
@@ -188,8 +180,6 @@ const Register = () => {
  </p>
  )}
  </div>
-
- {/* Confirm Password Input */}
  <div>
  <label className="block text-[10px] font-black tracking-[0.2em] mb-2 text-gray-700">
  Xác nhận mật khẩu
@@ -215,8 +205,6 @@ const Register = () => {
  </p>
  )}
  </div>
-
- {/* Submit Button */}
  <button
  type="submit"
  disabled={loading}
@@ -235,8 +223,6 @@ const Register = () => {
  )}
  </button>
  </form>
-
- {/* Divider */}
  <div className="relative my-8">
  <div className="absolute inset-0 flex items-center">
  <div className="w-full border-t border-gray-100"></div>
@@ -247,8 +233,6 @@ const Register = () => {
  </span>
  </div>
  </div>
-
- {/* Login Link */}
  <div className="text-center">
  <p className="text-xs text-gray-600">
  Đã có tài khoản?{" "}
@@ -261,8 +245,6 @@ const Register = () => {
  </p>
  </div>
  </div>
-
- {/* Back to Home */}
  <div className="text-center mt-8">
  <Link
  to="/"

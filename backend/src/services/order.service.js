@@ -20,11 +20,8 @@ class OrderService {
             city,
             paymentMethod = "VNPAY",
             notes,
-        } = orderData;
-
-        // Thực hiện toàn bộ thao tác tạo đơn + trừ tồn kho trong transaction
-        const order = await prisma.$transaction(async (tx) => {
-            // 1. Lấy giỏ hàng trong transaction (đảm bảo dữ liệu mới nhất)
+        } = orderData;
+        const order = await prisma.$transaction(async (tx) => {
             const cart = await tx.cart.findUnique({
                 where: { userId },
                 include: {
@@ -38,9 +35,7 @@ class OrderService {
 
             if (!cart || !cart.items || cart.items.length === 0) {
                 throw new BadRequestError("Giỏ hàng trống");
-            }
-
-            // 2. Tính tổng tiền và chuẩn bị danh sách order items
+            }
             let total = 0;
             const orderItems = cart.items.map((item) => {
                 const price = item.variant.price;
@@ -52,9 +47,7 @@ class OrderService {
                     price: price, // Snapshot price at time of purchase
                     quantity: quantity,
                 };
-            });
-
-            // 3. Trừ tồn kho theo từng biến thể size
+            });
             for (const item of cart.items) {
                 const result = await tx.productVariant.updateMany({
                     where: {
@@ -75,9 +68,7 @@ class OrderService {
                         "Sản phẩm không đủ số lượng trong kho"
                     );
                 }
-            }
-
-            // 4. Tạo đơn hàng (+ bản ghi thanh toán COD để admin / chi tiết đơn hiển thị đúng)
+            }
             const orderCreateData = {
                 userId,
                 receiverName,
@@ -117,25 +108,17 @@ class OrderService {
                     },
                     payment: true,
                 },
-            });
-
-            // 5. Xóa giỏ hàng sau khi tạo đơn thành công
+            });
             await tx.cartItem.deleteMany({
                 where: { cartId: cart.id },
             });
 
             return createdOrder;
-        });
-
-        // 5. Gửi thông báo đặt hàng thành công cho user
-        notificationService.notifyOrderPlaced(userId, order.id).catch(console.error);
-        // 6. Báo cho admin có đơn mới cần duyệt
+        });
+        notificationService.notifyOrderPlaced(userId, order.id).catch(console.error);
         notificationService
             .notifyOrderPendingApprovalToAdmins(order.id)
-            .catch(console.error);
-
-        // 7. Return order with payment info
-        // Payment record will be created by payment controller
+            .catch(console.error);
         let result = {
             order,
             success: true,
@@ -252,12 +235,8 @@ class OrderService {
                     payment: true,
                 },
             });
-        });
-
-        // Gửi thông báo đặt hàng thành công cho user
-        notificationService.notifyOrderPlaced(userId, order.id).catch(console.error);
-        
-        // Gửi thông báo cho admin có đơn mới cần duyệt
+        });
+        notificationService.notifyOrderPlaced(userId, order.id).catch(console.error);
         notificationService
             .notifyOrderPendingApprovalToAdmins(order.id)
             .catch(console.error);
@@ -269,7 +248,6 @@ class OrderService {
             paymentMethod,
         };
     }
-
 
     /**
      * Find order by ID with validation
@@ -295,10 +273,7 @@ class OrderService {
      * Update payment status based on VNPAY response code
      */
     static async updatePaymentStatus(orderId, vnpayResponseCode) {
-        const order = await this.findById(orderId);
-
-        // Thanh toán thành công không đồng nghĩa với đơn đã được admin duyệt.
-        // Đơn vẫn ở trạng thái PENDING để chờ admin xử lý thủ công.
+        const order = await this.findById(orderId);
         let orderStatus = order.status;
 
         if (vnpayResponseCode === "00") {
@@ -315,24 +290,18 @@ class OrderService {
      */
     static async updateOrderStatus(orderId, status) {
         const order = await this.findById(orderId);
-        const previousStatus = order.status;
-
-        // Validate status transitions
+        const previousStatus = order.status;
         const validStatuses = ["PENDING", "PAID", "SHIPPED", "COMPLETED", "CANCELLED"];
         if (!validStatuses.includes(status)) {
             throw new BadRequestError("Invalid order status");
-        }
-
-        // Khi đơn bị hủy trước khi giao/hoàn tất, trả lại kho theo các biến thể
-        // (hiện hệ thống trừ kho ngay khi tạo đơn)
+        }
         let updated;
         if (
             status === "CANCELLED" &&
             previousStatus !== "CANCELLED" &&
             previousStatus !== "COMPLETED"
         ) {
-            await prisma.$transaction(async (tx) => {
-                // Hoàn kho: cộng lại đúng số lượng đã trừ khi tạo đơn
+            await prisma.$transaction(async (tx) => {
                 for (const item of order.items || []) {
                     const variantId = item.variantId ?? item.variant?.id;
                     const quantity = item.quantity;
@@ -351,9 +320,7 @@ class OrderService {
             });
         } else {
             updated = await OrderRepository.updateOrderStatus(orderId, status);
-        }
-
-        // Gửi thông báo cho user theo trạng thái mới
+        }
         const notifyMap = {
             PAID:      () => notificationService.notifyOrderPaid(order.userId, orderId),
             SHIPPED:   () => notificationService.notifyOrderShipped(order.userId, orderId),
@@ -371,31 +338,22 @@ class OrderService {
      * Validate order for payment
      */
     static async validateOrderForPayment(orderId, amount) {
-        const order = await this.findById(orderId);
-
-        // Check if order already paid
+        const order = await this.findById(orderId);
         if (order.status === "PAID" || order.status === "COMPLETED") {
             throw new BadRequestError("Order already paid");
-        }
-
-        // Check if order is cancelled
+        }
         if (order.status === "CANCELLED") {
             throw new BadRequestError("Cannot pay for cancelled order");
-        }
-
-        // Verify amount matches
+        }
         if (Math.abs(order.total - amount) > 0.01) {
             throw new BadRequestError(
                 `Amount mismatch. Expected ${order.total}, got ${amount}`
             );
-        }
-
-        // Check if payment already exists
+        }
         if (order.payment) {
             if (order.payment.status === "SUCCESS") {
                 throw new BadRequestError("Order already has successful payment");
-            }
-            // If payment exists but not successful, we can create a new one
+            }
         }
 
         return order;
@@ -412,9 +370,7 @@ class OrderService {
      * Delete order (Admin)
      */
     static async deleteOrder(orderId) {
-        const order = await this.findById(orderId);
-
-        // Optional: Prevent deletion of completed orders
+        const order = await this.findById(orderId);
         if (order.status === "COMPLETED") {
             throw new BadRequestError("Cannot delete completed orders");
         }

@@ -71,7 +71,6 @@ export default function MyOrders() {
 
  return (
  <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
- {/* BREADCRUMB */}
  <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
@@ -104,7 +103,6 @@ export default function MyOrders() {
  key={order.id}
  className="bg-white border border-gray-100 rounded-3xl p-6 hover:shadow-lg transition-all group"
  >
- {/* Order Header */}
  <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b">
  <div className="flex items-center gap-4">
  <Package className="w-5 h-5 text-gray-400" />
@@ -131,8 +129,6 @@ export default function MyOrders() {
  {getDisplayStatus(order)}
  </span>
  </div>
-
- {/* Order Items Preview */}
  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
  {order.items.slice(0, 5).map((item) => (
  <div
@@ -162,8 +158,6 @@ export default function MyOrders() {
  </div>
  )}
  </div>
-
- {/* Order Footer */}
  <div className="flex flex-wrap items-center justify-between gap-4">
  <div>
  <p className="text-[10px] font-bold tracking-widest text-gray-500 mb-1">

@@ -15,7 +15,6 @@ export default function BodyProfileModal({ onComplete }) {
  const [errors, setErrors] = useState({});
  const [saving, setSaving] = useState(false);
 
- // Khoá scroll trang khi modal mở
  useEffect(() => {
  const prev = document.body.style.overflow;
  document.body.style.overflow = "hidden";
@@ -59,15 +58,13 @@ export default function BodyProfileModal({ onComplete }) {
  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
 
- {/* Header — giống Profile.jsx Modal nhưng không có nút X */}
  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
  <h3 className="text-sm font-black tracking-widest text-gray-900">
  Cập nhật chỉ số cơ thể
  </h3>
- {/* Không có nút đóng — bắt buộc phải điền */}
+
  </div>
 
- {/* Mô tả */}
  <div className="px-6 pt-5 pb-1">
  <p className="text-[11px] font-bold tracking-wider text-gray-400 leading-relaxed">
  Vui lòng nhập thông tin cơ thể để Fortunate gợi ý size chính xác hơn cho bạn.{" "}
@@ -75,7 +72,6 @@ export default function BodyProfileModal({ onComplete }) {
  </p>
  </div>
 
- {/* Form */}
  <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
  {FIELDS.map(({ key, label, placeholder, required }) => (
  <div key={key}>
@@ -105,7 +101,6 @@ export default function BodyProfileModal({ onComplete }) {
  </div>
  ))}
 
- {/* Chỉ có nút Lưu — không có nút Huỷ */}
  <div className="pt-2">
  <button
  type="submit"

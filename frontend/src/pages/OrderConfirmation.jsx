@@ -74,9 +74,7 @@ export default function OrderConfirmation() {
  } finally {
  setLoading(false);
  }
- };
-
- // Tự động tải PDF hóa đơn khi trang xác nhận được tải
+ };
  useEffect(() => {
  if (!order || autoDownloaded.current) return;
  autoDownloaded.current = true;
@@ -162,7 +160,6 @@ export default function OrderConfirmation() {
 
  return (
  <div className="max-w-[1440px] mx-auto px-6 lg:px-16 py-12 bg-white min-h-screen">
- {/* BREADCRUMB */}
  <nav className="flex items-center gap-2 text-[10px] font-bold text-gray-400 mb-12">
  <Link to="/" className="hover:text-black">
  Trang chủ
@@ -170,8 +167,6 @@ export default function OrderConfirmation() {
  <ChevronRight className="w-3 h-3" />
  <span className="text-black">Xác nhận đơn hàng</span>
  </nav>
-
- {/* Success/Error Header */}
  <div className="text-center mb-12">
  {isSuccess ? (
  <>
@@ -197,7 +192,6 @@ export default function OrderConfirmation() {
  </div>
 
  <div className="max-w-4xl mx-auto space-y-8">
- {/* Order Status */}
  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
  <div className="flex items-center justify-between">
  <div>
@@ -236,10 +230,7 @@ export default function OrderConfirmation() {
  )}
  </div>
  </div>
-
- {/* Order Details Grid */}
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
- {/* Shipping Info */}
  <div className="bg-white p-6 rounded-2xl border border-gray-100">
  <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <MapPin className="w-4 h-4" />
@@ -261,8 +252,6 @@ export default function OrderConfirmation() {
  </p>
  </div>
  </div>
-
- {/* Payment Info */}
  <div className="bg-white p-6 rounded-2xl border border-gray-100">
  <h3 className="text-xs font-black tracking-tight mb-4 flex items-center gap-2">
  <CreditCard className="w-4 h-4" />
@@ -288,8 +277,6 @@ export default function OrderConfirmation() {
  </div>
  </div>
  </div>
-
- {/* Order Items */}
  <div className="bg-white p-6 rounded-2xl border border-gray-100">
  <h3 className="text-xs font-black tracking-tight mb-6 flex items-center gap-2">
  <Package className="w-4 h-4" />
@@ -323,8 +310,6 @@ export default function OrderConfirmation() {
  ))}
  </div>
  </div>
-
- {/* Notes */}
  {order.notes && (
  <div className="bg-yellow-50 p-6 rounded-2xl border border-yellow-100">
  <h3 className="text-xs font-black tracking-tight mb-2">
@@ -333,8 +318,6 @@ export default function OrderConfirmation() {
  <p className="text-sm text-gray-700">{order.notes}</p>
  </div>
  )}
-
- {/* Action Buttons */}
  <div className="flex flex-col sm:flex-row gap-4 pt-6">
  <Link
  to={user ? "/my-orders" : "/"}

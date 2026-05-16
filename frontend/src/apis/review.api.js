@@ -1,13 +1,8 @@
 import api from './axiosConfig';
 
-export const reviewAPI = {
-    // Lấy danh sách đánh giá của sản phẩm
-    getReviews: (productId) => api.get(`/products/${productId}/reviews`),
-
-    // Kiểm tra quyền đánh giá (cần đăng nhập)
-    checkEligibility: (productId) => api.get(`/products/${productId}/reviews/eligibility`),
-
-    // Tạo đánh giá mới
+export const reviewAPI = {
+    getReviews: (productId) => api.get(`/products/${productId}/reviews`),
+    checkEligibility: (productId) => api.get(`/products/${productId}/reviews/eligibility`),
     createReview: (productId, data) => {
         const formData = new FormData();
         formData.append("rating", String(data.rating));

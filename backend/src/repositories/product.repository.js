@@ -1,4 +1,4 @@
-// fortunate/backend/src/repositories/product.repository.js
+
 import prisma from "../config/prisma.js";
 
 class ProductRepository {
@@ -42,14 +42,11 @@ class ProductRepository {
     return await prisma.product.create({
       data: {
         name: data.name,
-        slug: data.slug,
-        // Bỏ description vì không tồn tại trong Prisma schema
+        slug: data.slug,
         categoryId: Number(data.categoryId),
         brandId,
         status: data.status ?? "DRAFT",
-        price: data.price ? Number(data.price) : null,
-
-        // SỬA TẠI ĐÂY: Gán trực tiếp mảng chuỗi
+        price: data.price ? Number(data.price) : null,
         images: data.images || [],
 
         variants: {
@@ -100,9 +97,7 @@ class ProductRepository {
       where.name = { contains: search, mode: "insensitive" };
     }
 
-    const isPriceSort = sort === "price_asc" || sort === "price_desc";
-
-    // Với price sort → dùng orderBy mặc định, sort bằng JS sau
+    const isPriceSort = sort === "price_asc" || sort === "price_desc";
     let orderBy = { wishlists: { _count: "desc" } };
     if (sort === "name_asc") orderBy = { name: "asc" };
 
@@ -114,9 +109,7 @@ class ProductRepository {
       },
       orderBy,
       take: 20,
-    });
-
-    // Sort theo giá thấp nhất của variants
+    });
     if (isPriceSort) {
       const getMinPrice = (p) =>
         p.variants.length > 0 ? Math.min(...p.variants.map((v) => v.price)) : 0;
@@ -168,9 +161,7 @@ class ProductRepository {
           color: { contains: style, mode: "insensitive" },
         },
       };
-    }
-
-    // Với price sort → fetch trước rồi sort bằng JS
+    }
     const isPriceSort = sort === "price_asc" || sort === "price_desc";
 
     let orderBy = { createdAt: "desc" };
@@ -181,9 +172,7 @@ class ProductRepository {
       where,
       include: { variants: true, category: true, brand: true },
       orderBy,
-    });
-
-    // Sort theo giá thấp nhất của variants
+    });
     if (isPriceSort) {
       const getMinPrice = (p) =>
         p.variants.length > 0 ? Math.min(...p.variants.map((v) => v.price)) : 0;
@@ -197,9 +186,7 @@ class ProductRepository {
     return products;
   }
 
-  async deleteProduct(id) {
-    // SỬA: Nhờ có onDelete: Cascade trong Schema, bạn chỉ cần xóa Product.
-    // Các bảng như Variant, CartItem, Review... tự động bị xóa theo.
+  async deleteProduct(id) {
     return await prisma.product.delete({
       where: { id: Number(id) },
     });
@@ -217,10 +204,7 @@ class ProductRepository {
         tx,
         data,
         existingProduct?.brandId ?? null
-      );
-
-      // 1. Cập nhật thông tin cơ bản và MẢNG ẢNH
-      // Prisma sẽ ghi đè mảng cũ bằng mảng mới trong data.images
+      );
       const updatedProduct = await tx.product.update({
         where: { id: productId },
         data: {
@@ -232,23 +216,17 @@ class ProductRepository {
           brandId: resolvedBrandId,
           price: data.price ? Number(data.price) : undefined,
         },
-      });
-
-      // 2. Xử lý biến thể (Variants) - Đồng bộ hoàn toàn (Sync)
+      });
       if (data.variants && Array.isArray(data.variants)) {
         const incomingIds = data.variants
           .filter((v) => v.id)
-          .map((v) => Number(v.id));
-
-        // Xóa các biến thể không còn trong danh sách gửi lên
+          .map((v) => Number(v.id));
         await tx.productVariant.deleteMany({
           where: {
             productId,
             id: { notIn: incomingIds },
           },
-        });
-
-        // Cập nhật hoặc Thêm mới
+        });
         for (const variant of data.variants) {
           const variantData = {
             size: variant.size,
@@ -272,7 +250,6 @@ class ProductRepository {
           }
         }
       }
-
 
       return updatedProduct;
     });
